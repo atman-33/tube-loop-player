@@ -9,15 +9,21 @@ export const YouTubePlayer = () => {
     currentVideoId,
     isLoop,
     isShuffle,
-    play,
     pause,
+    resume,
     toggleLoop,
     toggleShuffle,
   } = usePlayerStore();
   const playerRef = useYouTubePlayer('youtube-player');
 
-  const handlePlayClick = () => (currentVideoId ? play(currentVideoId) : null);
-  const handlePauseClick = () => pause();
+  const handleTogglePlayPause = () => {
+    if (!currentVideoId) return;
+    if (isPlaying) {
+      pause();
+    } else {
+      resume();
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -29,17 +35,10 @@ export const YouTubePlayer = () => {
       <div className="flex justify-center gap-2">
         <Button
           variant="default"
-          onClick={handlePlayClick}
-          disabled={!currentVideoId || isPlaying}
+          onClick={handleTogglePlayPause}
+          disabled={!currentVideoId}
         >
-          Play
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={handlePauseClick}
-          disabled={!isPlaying}
-        >
-          Pause
+          {isPlaying ? 'Pause' : 'Play'}
         </Button>
       </div>
 
