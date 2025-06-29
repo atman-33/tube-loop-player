@@ -1,16 +1,38 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { usePlayerStore } from '../stores/player';
+
+interface YouTubePlayerEvent {
+  data: number;
+}
 
 declare global {
   interface Window {
     onYouTubeIframeAPIReady: () => void;
-    YT: any;
+    YT: {
+      Player: new (
+        elementId: string,
+        options: {
+          events: {
+            onReady: (event: YouTubePlayerEvent) => void;
+            onStateChange: (event: YouTubePlayerEvent) => void;
+          };
+        },
+      ) => any;
+    };
   }
 }
 
 export const useYouTubePlayer = (elementId: string) => {
   const playerRef = useRef<any>(null);
   const { setPlayerInstance } = usePlayerStore();
+
+  const handlePlayerReady = useCallback((event: YouTubePlayerEvent) => {
+    console.log('Player ready', event);
+  }, []);
+
+  const handleStateChange = useCallback((event: YouTubePlayerEvent) => {
+    console.log('State changed', event.data);
+  }, []);
 
   useEffect(() => {
     if (!window.YT) {
@@ -22,9 +44,8 @@ export const useYouTubePlayer = (elementId: string) => {
       window.onYouTubeIframeAPIReady = () => {
         playerRef.current = new window.YT.Player(elementId, {
           events: {
-            onReady: (event: any) => console.log('Player ready', event),
-            onStateChange: (event: any) =>
-              console.log('State changed', event.data),
+            onReady: handlePlayerReady,
+            onStateChange: handleStateChange,
           },
         });
         setPlayerInstance(playerRef.current);
@@ -36,7 +57,7 @@ export const useYouTubePlayer = (elementId: string) => {
         playerRef.current.destroy();
       }
     };
-  }, [elementId, setPlayerInstance]);
+  }, [elementId, setPlayerInstance, handlePlayerReady, handleStateChange]);
 
   return playerRef;
 };
