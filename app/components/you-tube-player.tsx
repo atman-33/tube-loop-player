@@ -1,4 +1,4 @@
-import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
+import { useYouTubePlayer } from '../hooks/use-you-tube-player';
 import { usePlayerStore } from '../stores/player';
 import { Button } from './ui/button';
 import { Toggle } from './ui/toggle';
@@ -23,10 +23,10 @@ export const YouTubePlayer = () => {
     <div className="space-y-4">
       <div
         id="youtube-player"
-        className="aspect-video w-full bg-black rounded-lg"
+        className="aspect-video w-full rounded-lg bg-black"
       />
 
-      <div className="flex gap-2 justify-center">
+      <div className="flex justify-center gap-2">
         <Button
           variant="default"
           onClick={handlePlayClick}
@@ -43,7 +43,7 @@ export const YouTubePlayer = () => {
         </Button>
       </div>
 
-      <div className="flex gap-4 justify-center">
+      <div className="flex justify-center gap-4">
         <Toggle pressed={isLoop} onPressedChange={toggleLoop}>
           Loop {isLoop ? 'ON' : 'OFF'}
         </Toggle>

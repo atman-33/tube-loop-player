@@ -17,12 +17,14 @@ declare global {
             onStateChange: (event: YouTubePlayerEvent) => void;
           };
         },
+        // biome-ignore lint/suspicious/noExplicitAny: <>
       ) => any;
     };
   }
 }
 
 export const useYouTubePlayer = (elementId: string) => {
+  // biome-ignore lint/suspicious/noExplicitAny: <>
   const playerRef = useRef<any>(null);
   const { setPlayerInstance } = usePlayerStore();
 

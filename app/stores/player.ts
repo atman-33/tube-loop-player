@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-
 interface PlayerState {
   isPlaying: boolean;
   currentVideoId: string | null;
   isLoop: boolean;
   isShuffle: boolean;
+  // biome-ignore lint/suspicious/noExplicitAny: <>
   playerInstance: any | null;
+  // biome-ignore lint/suspicious/noExplicitAny: <>
   setPlayerInstance: (player: any) => void;
   play: (videoId: string) => void;
   pause: () => void;

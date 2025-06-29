@@ -8,7 +8,7 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-import { YouTubePlayer } from '../../components/YouTubePlayer';
+import { YouTubePlayer } from '../../components/you-tube-player';
 
 export default function Home() {
   return (
