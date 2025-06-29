@@ -1,4 +1,4 @@
-export function setCookie(name: string, value: any, days: number) {
+export function setCookie(name: string, value: string, days: number) {
   let expires = '';
   if (days) {
     const date = new Date();
@@ -6,15 +6,10 @@ export function setCookie(name: string, value: any, days: number) {
     expires = `; expires=${date.toUTCString()}`;
   }
   // biome-ignore lint/suspicious/noDocumentCookie: <>
-  document.cookie =
-    name +
-    '=' +
-    encodeURIComponent(JSON.stringify(value)) +
-    expires +
-    '; path=/';
+  document.cookie = `${name}=${encodeURIComponent(value)}${expires}; path=/`;
 }
 
-export function getCookie(name: string): any | null {
+export function getCookie(name: string): string | null {
   const nameEQ = `${name}=`;
   const ca = document.cookie.split(';');
   for (let i = 0; i < ca.length; i++) {
@@ -23,9 +18,9 @@ export function getCookie(name: string): any | null {
     if (c.indexOf(nameEQ) === 0) {
       const value = c.substring(nameEQ.length, c.length);
       try {
-        return JSON.parse(decodeURIComponent(value));
+        return decodeURIComponent(value);
       } catch (e) {
-        console.error('Error parsing cookie:', e);
+        console.error('Error decoding cookie:', e);
         return null;
       }
     }
