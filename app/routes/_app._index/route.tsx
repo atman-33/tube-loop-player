@@ -1,19 +1,20 @@
 import type { Route } from './+types/route';
 
+// biome-ignore lint/correctness/noEmptyPattern: <>
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "TubeLoopPlayer" },
-    { name: "description", content: "YouTube video loop player" },
+    { title: 'TubeLoopPlayer' },
+    { name: 'description', content: 'YouTube video loop player' },
   ];
 }
+
+import { YouTubePlayer } from '../../components/YouTubePlayer';
 
 export default function Home() {
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">TubeLoopPlayer</h1>
-      <div className="aspect-video w-full max-w-4xl mx-auto bg-gray-200 rounded-lg">
-        {/* YouTubeプレイヤーがここに入る */}
-      </div>
+      <h1 className="mb-4 font-bold text-2xl">TubeLoopPlayer</h1>
+      <YouTubePlayer />
     </div>
   );
 }
