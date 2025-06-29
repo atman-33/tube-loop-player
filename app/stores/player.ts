@@ -24,6 +24,7 @@ interface PlayerState {
   setPlayerInstance: (player: any) => void;
   play: (videoId: string) => void;
   pause: () => void;
+  resume: () => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
   addToPlaylist: (item: PlaylistItem) => void;
@@ -56,6 +57,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       playerInstance.pauseVideo();
     }
     set({ isPlaying: false });
+  },
+  resume: () => {
+    const { playerInstance } = get();
+    if (playerInstance) {
+      playerInstance.playVideo();
+    }
+    set({ isPlaying: true });
   },
   toggleLoop: () => set((state) => ({ isLoop: !state.isLoop })),
   toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
