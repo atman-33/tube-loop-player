@@ -8,17 +8,17 @@ export const PlaylistDisplay = () => {
     <div className="space-y-2">
       <h3 className="font-medium">プレイリスト</h3>
       {playlist.length === 0 ? (
-        <p className="text-sm text-gray-500">プレイリストが空です</p>
+        <p className="text-gray-500 text-sm">プレイリストが空です</p>
       ) : (
         <ul className="space-y-1">
           {playlist.map((item, index) => (
             <li
               key={item.id}
-              className={`flex items-center justify-between p-2 rounded ${currentIndex === index ? 'bg-gray-100' : ''}`}
+              className={`flex items-center justify-between rounded p-2 ${currentIndex === index ? 'bg-gray-100' : ''}`}
             >
               <button
                 type="button"
-                className="text-left hover:underline flex-1"
+                className="flex-1 text-left hover:underline"
                 onClick={() => play(item.id)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
