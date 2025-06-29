@@ -1,5 +1,11 @@
 import { create } from 'zustand';
 
+const initialVideoId = 'grMErH4ahp4';
+const initialPlaylistItem: PlaylistItem = {
+  id: initialVideoId,
+  title: 'Sunset waltz (Final Fantasy XV)',
+};
+
 interface PlaylistItem {
   id: string;
   title?: string;
@@ -29,9 +35,9 @@ interface PlayerState {
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   isPlaying: false,
-  currentVideoId: null,
-  currentIndex: null,
-  playlist: [],
+  currentVideoId: initialVideoId,
+  currentIndex: 0,
+  playlist: [initialPlaylistItem],
   isLoop: true,
   isShuffle: false,
   playerInstance: null,

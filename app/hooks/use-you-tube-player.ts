@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { usePlayerStore } from '../stores/player';
 
+interface YouTubePlayer {
+  cueVideoById: (id: string) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: <>
+  [key: string]: any;
+}
 interface YouTubePlayerEvent {
+  target: YouTubePlayer;
   data: number;
 }
 
@@ -17,8 +23,7 @@ declare global {
             onStateChange: (event: YouTubePlayerEvent) => void;
           };
         },
-        // biome-ignore lint/suspicious/noExplicitAny: <>
-      ) => any;
+      ) => YouTubePlayer;
       PlayerState: {
         ENDED: number;
       };
@@ -27,12 +32,14 @@ declare global {
 }
 
 export const useYouTubePlayer = (elementId: string) => {
-  // biome-ignore lint/suspicious/noExplicitAny: <>
-  const playerRef = useRef<any>(null);
-  const { setPlayerInstance, playNext } = usePlayerStore();
+  const playerRef = useRef<YouTubePlayer | null>(null);
+  const { setPlayerInstance, playNext, currentVideoId } = usePlayerStore();
+  const initialVideoIdRef = useRef(currentVideoId);
 
   const handlePlayerReady = useCallback((event: YouTubePlayerEvent) => {
-    console.log('Player ready', event);
+    if (initialVideoIdRef.current) {
+      event.target.cueVideoById(initialVideoIdRef.current);
+    }
   }, []);
 
   const handleStateChange = useCallback(
