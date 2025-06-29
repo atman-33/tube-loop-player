@@ -19,6 +19,9 @@ declare global {
         },
         // biome-ignore lint/suspicious/noExplicitAny: <>
       ) => any;
+      PlayerState: {
+        ENDED: number;
+      };
     };
   }
 }
@@ -26,32 +29,40 @@ declare global {
 export const useYouTubePlayer = (elementId: string) => {
   // biome-ignore lint/suspicious/noExplicitAny: <>
   const playerRef = useRef<any>(null);
-  const { setPlayerInstance } = usePlayerStore();
+  const { setPlayerInstance, playNext } = usePlayerStore();
 
   const handlePlayerReady = useCallback((event: YouTubePlayerEvent) => {
     console.log('Player ready', event);
   }, []);
 
-  const handleStateChange = useCallback((event: YouTubePlayerEvent) => {
-    console.log('State changed', event.data);
-  }, []);
+  const handleStateChange = useCallback(
+    (event: YouTubePlayerEvent) => {
+      if (event.data === window.YT.PlayerState.ENDED) {
+        playNext();
+      }
+    },
+    [playNext],
+  );
 
   useEffect(() => {
+    const createPlayer = () => {
+      playerRef.current = new window.YT.Player(elementId, {
+        events: {
+          onReady: handlePlayerReady,
+          onStateChange: handleStateChange,
+        },
+      });
+      setPlayerInstance(playerRef.current);
+    };
+
     if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-      window.onYouTubeIframeAPIReady = () => {
-        playerRef.current = new window.YT.Player(elementId, {
-          events: {
-            onReady: handlePlayerReady,
-            onStateChange: handleStateChange,
-          },
-        });
-        setPlayerInstance(playerRef.current);
-      };
+      window.onYouTubeIframeAPIReady = createPlayer;
+    } else {
+      createPlayer();
     }
 
     return () => {
