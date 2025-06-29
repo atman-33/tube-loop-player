@@ -3,8 +3,9 @@ export function setCookie(name: string, value: any, days: number) {
   if (days) {
     const date = new Date();
     date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-    expires = '; expires=' + date.toUTCString();
+    expires = `; expires=${date.toUTCString()}`;
   }
+  // biome-ignore lint/suspicious/noDocumentCookie: <>
   document.cookie =
     name +
     '=' +
@@ -14,7 +15,7 @@ export function setCookie(name: string, value: any, days: number) {
 }
 
 export function getCookie(name: string): any | null {
-  const nameEQ = name + '=';
+  const nameEQ = `${name}=`;
   const ca = document.cookie.split(';');
   for (let i = 0; i < ca.length; i++) {
     let c = ca[i];
@@ -33,5 +34,6 @@ export function getCookie(name: string): any | null {
 }
 
 export function deleteCookie(name: string) {
-  document.cookie = name + '=; Max-Age=-99999999;';
+  // biome-ignore lint/suspicious/noDocumentCookie: <>
+  document.cookie = `${encodeURIComponent(name)}=; Max-Age=-99999999; Path=/`;
 }
