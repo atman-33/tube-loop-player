@@ -6,9 +6,9 @@ export const PlaylistDisplay = () => {
 
   return (
     <div className="space-y-2">
-      <h3 className="font-medium">プレイリスト</h3>
+      <h3 className="font-medium">Playlist</h3>
       {playlist.length === 0 ? (
-        <p className="text-gray-500 text-sm">プレイリストが空です</p>
+        <p className="text-gray-500 text-sm">Playlist is empty</p>
       ) : (
         <ul className="space-y-1">
           {playlist.map((item, index) => (
@@ -26,14 +26,14 @@ export const PlaylistDisplay = () => {
                   }
                 }}
               >
-                {item.title || `動画 ${index + 1}`}
+                {item.title || `Video ${index + 1}`}
               </button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => removeFromPlaylist(index)}
               >
-                削除
+                Remove
               </Button>
             </li>
           ))}

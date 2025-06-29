@@ -11,7 +11,7 @@ export const PlaylistInputForm = () => {
     e.preventDefault();
     if (!inputUrl.trim()) return;
 
-    // YouTube URLから動画IDを抽出
+    // Extract video ID from YouTube URL
     const videoId = extractVideoId(inputUrl);
     if (videoId) {
       addToPlaylist({ id: videoId });
@@ -34,11 +34,11 @@ export const PlaylistInputForm = () => {
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           setInputUrl(e.target.value)
         }
-        placeholder="YouTube URLを入力"
+        placeholder="Enter YouTube URL"
         className="flex-1"
       />
       <Button type="submit" variant="default">
-        追加
+        Add
       </Button>
     </form>
   );
