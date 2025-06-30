@@ -16,6 +16,7 @@ export const YouTubePlayer = () => {
     toggleShuffle,
     playlist, // For getting video title from playlist
   } = usePlayerStore();
+  // biome-ignore lint/correctness/noUnusedVariables: <>
   const playerRef = useYouTubePlayer('youtube-player');
 
   const handleTogglePlayPause = () => {
@@ -70,6 +71,7 @@ export const YouTubePlayer = () => {
           onPressedChange={toggleLoop}
           aria-label="Toggle loop"
           size="lg" // Larger toggle size
+          className="cursor-pointer" // Ensure cursor is pointer
         >
           <Repeat className="h-5 w-5" />
           <span className="ml-2 hidden sm:inline">
@@ -81,6 +83,7 @@ export const YouTubePlayer = () => {
           onPressedChange={toggleShuffle}
           aria-label="Toggle shuffle"
           size="lg" // Larger toggle size
+          className="cursor-pointer" // Ensure cursor is pointer
         >
           <Shuffle className="h-5 w-5" />
           <span className="ml-2 hidden sm:inline">
