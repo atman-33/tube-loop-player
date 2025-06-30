@@ -1,4 +1,4 @@
-import { Pause, Play, Repeat, Shuffle } from 'lucide-react'; // アイコンをインポート
+import { Pause, Play, Repeat, Shuffle } from 'lucide-react'; // Import icons
 import { useYouTubePlayer } from '../hooks/use-you-tube-player';
 import { usePlayerStore } from '../stores/player';
 import { Button } from './ui/button';
@@ -33,15 +33,15 @@ export const YouTubePlayer = () => {
     : 'No video selected';
 
   return (
-    <div className="space-y-4 p-4 rounded-lg shadow-lg bg-card">
+    <div className="space-y-4 rounded-lg bg-card p-4 shadow-lg">
       {' '}
-      {/* 全体的なコンテナのスタイル */}
+      {/* Overall container style */}
       <div
         id="youtube-player"
-        className="aspect-video w-full rounded-lg bg-black overflow-hidden shadow-md" // プレイヤーのスタイリング
+        className="aspect-video w-full overflow-hidden rounded-lg bg-black shadow-md" // Player styling
       />
       {currentVideoId && (
-        <div className="text-center text-lg font-semibold text-foreground">
+        <div className="text-center font-semibold text-foreground text-lg">
           {currentVideoTitle}
         </div>
       )}
@@ -50,8 +50,8 @@ export const YouTubePlayer = () => {
           variant="default"
           onClick={handleTogglePlayPause}
           disabled={!currentVideoId}
-          size="lg" // ボタンサイズを大きく
-          className="px-6 py-3" // パディングを調整
+          size="lg" // Larger button size
+          className="px-6 py-3" // Adjust padding
         >
           {isPlaying ? (
             <>

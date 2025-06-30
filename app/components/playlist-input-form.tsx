@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'; // Loader2をインポート
+import { Loader2 } from 'lucide-react'; // Import Loader2
 import { useState } from 'react';
 import { usePlayerStore } from '../stores/player';
 import { Button } from './ui/button';
@@ -7,7 +7,7 @@ import { Input } from './ui/input';
 export const PlaylistInputForm = () => {
   const [inputUrl, setInputUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); // エラー状態を追加
+  const [error, setError] = useState<string | null>(null); // Add error state
   const { addToPlaylist } = usePlayerStore();
 
   // Google Apps Script URL
@@ -60,10 +60,10 @@ export const PlaylistInputForm = () => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       {' '}
-      {/* flex-colに変更 */}
+      {/* Changed to flex-col */}
       <div className="flex gap-2">
         {' '}
-        {/* InputとButtonをflexで囲む */}
+        {/* Wrap Input and Button with flex */}
         <Input
           type="text"
           value={inputUrl}

@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'; // Trash2アイコンをインポート
+import { Trash2 } from 'lucide-react'; // Import Trash2 icon
 import { usePlayerStore } from '../stores/player';
 import { Button } from './ui/button';
 
