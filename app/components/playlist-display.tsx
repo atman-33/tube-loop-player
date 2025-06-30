@@ -70,7 +70,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
         </button>
         <button
           type="button"
-          className={`flex-1 flex items-center gap-4 p-3 border-l-0 rounded-r-lg shadow-sm transition-all duration-200 cursor-pointer w-full ${
+          className={`flex-1 flex items-center gap-4 p-3 border-l-0 rounded-r-lg shadow-sm transition-all duration-200 cursor-pointer w-0 md:w-[95%] ${
             currentIndex === index
               ? 'bg-primary/10 border-primary ring-2 ring-primary/50'
               : 'bg-card hover:bg-card-foreground/5'
@@ -132,7 +132,7 @@ export const PlaylistDisplay = () => {
     : null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 container mx-auto">
       <h3 className="font-semibold text-lg">Playlist</h3>
       {playlist.length === 0 ? (
         <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg">
