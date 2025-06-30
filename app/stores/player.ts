@@ -20,20 +20,22 @@ interface PlayerState {
   setPlayerInstance: (player: any) => void;
   play: (videoId: string) => void;
   pause: () => void;
+  setPlayingStateToFalse: () => void;
   resume: () => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
   addToPlaylist: (item: PlaylistItem) => void;
   removeFromPlaylist: (index: number) => void;
+  reorderPlaylist: (fromIndex: number, toIndex: number) => void;
   clearPlaylist: () => void;
   playNext: () => void;
   playPrevious: () => void;
 }
 
-const initialVideoId = 'grMErH4ahp4';
+const initialVideoId = 'V4UL6BYgUXw';
 const initialPlaylistItem: PlaylistItem = {
   id: initialVideoId,
-  title: 'Sunset waltz (Final Fantasy XV)',
+  title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
 export const usePlayerStore = create<PlayerState>()(
@@ -48,18 +50,27 @@ export const usePlayerStore = create<PlayerState>()(
       playerInstance: null,
       setPlayerInstance: (player) => set({ playerInstance: player }),
       play: (videoId) => {
-        const { playerInstance } = get();
+        const { playerInstance, playlist } = get(); // Get playlist from state
         if (playerInstance) {
           playerInstance.loadVideoById(videoId);
           playerInstance.playVideo();
         }
-        set({ isPlaying: true, currentVideoId: videoId });
+        // Add logic to update currentIndex
+        const newIndex = playlist.findIndex((item) => item.id === videoId);
+        set({
+          isPlaying: true,
+          currentVideoId: videoId,
+          currentIndex: newIndex,
+        });
       },
       pause: () => {
         const { playerInstance } = get();
         if (playerInstance) {
           playerInstance.pauseVideo();
         }
+        set({ isPlaying: false });
+      },
+      setPlayingStateToFalse: () => {
         set({ isPlaying: false });
       },
       resume: () => {
@@ -81,6 +92,31 @@ export const usePlayerStore = create<PlayerState>()(
           const newPlaylist = [...state.playlist];
           newPlaylist.splice(index, 1);
           return { playlist: newPlaylist };
+        }),
+      reorderPlaylist: (fromIndex, toIndex) =>
+        set((state) => {
+          const newPlaylist = [...state.playlist];
+          const [removed] = newPlaylist.splice(fromIndex, 1);
+          newPlaylist.splice(toIndex, 0, removed);
+
+          // Update currentIndex if the currently playing video moved
+          let newCurrentIndex: number | null = state.currentIndex;
+          if (newCurrentIndex !== null) {
+            if (newCurrentIndex === fromIndex) {
+              newCurrentIndex = toIndex;
+            } else {
+              // Adjust index if an item was moved past it
+              if (fromIndex < newCurrentIndex && toIndex >= newCurrentIndex) {
+                newCurrentIndex -= 1;
+              } else if (
+                fromIndex > newCurrentIndex &&
+                toIndex <= newCurrentIndex
+              ) {
+                newCurrentIndex += 1;
+              }
+            }
+          }
+          return { playlist: newPlaylist, currentIndex: newCurrentIndex };
         }),
       clearPlaylist: () =>
         set({ playlist: [], currentIndex: null, currentVideoId: null }),
