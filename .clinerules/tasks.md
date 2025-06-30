@@ -27,10 +27,9 @@
 
 ## UI
 
-- [ ] Logo, Favicon追加
-- [ ] フッター追加
-- [ ] Terms追加
-- [ ] Privacy追加
+- [x] Logo, Favicon追加
+- [x] フッター追加
+- [ ] Privacy & Terms追加
 - [ ] Contact追加
 
 ## リリース
