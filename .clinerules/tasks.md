@@ -29,7 +29,7 @@
 
 - [x] Logo, Favicon追加
 - [x] フッター追加
-- [ ] Privacy & Terms追加
+- [x] Privacy & Terms追加
 - [ ] Contact追加
 
 ## リリース
