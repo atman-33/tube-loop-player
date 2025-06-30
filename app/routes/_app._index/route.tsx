@@ -24,6 +24,23 @@ export default function Home() {
           <PlaylistDisplay />
         </div>
       </div>
+      <div className="mt-8 rounded-lg bg-gray-100 p-4">
+        <h2 className="mb-2 font-bold text-xl">About TubeLoopPlayer</h2>
+        <p className="mb-4 text-gray-700">
+          TubeLoopPlayer is a simple yet powerful web application designed to
+          enhance your YouTube video viewing experience. It allows you to
+          seamlessly loop specific YouTube videos or create custom playlists for
+          continuous playback.
+        </p>
+        <h2 className="mb-2 font-bold text-xl">Key Features</h2>
+        <ul className="list-inside list-disc text-gray-700">
+          <li>Loop individual YouTube videos for repetitive viewing.</li>
+          <li>Create and manage custom playlists from YouTube URLs.</li>
+          <li>Intuitive interface for easy video and playlist management.</li>
+          <li>Persistent storage of playlists and settings using cookies.</li>
+          <li>Seamless integration with the YouTube IFrame API.</li>
+        </ul>
+      </div>
     </div>
   );
 }
