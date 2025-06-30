@@ -26,43 +26,41 @@ export const PlaylistDisplay = () => {
           {' '}
           {/* Increased space-y for more spacing */}
           {playlist.map((item, index) => (
-            <li
+            <button
               key={item.id}
-              className={`flex items-center gap-4 p-3 border rounded-lg shadow-sm transition-all duration-200
+              type="button"
+              className={`flex items-center gap-4 p-3 border rounded-lg shadow-sm transition-all duration-200 cursor-pointer w-full
                 ${
                   currentIndex === index
                     ? 'bg-primary/10 border-primary ring-2 ring-primary/50'
                     : 'bg-card hover:bg-card-foreground/5'
                 }`}
+              onClick={() => play(item.id)}
             >
               <img
                 src={getThumbnailUrl(item.id)}
                 alt={item.title}
                 className="w-24 h-14 object-cover rounded-md flex-shrink-0" // Fixed thumbnail size
               />
-              <button
-                type="button"
-                className="flex-1 text-left font-medium text-foreground hover:text-primary transition-colors truncate" // Emphasize title, add truncate
-                onClick={() => play(item.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    play(item.id);
-                  }
-                }}
-              >
+              <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground hover:text-primary transition-colors truncate text-ellipsis whitespace-nowrap">
+                {' '}
+                {/* Emphasize title, add truncate, add min-w-0, overflow-hidden, text-ellipsis, whitespace-nowrap to prevent overflow and properly truncate */}
                 {item.title || `Video ${index + 1}`}
-              </button>
+              </div>
               <Button
                 variant="ghost"
                 size="icon" // Change size for icon
-                onClick={() => removeFromPlaylist(index)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent li onClick from firing
+                  removeFromPlaylist(index);
+                }}
                 className="flex-shrink-0 text-muted-foreground hover:text-destructive" // Change color
               >
                 <Trash2 className="h-5 w-5" /> {/* Change to icon */}
                 <span className="sr-only">Remove</span>{' '}
                 {/* For screen readers */}
               </Button>
-            </li>
+            </button>
           ))}
         </ul>
       )}
