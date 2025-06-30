@@ -1,8 +1,8 @@
 import { Pause, Play, Repeat, Shuffle } from 'lucide-react'; // Import icons
-import { useYouTubePlayer } from '../hooks/use-you-tube-player';
-import { usePlayerStore } from '../stores/player';
-import { Button } from './ui/button';
-import { Toggle } from './ui/toggle';
+import { Button } from '../../../components/ui/button';
+import { Toggle } from '../../../components/ui/toggle';
+import { useYouTubePlayer } from '../../../hooks/use-you-tube-player';
+import { usePlayerStore } from '../../../stores/player';
 
 export const YouTubePlayer = () => {
   const {

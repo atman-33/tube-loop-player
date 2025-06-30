@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { siteConfig } from '../config/site-config';
+import { siteConfig } from '../../../config/site-config';
 
 const Footer = () => {
   const handleContactClick = () => {

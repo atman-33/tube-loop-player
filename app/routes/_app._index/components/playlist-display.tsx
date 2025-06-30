@@ -13,8 +13,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react'; // Add GripVertical
 import type React from 'react';
 import { useState } from 'react';
-import { usePlayerStore } from '../stores/player';
-import { Button } from './ui/button';
+import { Button } from '../../../components/ui/button';
+import { usePlayerStore } from '../../../stores/player';
 
 const getThumbnailUrl = (videoId: string) =>
   `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;

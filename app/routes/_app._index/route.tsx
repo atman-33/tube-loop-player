@@ -1,7 +1,7 @@
-import { PlaylistDisplay } from '../../components/playlist-display';
-import { PlaylistInputForm } from '../../components/playlist-input-form';
-import { YouTubePlayer } from '../../components/you-tube-player';
 import type { Route } from './+types/route';
+import { PlaylistDisplay } from './components/playlist-display';
+import { PlaylistInputForm } from './components/playlist-input-form';
+import { YouTubePlayer } from './components/you-tube-player';
 
 // biome-ignore lint/correctness/noEmptyPattern: <>
 export function meta({}: Route.MetaArgs) {

@@ -1,8 +1,8 @@
 import { Loader2 } from 'lucide-react'; // Import Loader2
 import { useState } from 'react';
-import { usePlayerStore } from '../stores/player';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { usePlayerStore } from '../../../stores/player';
 
 export const PlaylistInputForm = () => {
   const [inputUrl, setInputUrl] = useState('');
