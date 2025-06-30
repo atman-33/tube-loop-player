@@ -14,7 +14,14 @@ export function meta({}: Route.MetaArgs) {
 export default function Home() {
   return (
     <div className="container mx-auto p-4">
-      <h1 className="mb-4 font-bold text-2xl">TubeLoopPlayer</h1>
+      <div className="mb-4 flex items-center">
+        <img
+          src="/favicons/favicon-32x32.png"
+          alt="TubeLoopPlayer logo"
+          className="mr-2"
+        />
+        <h1 className="font-bold text-2xl">TubeLoopPlayer</h1>
+      </div>
       <div className="flex flex-col gap-6 md:flex-row">
         <div className="flex-1">
           <YouTubePlayer />
