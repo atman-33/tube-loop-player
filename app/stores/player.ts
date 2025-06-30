@@ -48,12 +48,18 @@ export const usePlayerStore = create<PlayerState>()(
       playerInstance: null,
       setPlayerInstance: (player) => set({ playerInstance: player }),
       play: (videoId) => {
-        const { playerInstance } = get();
+        const { playerInstance, playlist } = get(); // Get playlist from state
         if (playerInstance) {
           playerInstance.loadVideoById(videoId);
           playerInstance.playVideo();
         }
-        set({ isPlaying: true, currentVideoId: videoId });
+        // Add logic to update currentIndex
+        const newIndex = playlist.findIndex((item) => item.id === videoId);
+        set({
+          isPlaying: true,
+          currentVideoId: videoId,
+          currentIndex: newIndex,
+        });
       },
       pause: () => {
         const { playerInstance } = get();
