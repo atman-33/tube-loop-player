@@ -6,7 +6,7 @@ const Header = () => {
     <header className="mb-4 flex items-center justify-between">
       <Link to="/" className="flex items-center">
         <img
-          src="/favicons/favicon-32x32.png"
+          src="favicons/favicon-32x32.png"
           alt="TubeLoopPlayer logo"
           className="mr-2"
         />
