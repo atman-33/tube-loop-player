@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react'; // Loader2をインポート
 import { useState } from 'react';
 import { usePlayerStore } from '../stores/player';
 import { Button } from './ui/button';
@@ -6,6 +7,7 @@ import { Input } from './ui/input';
 export const PlaylistInputForm = () => {
   const [inputUrl, setInputUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null); // エラー状態を追加
   const { addToPlaylist } = usePlayerStore();
 
   // Google Apps Script URL
@@ -14,20 +16,33 @@ export const PlaylistInputForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputUrl.trim() || isLoading) return;
+    setError(null); // エラーをリセット
+    if (!inputUrl.trim() || isLoading) {
+      if (!inputUrl.trim()) {
+        setError('YouTube URLを入力してください。');
+      }
+      return;
+    }
 
     const videoId = extractVideoId(inputUrl);
-    if (!videoId) return;
+    if (!videoId) {
+      setError('有効なYouTube URLを入力してください。');
+      return;
+    }
 
     setIsLoading(true);
     try {
       const response = await fetch(`${GAS_URL}?videoId=${videoId}`);
+      if (!response.ok) {
+        throw new Error('動画情報の取得に失敗しました。');
+      }
       const data = await response.json();
       const title = data.title || `Video ${videoId.substring(0, 5)}`;
       addToPlaylist({ id: videoId, title });
       setInputUrl('');
-    } catch (error) {
-      console.error('Failed to fetch video title:', error);
+    } catch (err) {
+      console.error('Failed to fetch video title:', err);
+      setError('動画情報の取得中にエラーが発生しました。');
       // Fallback to adding with just the ID
       addToPlaylist({ id: videoId, title: `Video ${videoId.substring(0, 5)}` });
     } finally {
@@ -43,20 +58,38 @@ export const PlaylistInputForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <Input
-        type="text"
-        value={inputUrl}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          setInputUrl(e.target.value)
-        }
-        placeholder="Enter YouTube URL"
-        className="flex-1"
-        disabled={isLoading}
-      />
-      <Button type="submit" variant="default" disabled={isLoading}>
-        {isLoading ? 'Adding...' : 'Add'}
-      </Button>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+      {' '}
+      {/* flex-colに変更 */}
+      <div className="flex gap-2">
+        {' '}
+        {/* InputとButtonをflexで囲む */}
+        <Input
+          type="text"
+          value={inputUrl}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            setInputUrl(e.target.value);
+            setError(null); // 入力時にエラーをクリア
+          }}
+          placeholder="YouTube URLを入力"
+          className="flex-1"
+          disabled={isLoading}
+          aria-invalid={error ? 'true' : 'false'} // エラー時にaria-invalidを設定
+        />
+        <Button type="submit" variant="default" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
+              {/* スピナーを追加 */}
+              追加中...
+            </>
+          ) : (
+            '追加'
+          )}
+        </Button>
+      </div>
+      {error && <p className="text-destructive text-sm mt-1">{error}</p>}{' '}
+      {/* エラーメッセージ表示 */}
     </form>
   );
 };

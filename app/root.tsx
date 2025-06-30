@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   isRouteErrorResponse,
   Links,
@@ -6,6 +7,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router';
+import { useThemeStore } from './stores/theme';
 
 import type { Route } from './+types/root';
 import './app.css';
@@ -25,8 +27,15 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const theme = useThemeStore((state) => state.theme);
+
+  useEffect(() => {
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+  }, [theme]);
+
   return (
-    <html lang="en">
+    <html lang="en" className={theme}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
