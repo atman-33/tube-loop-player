@@ -110,8 +110,7 @@ export default function PrivacyAndTerms() {
         </h2>
         <p>
           If you have any questions about this Privacy Policy or our Terms of
-          Service, please contact us. (A contact method will be provided in a
-          future update).
+          Service, please contact us.
         </p>
       </section>
 
