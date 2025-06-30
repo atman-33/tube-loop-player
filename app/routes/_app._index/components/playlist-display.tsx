@@ -59,7 +59,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
       }`}
       {...attributes}
     >
-      <div className="flex items-center">
+      <div className="flex items-center w-full">
         <button
           type="button"
           className="p-3 cursor-grab text-muted-foreground hover:text-foreground"
@@ -70,7 +70,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
         </button>
         <button
           type="button"
-          className={`flex-1 flex items-center gap-4 p-3 border-l-0 rounded-r-lg shadow-sm transition-all duration-200 cursor-pointer w-0 md:w-[95%] ${
+          className={`flex-1 flex items-center gap-4 p-3 border-l-0 rounded-r-lg shadow-sm transition-all duration-200 cursor-pointer w-0 ${
             currentIndex === index
               ? 'bg-primary/10 border-primary ring-2 ring-primary/50'
               : 'bg-card hover:bg-card-foreground/5'

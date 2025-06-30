@@ -61,7 +61,7 @@ export const PlaylistInputForm = () => {
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       {' '}
       {/* Changed to flex-col */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         {' '}
         {/* Wrap Input and Button with flex */}
         <Input
