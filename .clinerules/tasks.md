@@ -30,7 +30,7 @@
 - [x] Logo, Favicon追加
 - [x] フッター追加
 - [x] Privacy & Terms追加
-- [ ] Contact追加
+- [x] Contact追加
 
 ## リリース
 

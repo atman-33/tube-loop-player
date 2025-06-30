@@ -25,7 +25,8 @@ const Footer = () => {
           Contact
         </button>
       </div>
-      <p className="mt-4">
+      <p className="mt-4">Made with {'<3'} by Atman</p>
+      <p className="mt-1">
         &copy; {new Date().getFullYear()} TubeLoopPlayer. All Rights Reserved.
       </p>
     </footer>
