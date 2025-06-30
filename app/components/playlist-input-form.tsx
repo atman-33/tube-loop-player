@@ -16,17 +16,17 @@ export const PlaylistInputForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null); // エラーをリセット
+    setError(null); // Reset error
     if (!inputUrl.trim() || isLoading) {
       if (!inputUrl.trim()) {
-        setError('YouTube URLを入力してください。');
+        setError('Please enter a YouTube URL.');
       }
       return;
     }
 
     const videoId = extractVideoId(inputUrl);
     if (!videoId) {
-      setError('有効なYouTube URLを入力してください。');
+      setError('Please enter a valid YouTube URL.');
       return;
     }
 
@@ -34,7 +34,7 @@ export const PlaylistInputForm = () => {
     try {
       const response = await fetch(`${GAS_URL}?videoId=${videoId}`);
       if (!response.ok) {
-        throw new Error('動画情報の取得に失敗しました。');
+        throw new Error('Failed to fetch video information.');
       }
       const data = await response.json();
       const title = data.title || `Video ${videoId.substring(0, 5)}`;
@@ -42,7 +42,7 @@ export const PlaylistInputForm = () => {
       setInputUrl('');
     } catch (err) {
       console.error('Failed to fetch video title:', err);
-      setError('動画情報の取得中にエラーが発生しました。');
+      setError('An error occurred while fetching video information.');
       // Fallback to adding with just the ID
       addToPlaylist({ id: videoId, title: `Video ${videoId.substring(0, 5)}` });
     } finally {
@@ -69,27 +69,27 @@ export const PlaylistInputForm = () => {
           value={inputUrl}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setInputUrl(e.target.value);
-            setError(null); // 入力時にエラーをクリア
+            setError(null); // Clear error on input
           }}
-          placeholder="YouTube URLを入力"
+          placeholder="Enter YouTube URL"
           className="flex-1"
           disabled={isLoading}
-          aria-invalid={error ? 'true' : 'false'} // エラー時にaria-invalidを設定
+          aria-invalid={error ? 'true' : 'false'} // Set aria-invalid on error
         />
         <Button type="submit" variant="default" disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-              {/* スピナーを追加 */}
-              追加中...
+              {/* Add spinner */}
+              Adding...
             </>
           ) : (
-            '追加'
+            'Add'
           )}
         </Button>
       </div>
       {error && <p className="text-destructive text-sm mt-1">{error}</p>}{' '}
-      {/* エラーメッセージ表示 */}
+      {/* Display error message */}
     </form>
   );
 };

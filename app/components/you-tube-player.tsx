@@ -14,7 +14,7 @@ export const YouTubePlayer = () => {
     resume,
     toggleLoop,
     toggleShuffle,
-    playlist, // プレイリストから動画タイトルを取得するため
+    playlist, // For getting video title from playlist
   } = usePlayerStore();
   const playerRef = useYouTubePlayer('youtube-player');
 
@@ -29,8 +29,8 @@ export const YouTubePlayer = () => {
 
   const currentVideoTitle = currentVideoId
     ? playlist.find((item) => item.id === currentVideoId)?.title ||
-      `動画 ${currentVideoId.substring(0, 5)}`
-    : '動画が選択されていません';
+      `Video ${currentVideoId.substring(0, 5)}`
+    : 'No video selected';
 
   return (
     <div className="space-y-4 p-4 rounded-lg shadow-lg bg-card">
@@ -55,11 +55,11 @@ export const YouTubePlayer = () => {
         >
           {isPlaying ? (
             <>
-              <Pause className="h-5 w-5 mr-2" /> 一時停止
+              <Pause className="h-5 w-5 mr-2" /> Pause
             </>
           ) : (
             <>
-              <Play className="h-5 w-5 mr-2" /> 再生
+              <Play className="h-5 w-5 mr-2" /> Play
             </>
           )}
         </Button>
@@ -69,22 +69,22 @@ export const YouTubePlayer = () => {
           pressed={isLoop}
           onPressedChange={toggleLoop}
           aria-label="Toggle loop"
-          size="lg" // トグルサイズを大きく
+          size="lg" // Larger toggle size
         >
           <Repeat className="h-5 w-5" />
           <span className="ml-2 hidden sm:inline">
-            ループ {isLoop ? 'ON' : 'OFF'}
+            Loop {isLoop ? 'ON' : 'OFF'}
           </span>
         </Toggle>
         <Toggle
           pressed={isShuffle}
           onPressedChange={toggleShuffle}
           aria-label="Toggle shuffle"
-          size="lg" // トグルサイズを大きく
+          size="lg" // Larger toggle size
         >
           <Shuffle className="h-5 w-5" />
           <span className="ml-2 hidden sm:inline">
-            シャッフル {isShuffle ? 'ON' : 'OFF'}
+            Shuffle {isShuffle ? 'ON' : 'OFF'}
           </span>
         </Toggle>
       </div>
