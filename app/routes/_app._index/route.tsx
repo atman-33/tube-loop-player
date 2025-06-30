@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { usePlayerStore } from '../../stores/player';
 import type { Route } from './+types/route';
 import { PlaylistDisplay } from './components/playlist-display';
 import { PlaylistInputForm } from './components/playlist-input-form';
@@ -12,6 +14,12 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const { setPlayingStateToFalse } = usePlayerStore();
+
+  useEffect(() => {
+    setPlayingStateToFalse();
+  }, [setPlayingStateToFalse]);
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col gap-6 md:flex-row">

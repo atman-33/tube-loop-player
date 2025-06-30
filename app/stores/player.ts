@@ -20,6 +20,7 @@ interface PlayerState {
   setPlayerInstance: (player: any) => void;
   play: (videoId: string) => void;
   pause: () => void;
+  setPlayingStateToFalse: () => void;
   resume: () => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
@@ -67,6 +68,9 @@ export const usePlayerStore = create<PlayerState>()(
         if (playerInstance) {
           playerInstance.pauseVideo();
         }
+        set({ isPlaying: false });
+      },
+      setPlayingStateToFalse: () => {
         set({ isPlaying: false });
       },
       resume: () => {
