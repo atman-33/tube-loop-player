@@ -31,10 +31,10 @@ interface PlayerState {
   playPrevious: () => void;
 }
 
-const initialVideoId = 'grMErH4ahp4';
+const initialVideoId = 'V4UL6BYgUXw';
 const initialPlaylistItem: PlaylistItem = {
   id: initialVideoId,
-  title: 'Sunset waltz (Final Fantasy XV)',
+  title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
 export const usePlayerStore = create<PlayerState>()(
