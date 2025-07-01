@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { Route } from '../+types/home';
 import { usePlayerStore } from '../../stores/player';
+import type { Route } from './+types/route';
 import { PlaylistDisplay } from './components/playlist-display';
 import { PlaylistInputForm } from './components/playlist-input-form';
 import { YouTubePlayer } from './components/you-tube-player';

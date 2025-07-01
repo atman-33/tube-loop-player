@@ -6,11 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.js"
-    ]
+    "includes": ["app/**"]
   },
   "formatter": {
     "indentStyle": "space"
@@ -43,9 +39,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "app/components/shadcn/ui/**"
-      ],
+      "includes": ["app/components/shadcn/ui/**"],
       "linter": {
         "rules": {
           "nursery": {
