@@ -32,6 +32,9 @@ export const YouTubePlayer = () => {
     ? playlist.find((item) => item.id === currentVideoId)?.title ||
       `Video ${currentVideoId.substring(0, 5)}`
     : 'No video selected';
+  console.log('Current Video Title:', currentVideoTitle);
+  console.log('Current Video ID:', currentVideoId);
+  console.log('playlist:', playlist);
 
   return (
     <div className="space-y-4 rounded-lg bg-card p-4 shadow-lg">
