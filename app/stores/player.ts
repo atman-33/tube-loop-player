@@ -32,9 +32,9 @@ interface PlayerState {
   playPrevious: () => void;
 }
 
-const initialVideoId = 'V4UL6BYgUXw';
-const initialPlaylistItem: PlaylistItem = {
-  id: initialVideoId,
+const defaultInitialVideoId = 'V4UL6BYgUXw';
+const defaultInitialPlaylistItem: PlaylistItem = {
+  id: defaultInitialVideoId,
   title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
@@ -42,9 +42,9 @@ export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => ({
       isPlaying: false,
-      currentVideoId: initialVideoId,
-      currentIndex: 0,
-      playlist: [initialPlaylistItem],
+      currentVideoId: null,
+      currentIndex: null,
+      playlist: [defaultInitialPlaylistItem],
       isLoop: true,
       isShuffle: false,
       playerInstance: null,
@@ -203,18 +203,26 @@ export const usePlayerStore = create<PlayerState>()(
         isLoop: state.isLoop,
         isShuffle: state.isShuffle,
       }),
-      onRehydrateStorage: (state) => {
-        if (state) {
-          // If playlist is empty after rehydration, initialize it
-          if (state.playlist.length === 0) {
-            state.playlist = [initialPlaylistItem];
-            state.currentVideoId = initialVideoId;
-            state.currentIndex = 0;
-          } else {
-            // Restore currentVideoId and currentIndex based on rehydrated playlist
-            const currentVideo = state.playlist[state.currentIndex || 0];
-            state.currentVideoId = currentVideo ? currentVideo.id : null;
-          }
+      merge: (persistedState, currentState) => {
+        const state = persistedState as PlayerState;
+        if (state?.playlist && state.playlist.length > 0) {
+          // If the restored playlist exists and is not empty
+          const firstVideo = state.playlist[0];
+          return {
+            ...currentState,
+            ...state,
+            currentVideoId: firstVideo ? firstVideo.id : null,
+            currentIndex: 0,
+          };
+        } else {
+          // If the restored playlist does not exist or is empty, use the default initial values
+          return {
+            ...currentState,
+            // Consider the case where state is null
+            playlist: [defaultInitialPlaylistItem],
+            currentVideoId: defaultInitialVideoId,
+            currentIndex: 0,
+          };
         }
       },
     },
