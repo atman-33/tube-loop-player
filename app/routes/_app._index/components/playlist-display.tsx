@@ -82,7 +82,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
             alt={item.title}
             className="w-24 h-14 object-cover rounded-md flex-shrink-0"
           />
-          <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground hover:text-primary transition-colors truncate text-ellipsis whitespace-nowrap">
+          <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground hover:text-primary transition-colors truncate text-ellipsis whitespace-nowrap block md:hidden lg:block">
             {item.title || `Video ${index + 1}`}
           </div>
           <Button
