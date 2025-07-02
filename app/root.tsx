@@ -7,6 +7,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router';
+import { siteConfig } from '~/config/site-config';
 import { useThemeStore } from './stores/theme';
 
 import type { Route } from './+types/root';
@@ -39,7 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="canonical" href="https://tubeloopplayer.com" />
+        <link rel="canonical" href={siteConfig.url} />
         <script type="application/ld+json">
           {`
         "@context": "https://schema.org",

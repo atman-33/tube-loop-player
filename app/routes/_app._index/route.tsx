@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { siteConfig } from '~/config/site-config';
 import { usePlayerStore } from '../../stores/player';
 import type { Route } from './+types/route';
 import { PlaylistDisplay } from './components/playlist-display';
@@ -10,8 +11,8 @@ export function meta({}: Route.MetaArgs) {
   const title = 'TubeLoopPlayer - Loop & Playlist Your Favorite YouTube Videos';
   const description =
     'TubeLoopPlayer is a free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback. Perfect for music, tutorials, and more.';
-  const imageUrl = 'https://tubeloopplayer.com/ogp-image.png'; // URL for the OGP image
-  const pageUrl = 'https://tubeloopplayer.com';
+  const imageUrl = `${siteConfig.url}/ogp-image.png`; // URL for the OGP image
+  const pageUrl = siteConfig.url;
 
   return [
     { title: title },
