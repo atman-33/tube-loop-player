@@ -24,7 +24,25 @@ export const links: Route.LinksFunction = () => [
     rel: 'stylesheet',
     href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
   },
-  { rel: 'icon', href: '/favicons/favicon.ico', type: 'image/png' },
+  {
+    rel: 'apple-touch-icon',
+    sizes: '180x180',
+    href: '/favicons/apple-touch-icon.png',
+  },
+  {
+    rel: 'icon',
+    type: 'image/png',
+    sizes: '32x32',
+    href: '/favicons/favicon-32x32.png',
+  },
+  {
+    rel: 'icon',
+    type: 'image/png',
+    sizes: '16x16',
+    href: '/favicons/favicon-16x16.png',
+  },
+  { rel: 'manifest', href: '/site.webmanifest' },
+  { rel: 'icon', href: '/favicons/favicon.ico', type: 'image/x-icon' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

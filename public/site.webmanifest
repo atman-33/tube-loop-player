@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "short_name": "",
+  "name": "TubeLoopPlayer",
+  "short_name": "TubeLoopPlayer",
   "icons": [
     {
       "src": "/favicons/android-chrome-192x192.png",
