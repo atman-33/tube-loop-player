@@ -70,6 +70,42 @@ export default function Home() {
           <li>Persistent storage of playlists and settings using cookies.</li>
           <li>Seamless integration with the YouTube IFrame API.</li>
         </ul>
+        <h2 className="mt-4 mb-2 font-bold text-xl">How to Use</h2>
+        <ol className="list-inside list-decimal text-gray-700 dark:text-gray-300">
+          <li>
+            <b>Add Videos:</b> Paste a YouTube URL and click "Add" to add it to
+            the playlist.
+          </li>
+          <li>
+            <b>Playback:</b> Videos will play automatically. Click any video in
+            the list to play it.
+          </li>
+          <li>
+            <b>Manage Playlist:</b>
+            <ul className="list-inside list-disc pl-4">
+              <li>
+                <b>Loop:</b> Toggle the "Loop" button to repeat the entire
+                playlist.
+              </li>
+              <li>
+                <b>Shuffle:</b> Toggle the "Shuffle" button to play videos in
+                random order.
+              </li>
+              <li>
+                <b>Reorder:</b> Drag and drop videos to change the playback
+                order.
+              </li>
+              <li>
+                <b>Delete:</b> Click the trash icon to remove a video from the
+                list.
+              </li>
+            </ul>
+          </li>
+          <li>
+            <b>Auto-Save:</b> Your playlist and settings are automatically saved
+            in your browser.
+          </li>
+        </ol>
       </div>
     </div>
   );
