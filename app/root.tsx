@@ -39,6 +39,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="canonical" href="https://tubeloopplayer.com" />
+        <script type="application/ld+json">
+          {`
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "TubeLoopPlayer",
+        "operatingSystem": "WEB",
+        "applicationCategory": "MultimediaApplication",
+        "description": "A free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      `}
+        </script>
         <Meta />
         <Links />
       </head>

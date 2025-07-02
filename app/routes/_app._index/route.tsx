@@ -7,9 +7,31 @@ import { YouTubePlayer } from './components/you-tube-player';
 
 // biome-ignore lint/correctness/noEmptyPattern: <>
 export function meta({}: Route.MetaArgs) {
+  const title = 'TubeLoopPlayer - Loop & Playlist Your Favorite YouTube Videos';
+  const description =
+    'TubeLoopPlayer is a free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback. Perfect for music, tutorials, and more.';
+  const imageUrl = 'https://tubeloopplayer.com/ogp-image.png'; // URL for the OGP image
+  const pageUrl = 'https://tubeloopplayer.com';
+
   return [
-    { title: 'TubeLoopPlayer' },
-    { name: 'description', content: 'YouTube video loop player' },
+    { title: title },
+    { name: 'description', content: description },
+    {
+      name: 'keywords',
+      content: 'YouTube, loop, looper, player, playlist, repeat, video, music',
+    },
+    // OGP tags
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: pageUrl },
+    { property: 'og:image', content: imageUrl },
+    { property: 'og:site_name', content: 'TubeLoopPlayer' },
+    // Twitter card tags
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: title },
+    { name: 'twitter:description', content: description },
+    { name: 'twitter:image', content: imageUrl },
   ];
 }
 
