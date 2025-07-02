@@ -79,6 +79,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3632222360837456"
           crossOrigin="anonymous"
         ></script>
+        <script
+          src="https://fpyf8.com/88/tag.min.js"
+          data-zone="155108"
+          async
+          data-cfasync="false"
+        ></script>
         <Meta />
         <Links />
       </head>
