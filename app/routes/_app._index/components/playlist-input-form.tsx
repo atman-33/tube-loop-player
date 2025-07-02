@@ -56,10 +56,9 @@ export const PlaylistInputForm = () => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       {' '}
-      {/* Changed to flex-col */}
-      <div className="flex gap-2 items-center">
-        {' '}
-        {/* Wrap Input and Button with flex */}
+      {/* Changed to flex-col */} {/* Wrap Input and Button with flex */}
+      {/* <div className="flex flex-row md:flex-col lg:flex-row gap-2 items-center"> */}
+      <div className="flex flex-row gap-2 items-center">
         <Input
           type="text"
           value={inputUrl}
@@ -68,7 +67,7 @@ export const PlaylistInputForm = () => {
             setError(null); // Clear error on input
           }}
           placeholder="Enter YouTube URL"
-          className="flex-1"
+          className="flex-1 md:w-full"
           disabled={isLoading}
           aria-invalid={error ? 'true' : 'false'} // Set aria-invalid on error
         />
