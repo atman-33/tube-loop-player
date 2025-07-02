@@ -10,10 +10,6 @@ export const PlaylistInputForm = () => {
   const [error, setError] = useState<string | null>(null); // Add error state
   const { addToPlaylist } = usePlayerStore();
 
-  // Google Apps Script URL
-  const GAS_URL =
-    'https://script.google.com/macros/s/AKfycbzqZ1L1dYBgDnVLwzOqRPBnOcwO0SdaJK9hC8Fh5AFepsnT1mx98rZkILECKPCcsyeM/exec';
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null); // Reset error
@@ -32,7 +28,7 @@ export const PlaylistInputForm = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${GAS_URL}?videoId=${videoId}`);
+      const response = await fetch(`/api/youtube?videoId=${videoId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch video information.');
       }
