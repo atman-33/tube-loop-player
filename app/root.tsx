@@ -7,6 +7,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router';
+import { siteConfig } from '~/config/site-config';
 import { useThemeStore } from './stores/theme';
 
 import type { Route } from './+types/root';
@@ -23,7 +24,25 @@ export const links: Route.LinksFunction = () => [
     rel: 'stylesheet',
     href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
   },
-  { rel: 'icon', href: '/favicons/favicon.ico', type: 'image/png' },
+  {
+    rel: 'apple-touch-icon',
+    sizes: '180x180',
+    href: '/favicons/apple-touch-icon.png',
+  },
+  {
+    rel: 'icon',
+    type: 'image/png',
+    sizes: '32x32',
+    href: '/favicons/favicon-32x32.png',
+  },
+  {
+    rel: 'icon',
+    type: 'image/png',
+    sizes: '16x16',
+    href: '/favicons/favicon-16x16.png',
+  },
+  { rel: 'manifest', href: '/site.webmanifest' },
+  { rel: 'icon', href: '/favicons/favicon.ico', type: 'image/x-icon' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -39,6 +58,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="canonical" href={siteConfig.url} />
+        <script type="application/ld+json">
+          {`
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "TubeLoopPlayer",
+        "operatingSystem": "WEB",
+        "applicationCategory": "MultimediaApplication",
+        "description": "A free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      `}
+        </script>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3632222360837456"
+          crossOrigin="anonymous"
+        ></script>
+        <script
+          src="https://fpyf8.com/88/tag.min.js"
+          data-zone="155108"
+          async
+          data-cfasync="false"
+        ></script>
         <Meta />
         <Links />
       </head>
