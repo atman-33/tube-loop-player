@@ -126,9 +126,28 @@ export const usePlayerStore = create<PlayerState>()(
       clearPlaylist: () =>
         set({ playlist: [], currentIndex: null, currentVideoId: null }),
       playNext: () => {
-        const { playlist, currentIndex, loopMode, playerInstance } = get();
+        const { playlist, currentIndex, loopMode, isShuffle, playerInstance } =
+          get();
         if (playlist.length === 0) {
           set({ isPlaying: false });
+          return;
+        }
+
+        if (isShuffle) {
+          let randomIndex: number;
+          do {
+            randomIndex = Math.floor(Math.random() * playlist.length);
+          } while (playlist.length > 1 && randomIndex === currentIndex);
+          const videoId = playlist[randomIndex].id;
+          if (playerInstance) {
+            playerInstance.loadVideoById(videoId);
+            playerInstance.playVideo();
+          }
+          set({
+            currentIndex: randomIndex,
+            currentVideoId: videoId,
+            isPlaying: true,
+          });
           return;
         }
 
@@ -158,8 +177,27 @@ export const usePlayerStore = create<PlayerState>()(
         }
       },
       playPrevious: () => {
-        const { playlist, currentIndex, loopMode, playerInstance } = get();
+        const { playlist, currentIndex, loopMode, isShuffle, playerInstance } =
+          get();
         if (playlist.length === 0) return;
+
+        if (isShuffle) {
+          let randomIndex: number;
+          do {
+            randomIndex = Math.floor(Math.random() * playlist.length);
+          } while (playlist.length > 1 && randomIndex === currentIndex);
+          const videoId = playlist[randomIndex].id;
+          if (playerInstance) {
+            playerInstance.loadVideoById(videoId);
+            playerInstance.playVideo();
+          }
+          set({
+            currentIndex: randomIndex,
+            currentVideoId: videoId,
+            isPlaying: true,
+          });
+          return;
+        }
 
         const prevIndex = (currentIndex ?? 0) - 1;
         if (prevIndex < 0) {
