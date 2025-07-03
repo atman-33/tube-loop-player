@@ -7,7 +7,7 @@ interface PlaylistItem {
   title?: string;
 }
 
-export type LoopMode = 'off' | 'all' | 'one';
+export type LoopMode = 'all' | 'one';
 
 interface PlayerState {
   isPlaying: boolean;
@@ -83,14 +83,9 @@ export const usePlayerStore = create<PlayerState>()(
         set({ isPlaying: true });
       },
       toggleLoop: () =>
-        set((state) => {
-          const nextState: Record<LoopMode, LoopMode> = {
-            off: 'all',
-            all: 'one',
-            one: 'off',
-          };
-          return { loopMode: nextState[state.loopMode] };
-        }),
+        set((state) => ({
+          loopMode: state.loopMode === 'all' ? 'one' : 'all',
+        })),
       toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
       addToPlaylist: (item) =>
         set((state) => ({
@@ -143,8 +138,6 @@ export const usePlayerStore = create<PlayerState>()(
               playerInstance.playVideo();
             }
             set({ currentIndex: 0, currentVideoId: videoId, isPlaying: true });
-          } else {
-            set({ isPlaying: false });
           }
         } else {
           const videoId = playlist[nextIndex].id;

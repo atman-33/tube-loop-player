@@ -67,7 +67,7 @@ export const YouTubePlayer = () => {
       </div>
       <div className="flex justify-center gap-4">
         <Toggle
-          pressed={loopMode !== 'off'}
+          pressed
           onPressedChange={toggleLoop}
           aria-label="Toggle loop"
           size="lg" // Larger toggle size
@@ -79,11 +79,7 @@ export const YouTubePlayer = () => {
             <Repeat className="h-5 w-5" />
           )}
           <span className="ml-2 hidden sm:inline">
-            {loopMode === 'off'
-              ? 'Loop OFF'
-              : loopMode === 'all'
-                ? 'Loop ALL'
-                : 'Loop ONE'}
+            {loopMode === 'all' ? 'Loop ALL' : 'Loop ONE'}
           </span>
         </Toggle>
         <Toggle
