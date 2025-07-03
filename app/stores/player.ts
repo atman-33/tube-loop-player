@@ -7,12 +7,14 @@ interface PlaylistItem {
   title?: string;
 }
 
+export type LoopMode = 'off' | 'all' | 'one';
+
 interface PlayerState {
   isPlaying: boolean;
   currentVideoId: string | null;
   currentIndex: number | null;
   playlist: PlaylistItem[];
-  isLoop: boolean;
+  loopMode: LoopMode;
   isShuffle: boolean;
   // biome-ignore lint/suspicious/noExplicitAny: <>
   playerInstance: any | null;
@@ -45,7 +47,7 @@ export const usePlayerStore = create<PlayerState>()(
       currentVideoId: null,
       currentIndex: null,
       playlist: [defaultInitialPlaylistItem],
-      isLoop: true,
+      loopMode: 'all',
       isShuffle: false,
       playerInstance: null,
       setPlayerInstance: (player) => set({ playerInstance: player }),
@@ -80,7 +82,15 @@ export const usePlayerStore = create<PlayerState>()(
         }
         set({ isPlaying: true });
       },
-      toggleLoop: () => set((state) => ({ isLoop: !state.isLoop })),
+      toggleLoop: () =>
+        set((state) => {
+          const nextState: Record<LoopMode, LoopMode> = {
+            off: 'all',
+            all: 'one',
+            one: 'off',
+          };
+          return { loopMode: nextState[state.loopMode] };
+        }),
       toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
       addToPlaylist: (item) =>
         set((state) => ({
@@ -121,12 +131,12 @@ export const usePlayerStore = create<PlayerState>()(
       clearPlaylist: () =>
         set({ playlist: [], currentIndex: null, currentVideoId: null }),
       playNext: () => {
-        const { playlist, currentIndex, isLoop, playerInstance } = get();
+        const { playlist, currentIndex, loopMode, playerInstance } = get();
         if (playlist.length === 0) return;
 
         const nextIndex = (currentIndex ?? -1) + 1;
         if (nextIndex >= playlist.length) {
-          if (isLoop) {
+          if (loopMode === 'all') {
             const videoId = playlist[0].id;
             if (playerInstance) {
               playerInstance.loadVideoById(videoId);
@@ -150,12 +160,12 @@ export const usePlayerStore = create<PlayerState>()(
         }
       },
       playPrevious: () => {
-        const { playlist, currentIndex, isLoop, playerInstance } = get();
+        const { playlist, currentIndex, loopMode, playerInstance } = get();
         if (playlist.length === 0) return;
 
         const prevIndex = (currentIndex ?? 0) - 1;
         if (prevIndex < 0) {
-          if (isLoop) {
+          if (loopMode === 'all') {
             const lastIndex = playlist.length - 1;
             const videoId = playlist[lastIndex].id;
             if (playerInstance) {
@@ -200,7 +210,7 @@ export const usePlayerStore = create<PlayerState>()(
       })),
       partialize: (state) => ({
         playlist: state.playlist,
-        isLoop: state.isLoop,
+        loopMode: state.loopMode,
         isShuffle: state.isShuffle,
       }),
       merge: (persistedState, currentState) => {

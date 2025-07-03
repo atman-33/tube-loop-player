@@ -33,7 +33,8 @@ declare global {
 
 export const useYouTubePlayer = (elementId: string) => {
   const playerRef = useRef<YouTubePlayer | null>(null);
-  const { setPlayerInstance, playNext, currentVideoId } = usePlayerStore();
+  const { setPlayerInstance, playNext, currentVideoId, loopMode, play } =
+    usePlayerStore();
   const initialVideoIdRef = useRef(currentVideoId);
 
   const handlePlayerReady = useCallback((event: YouTubePlayerEvent) => {
@@ -45,10 +46,14 @@ export const useYouTubePlayer = (elementId: string) => {
   const handleStateChange = useCallback(
     (event: YouTubePlayerEvent) => {
       if (event.data === window.YT.PlayerState.ENDED) {
-        playNext();
+        if (loopMode === 'one' && currentVideoId) {
+          play(currentVideoId);
+        } else {
+          playNext();
+        }
       }
     },
-    [playNext],
+    [playNext, loopMode, currentVideoId, play],
   );
 
   useEffect(() => {
