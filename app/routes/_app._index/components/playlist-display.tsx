@@ -47,14 +47,14 @@ const SortableItem: React.FC<SortableItemProps> = ({
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 1 : 0, // Ensure dragging item is on top
-    opacity: isDragging ? 0.8 : 1, // Visual feedback for dragging
+    opacity: isDragging ? 0.1 : 1, // Visual feedback for dragging
   };
 
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className={`relative rounded-lg shadow-sm transition-all duration-200 ${
+      className={`relative rounded-lg shadow-sm transition-all duration-200 list-none ${
         isDragging ? 'ring-2 ring-primary/50' : ''
       }`}
       {...attributes}
