@@ -89,12 +89,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
         {/* monetag - In-Page Push  */}
-        <script
+        {/* <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: Embedding external advertisement script
           dangerouslySetInnerHTML={{
             __html: `(function(d,z,s){s.src='https://'+d+'/400/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('vemtoutcheeg.com',9519899,document.createElement('script'))`,
           }}
-        />
+        /> */}
         <Meta />
         <Links />
       </head>

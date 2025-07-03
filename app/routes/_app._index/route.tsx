@@ -55,6 +55,7 @@ export default function Home() {
           <PlaylistDisplay />
         </div>
       </div>
+      {/* NOTE: Use this space for ads if needed */}
       <Description />
     </div>
   );
