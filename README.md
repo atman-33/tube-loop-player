@@ -1,26 +1,46 @@
-# Welcome to React Router!
+# TubeLoopPlayer
 
-A modern, production-ready template for building full-stack React applications using React Router.
+> Seamless YouTube Playlist Looping
+
+![TubeLoopPlayer Screenshot](public/ogp-image.png)
+
+## About The Project
+
+TubeLoopPlayer is a web application designed for looping YouTube videos and playlists seamlessly. Create your own custom playlists and enjoy uninterrupted playback for studying, working, relaxing, or any occasion.
 
 ## Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- **Custom Playlists**: Easily create your own playlists from YouTube video or playlist URLs.
+- **Flexible Playback**: Change the playback order with drag-and-drop, and use loop (all/single) and shuffle modes.
+- **Persistent Storage**: Your playlists are saved in your browser's cookies, so you can pick up where you left off.
+- **Theme Support**: Switch between light and dark modes for your viewing comfort.
+- **Simple Interface**: An intuitive and user-friendly UI.
+
+## Built With
+
+- [React](https://react.dev/)
+- [Remix](https://remix.run/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Vite](https://vitejs.dev/)
 
 ## Getting Started
 
+To get a local copy up and running, follow these simple steps.
+
 ### Installation
 
-Install the dependencies:
+1. Clone the repo
 
-```bash
-npm install
-```
+   ```sh
+   git clone https://github.com/your_username/tube-loop-player.git
+   ```
+
+2. Install NPM packages
+
+   ```sh
+   npm install
+   ```
 
 ### Development
 
@@ -32,48 +52,6 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
-## Previewing the Production Build
+## License
 
-Preview the production build locally:
-
-```bash
-npm run preview
-```
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-Deployment is done using the Wrangler CLI.
-
-To build and deploy directly to production:
-
-```sh
-npm run deploy
-```
-
-To deploy a preview URL:
-
-```sh
-npx wrangler versions upload
-```
-
-You can then promote a version to production after verification or roll it out progressively.
-
-```sh
-npx wrangler versions deploy
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+Distributed under the MIT License. See `LICENSE` for more information.
