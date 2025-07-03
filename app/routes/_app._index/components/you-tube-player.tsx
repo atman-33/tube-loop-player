@@ -1,4 +1,4 @@
-import { Pause, Play, Repeat, Shuffle } from 'lucide-react'; // Import icons
+import { Pause, Play, Repeat, Repeat1, Shuffle } from 'lucide-react'; // Import icons
 import { Button } from '../../../components/ui/button';
 import { Toggle } from '../../../components/ui/toggle';
 import { useYouTubePlayer } from '../../../hooks/use-you-tube-player';
@@ -8,7 +8,7 @@ export const YouTubePlayer = () => {
   const {
     isPlaying,
     currentVideoId,
-    isLoop,
+    loopMode,
     isShuffle,
     pause,
     resume,
@@ -67,15 +67,19 @@ export const YouTubePlayer = () => {
       </div>
       <div className="flex justify-center gap-4">
         <Toggle
-          pressed={isLoop}
+          pressed
           onPressedChange={toggleLoop}
           aria-label="Toggle loop"
           size="lg" // Larger toggle size
           className="cursor-pointer" // Ensure cursor is pointer
         >
-          <Repeat className="h-5 w-5" />
+          {loopMode === 'one' ? (
+            <Repeat1 className="h-5 w-5" />
+          ) : (
+            <Repeat className="h-5 w-5" />
+          )}
           <span className="ml-2 hidden sm:inline">
-            Loop {isLoop ? 'ON' : 'OFF'}
+            {loopMode === 'all' ? 'Loop ALL' : 'Loop ONE'}
           </span>
         </Toggle>
         <Toggle
