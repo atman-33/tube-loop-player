@@ -33,9 +33,34 @@ declare global {
 
 export const useYouTubePlayer = (elementId: string) => {
   const playerRef = useRef<YouTubePlayer | null>(null);
-  const { setPlayerInstance, playNext, currentVideoId, loopMode, play } =
-    usePlayerStore();
+  const {
+    setPlayerInstance,
+    playNext,
+    currentVideoId,
+    loopMode,
+    play,
+    setPlayingStateToFalse,
+  } = usePlayerStore();
   const initialVideoIdRef = useRef(currentVideoId);
+
+  // useRef to hold the latest state and functions
+  const stateRef = useRef({
+    playNext,
+    loopMode,
+    currentVideoId,
+    play,
+    setPlayingStateToFalse,
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      playNext,
+      loopMode,
+      currentVideoId,
+      play,
+      setPlayingStateToFalse,
+    };
+  }, [playNext, loopMode, currentVideoId, play, setPlayingStateToFalse]);
 
   const handlePlayerReady = useCallback((event: YouTubePlayerEvent) => {
     if (initialVideoIdRef.current) {
@@ -43,18 +68,20 @@ export const useYouTubePlayer = (elementId: string) => {
     }
   }, []);
 
-  const handleStateChange = useCallback(
-    (event: YouTubePlayerEvent) => {
-      if (event.data === window.YT.PlayerState.ENDED) {
-        if (loopMode === 'one' && currentVideoId) {
-          play(currentVideoId);
-        } else {
-          playNext();
-        }
+  const handleStateChange = useCallback((event: YouTubePlayerEvent) => {
+    if (event.data === window.YT.PlayerState.ENDED) {
+      const { loopMode, currentVideoId, play, playNext } = stateRef.current;
+      if (loopMode === 'one' && currentVideoId) {
+        play(currentVideoId);
+      } else if (loopMode === 'all') {
+        playNext();
+      } else {
+        // This case handles when loop is off, if that mode is ever re-introduced.
+        // For now, it will only be called if loopMode is somehow not 'one' or 'all'.
+        stateRef.current.setPlayingStateToFalse();
       }
-    },
-    [playNext, loopMode, currentVideoId, play],
-  );
+    }
+  }, []);
 
   useEffect(() => {
     const createPlayer = () => {
@@ -79,7 +106,12 @@ export const useYouTubePlayer = (elementId: string) => {
 
     return () => {
       if (playerRef.current) {
-        playerRef.current.destroy();
+        // biome-ignore lint/suspicious/noExplicitAny: <>
+        const player = playerRef.current as any;
+        if (player && typeof player.destroy === 'function') {
+          player.destroy();
+        }
+        playerRef.current = null;
       }
     };
   }, [elementId, setPlayerInstance, handlePlayerReady, handleStateChange]);

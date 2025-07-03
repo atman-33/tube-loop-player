@@ -127,7 +127,10 @@ export const usePlayerStore = create<PlayerState>()(
         set({ playlist: [], currentIndex: null, currentVideoId: null }),
       playNext: () => {
         const { playlist, currentIndex, loopMode, playerInstance } = get();
-        if (playlist.length === 0) return;
+        if (playlist.length === 0) {
+          set({ isPlaying: false });
+          return;
+        }
 
         const nextIndex = (currentIndex ?? -1) + 1;
         if (nextIndex >= playlist.length) {
@@ -138,6 +141,8 @@ export const usePlayerStore = create<PlayerState>()(
               playerInstance.playVideo();
             }
             set({ currentIndex: 0, currentVideoId: videoId, isPlaying: true });
+          } else {
+            set({ isPlaying: false });
           }
         } else {
           const videoId = playlist[nextIndex].id;
