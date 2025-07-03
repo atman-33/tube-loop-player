@@ -95,6 +95,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
             __html: `(function(d,z,s){s.src='https://'+d+'/400/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('vemtoutcheeg.com',9519899,document.createElement('script'))`,
           }}
         /> */}
+        {/* Google tag (gtag.js) */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-1R35RBBGXL"
+        ></script>
+        <script>
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-1R35RBBGXL');
+          `}
+        </script>
         <Meta />
         <Links />
       </head>
