@@ -1,3 +1,4 @@
 export const siteConfig = {
-  url: 'https://tubeloopplayer.com',
+  appUrl: 'https://tubeloopplayer.com',
+  xUrl: 'https://x.com/atman_33',
 };

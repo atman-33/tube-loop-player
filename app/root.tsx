@@ -58,7 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="canonical" href={siteConfig.url} />
+        <link rel="canonical" href={siteConfig.appUrl} />
         <script type="application/ld+json">
           {`
         "@context": "https://schema.org",

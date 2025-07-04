@@ -12,8 +12,8 @@ export function meta({}: Route.MetaArgs) {
   const title = 'TubeLoopPlayer - Loop & Playlist Your Favorite YouTube Videos';
   const description =
     'TubeLoopPlayer is a free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback. Perfect for music, tutorials, and more.';
-  const imageUrl = `${siteConfig.url}/ogp-image.png`; // URL for the OGP image
-  const pageUrl = siteConfig.url;
+  const imageUrl = `${siteConfig.appUrl}/ogp-image.png`; // URL for the OGP image
+  const pageUrl = siteConfig.appUrl;
 
   return [
     { title: title },

@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { siteConfig } from '~/config/site-config';
 
 type FooterProps = {
   contactEmail: string;
@@ -35,7 +36,17 @@ const Footer = ({ contactEmail }: FooterProps) => {
             Contact
           </button>
         </div>
-        <p className="mt-6">Made with {'<3'} by Atman</p>
+        <p className="mt-6">
+          Made with {'<3'} by{' '}
+          <a
+            href={siteConfig.xUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline hover:text-foreground transition-colors"
+          >
+            Atman
+          </a>
+        </p>
         <p className="mt-2">
           &copy; {new Date().getFullYear()} TubeLoopPlayer. All Rights Reserved.
         </p>
