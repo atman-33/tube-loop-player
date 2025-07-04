@@ -59,21 +59,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="canonical" href={siteConfig.appUrl} />
-        <script type="application/ld+json">
-          {`
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "TubeLoopPlayer",
-        "operatingSystem": "WEB",
-        "applicationCategory": "MultimediaApplication",
-        "description": "A free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback.",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
-      `}
-        </script>
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is stringified, so it is safe
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'TubeLoopPlayer',
+              operatingSystem: 'WEB',
+              applicationCategory: 'MultimediaApplication',
+              description:
+                'A free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback.',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+            }),
+          }}
+        />
         {/* Googler Adsense */}
         <script
           async
