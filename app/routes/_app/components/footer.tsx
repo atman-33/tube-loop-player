@@ -1,10 +1,14 @@
 import { Link } from 'react-router';
-import { siteConfig } from '../../../config/site-config';
+import { siteConfig } from '~/config/site-config';
 
-const Footer = () => {
+type FooterProps = {
+  contactEmail: string;
+};
+
+const Footer = ({ contactEmail }: FooterProps) => {
   const handleContactClick = () => {
-    if (siteConfig.contactEmail) {
-      window.location.href = `mailto:${siteConfig.contactEmail}`;
+    if (contactEmail) {
+      window.location.href = `mailto:${contactEmail}`;
     }
   };
 
@@ -27,12 +31,22 @@ const Footer = () => {
           <button
             type="button"
             onClick={handleContactClick}
-            className="bg-transparent p-0 hover:underline hover:text-foreground transition-colors"
+            className="bg-transparent p-0 hover:underline hover:text-foreground transition-colors cursor-pointer"
           >
             Contact
           </button>
         </div>
-        <p className="mt-6">Made with {'<3'} by Atman</p>
+        <p className="mt-6">
+          Made with {'<3'} by{' '}
+          <a
+            href={siteConfig.xUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline hover:text-foreground transition-colors"
+          >
+            Atman
+          </a>
+        </p>
         <p className="mt-2">
           &copy; {new Date().getFullYear()} TubeLoopPlayer. All Rights Reserved.
         </p>

@@ -4,13 +4,13 @@ export const loader = () => {
   const content = `
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       <url>
-        <loc>${siteConfig.url}</loc>
+        <loc>${siteConfig.appUrl}</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
       </url>
       <url>
-        <loc>${siteConfig.url}/privacy-terms</loc>
+        <loc>${siteConfig.appUrl}/privacy-terms</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.5</priority>

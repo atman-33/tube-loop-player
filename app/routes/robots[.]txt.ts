@@ -4,7 +4,7 @@ export const loader = () => {
   const content = `User-agent: *
 Allow: /
 
-Sitemap: ${siteConfig.url}/sitemap.xml
+Sitemap: ${siteConfig.appUrl}/sitemap.xml
 `;
 
   return new Response(content, {
