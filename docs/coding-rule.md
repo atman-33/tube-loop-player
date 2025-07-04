@@ -1,10 +1,10 @@
-# コーディング規約
+# Coding Standards
 
-## 共通ルール
+## Common Rules
 
-### ファイル命名規則
+### File Naming Convention
 
-- すべて **ケバブケース（kebab-case）** で統一すること。
+- All file names must be in **kebab-case**.
 
 e.g.  
 
@@ -13,58 +13,58 @@ button.tsx
 auth-utils.ts
 ```
 
-### 関数の記述方法
+### Function Declaration Style
 
-- TypeScript の関数は **アロー関数** で記述すること。
+- TypeScript functions must be written as **arrow functions**.
 
-### メソッド命名規則
+### Method Naming Convention
 
-#### `handle〇〇`（イベントハンドラの命名）
+#### `handle〇〇` (Event Handler Naming)
 
-- ボタンやフォームのイベントを処理するメソッドは `handle + 対象 + Event内容` の形式で命名すること。
+- Methods that handle events for buttons or forms should be named in the format `handle + Target + Event`.
 
 e.g.  
 
 ```tsx
-const handleFormSubmit = () => { /* 処理 */ };
-const handleButtonClick = () => { /* 処理 */ };
+const handleFormSubmit = () => { /* process */ };
+const handleButtonClick = () => { /* process */ };
 ```
 
 ---
 
-## React に関するルール
+## React Rules
 
-### React RouterでActionを呼び出す場合の使い分け
+### Usage of Actions in React Router
 
-- **通常のフォーム送信（ページ遷移あり）** → `<Form>` + `<button>`
-- **非同期リクエストでページ遷移なし（AJAX）** → `fetcher.Form` or `fetcher.submit`
-- **ボタンクリックなどで `action` を呼び出す（ページ遷移なし）** → `fetcher.submit`
-- **プログラム的に `<Form>` を送信したい（ページ遷移あり）** → `useSubmit`
+- **Normal form submission (with page transition)** → `<Form>` + `<button>`
+- **Asynchronous request without page transition (AJAX)** → `fetcher.Form` or `fetcher.submit`
+- **Calling `action` on button click, etc. (without page transition)** → `fetcher.submit`
+- **Programmatically submitting a `<Form>` (with page transition)** → `useSubmit`
 
 ---
 
-## UIコンポーネント
+## UI Components
 
-### ボタン（Button）
+### Button
 
-#### `variant` の使い分け
+#### Usage of `variant`
 
-ボタンの **`variant`** を以下のルールで使い分ける。
+The **`variant`** of a button should be used according to the following rules.
 
-| 種類 | 用途 | 例 |
+| Type | Purpose | Example |
 |------|------|----|
-| **通常ボタン (`default`)** | 主要アクション | 作成、編集、送信、保存 |
-| **セカンダリーボタン (`secondary`)** | 補完的なアクション | 詳細、次へ、追加の設定 |
-| **破壊的ボタン (`destructive`)** | 取り返しのつかないアクション（警告が必要） | 削除、アカウント削除、データ消去 |
-| **アウトラインボタン (`outline`)** | 補助的なアクション（目立たず控えめ） | キャンセル、戻る、後で保存 |
+| **Default Button (`default`)** | Primary actions | Create, Edit, Submit, Save |
+| **Secondary Button (`secondary`)** | Complementary actions | Details, Next, Additional Settings |
+| **Destructive Button (`destructive`)** | Irreversible actions (warning required) | Delete, Delete Account, Erase Data |
+| **Outline Button (`outline`)** | Auxiliary actions (less prominent) | Cancel, Back, Save for Later |
 
-### ナビリンク（NaviLink）
+### NavLink
 
-`isActive`と`isPending`に対するスタイルを以下のルールで使い分ける。
+Styles for `isActive` and `isPending` should be applied according to the following rules.
 
-- isActive = true: 濃い色の文字、背景色有り
-- isActive = false & isPending = true: 薄い色の文字
-- isActive = false & isPending = false: デフォルト色の文字
+- isActive = true: Dark text color, with background color
+- isActive = false & isPending = true: Light text color
+- isActive = false & isPending = false: Default text color
 
 e.g.  
 
@@ -80,13 +80,13 @@ className={({ isActive, isPending }) =>
 
 ---
 
-## 記述例
+## Examples
 
-書き方は、以下の例を参考にすること。
+Refer to the following examples for how to write code.
 
 ### route.tsx
 
-#### サーバーデータローディング
+#### Server Data Loading
 
 ```tsx
 import type { Route } from "./+types/route";
@@ -152,4 +152,3 @@ export const Default: Story = {
     children: 'Button',
   },
 };
-```
