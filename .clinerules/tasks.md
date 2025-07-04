@@ -1,48 +1,48 @@
-# TubeLoopPlayer 開発タスクリスト
+# TubeLoopPlayer Development Task List
 
-## コア機能
+## Core Features
 
-### YouTubeプレイヤーコンポーネント
+### YouTube Player Component
 
-- [x] YouTube IFrame APIを統合
-- [x] 再生状態管理を実装
-- [x] イベントハンドリングを実装
+- [x] Integrate YouTube IFrame API
+- [x] Implement playback state management
+- [x] Implement event handling
 
-### プレイリスト管理
+### Playlist Management
 
-- [x] URL入力フォームを作成
-- [x] 動画リスト表示コンポーネント
-- [x] 追加/削除/クリア機能
+- [x] Create URL input form
+- [x] Video list display component
+- [x] Add/Remove/Clear functionality
 
-### 再生モード
+### Playback Modes
 
-- [x] ループモード実装
-- [x] シャッフルモード実装
-- [x] モード切り替えUI
+- [x] Implement loop mode
+- [x] Implement shuffle mode
+- [x] Mode switching UI
 
-## 永続化
+## Persistence
 
-- [x] Cookieを使用した設定保存
-- [x] プレイリストの永続化
+- [x] Save settings using Cookies
+- [x] Persist playlist
 
 ## UI
 
-- [x] Logo, Favicon追加
-- [x] フッター追加
-- [x] Privacy & Terms追加
-- [x] Contact追加
+- [x] Add Logo, Favicon
+- [x] Add Footer
+- [x] Add Privacy & Terms
+- [x] Add Contact
 
-## Bug Fix
+## Bug Fixes
 
-- [x] ドラッグ&ドロップでPlaylistの動画を入れ替えても再生順が更新されない問題の対処
-- [x] Lightモードの際、Playlistのコンポーネントに不要な線が表示される問題の対処
+- [x] Fix issue where playback order does not update after reordering videos in the playlist via drag & drop
+- [x] Fix issue where an unnecessary line appears in the Playlist component in Light mode
 
-## リリース準備
+## Release Preparation
 
-- [x] ドメイン登録
-- [x] SEO対策
-- [x] 広告追加
+- [x] Register domain
+- [x] SEO measures
+- [x] Add advertisements
 
-## 改善
+## Improvements
 
-- [x] トップページに操作方法の説明を追加
+- [x] Add instructions on how to use to the top page
