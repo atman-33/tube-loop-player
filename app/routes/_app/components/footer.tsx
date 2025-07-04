@@ -1,10 +1,13 @@
 import { Link } from 'react-router';
-import { siteConfig } from '../../../config/site-config';
 
-const Footer = () => {
+type FooterProps = {
+  contactEmail: string;
+};
+
+const Footer = ({ contactEmail }: FooterProps) => {
   const handleContactClick = () => {
-    if (siteConfig.contactEmail) {
-      window.location.href = `mailto:${siteConfig.contactEmail}`;
+    if (contactEmail) {
+      window.location.href = `mailto:${contactEmail}`;
     }
   };
 
