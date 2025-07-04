@@ -30,7 +30,7 @@ const Footer = ({ contactEmail }: FooterProps) => {
           <button
             type="button"
             onClick={handleContactClick}
-            className="bg-transparent p-0 hover:underline hover:text-foreground transition-colors"
+            className="bg-transparent p-0 hover:underline hover:text-foreground transition-colors cursor-pointer"
           >
             Contact
           </button>
