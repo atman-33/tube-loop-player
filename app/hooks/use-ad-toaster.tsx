@@ -20,8 +20,8 @@ export const useAdToaster = () => {
         toast.custom(
           (t) => (
             <AdBanner
-              title="おすすめサイトをチェック！"
-              description="新しいコンテンツを探索するにはクリックしてください。"
+              title="Check out this recommended site!"
+              description="Click to explore new content."
               buttonText="Go"
               onClick={() => {
                 window.open(AD_URL, '_blank');
@@ -30,7 +30,7 @@ export const useAdToaster = () => {
             />
           ),
           {
-            duration: 5000,
+            duration: 30 * 1000,
             position: 'bottom-right',
           },
         );
@@ -42,7 +42,7 @@ export const useAdToaster = () => {
     handleAdDisplay();
 
     // Set up an interval to check periodically (e.g., every minute)
-    const intervalId = setInterval(handleAdDisplay, 5 * 1000); // Check every minute
+    const intervalId = setInterval(handleAdDisplay, 60 * 1000); // Check every minute
 
     return () => clearInterval(intervalId);
   }, []);

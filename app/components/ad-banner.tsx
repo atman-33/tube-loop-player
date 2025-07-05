@@ -18,7 +18,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
     <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg relative overflow-hidden">
       {/* Background effect */}
       <div
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-10 -z-10"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml,%3Csvg width='100%25' height='100%25' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")",
