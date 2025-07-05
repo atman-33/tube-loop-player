@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { AdBanner } from '~/components/ad-banner';
+import { siteConfig } from '~/config/site-config';
 import { getCookie, setCookie } from '~/lib/cookie';
 
 const AD_TOASTER_COOKIE_NAME = 'last_ad_display_time';
 const AD_DISPLAY_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
-const AD_URL = 'https://otieu.com/4/9519912';
+const AD_URL = siteConfig.adUrl;
 
 export const useAdToaster = () => {
   useEffect(() => {
