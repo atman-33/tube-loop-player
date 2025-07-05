@@ -45,6 +45,8 @@ Refs: #123
 
 ## Pull Request
 
+- Pull Request messages should be written in English
+
 Before creating a pull request, always ask for confirmation.
 Follow these steps to create a pull request:
 
