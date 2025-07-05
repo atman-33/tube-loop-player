@@ -152,3 +152,7 @@ export const Default: Story = {
     children: 'Button',
   },
 };
+
+### Comments
+
+- All comments in source files must be written in English.

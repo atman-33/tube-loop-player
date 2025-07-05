@@ -17,6 +17,12 @@
     "types": [
       "./worker-configuration.d.ts",
       "vitest/globals"
-    ]
+    ],
+    "paths": {
+      "~/*": [
+        "./app/*"
+      ]
+    },
+    "sourceMap": true
   }
 }
