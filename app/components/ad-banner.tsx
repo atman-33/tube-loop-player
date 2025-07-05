@@ -15,7 +15,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   onClick,
 }) => {
   return (
-    <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-2xl relative overflow-hidden">
+    <div className="flex items-center space-x-2 sm:space-x-4 p-2 sm:p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-2xl relative overflow-hidden">
       {/* Background effect */}
       <div
         className="absolute inset-0 opacity-10 -z-10"
@@ -25,19 +25,19 @@ export const AdBanner: React.FC<AdBannerProps> = ({
         }}
       ></div>
 
-      <div className="flex-shrink-0 text-3xl">✨</div>
+      <div className="flex-shrink-0 text-2xl sm:text-3xl">✨</div>
       <div className="flex-grow">
-        <h3 className="text-lg font-bold flex items-center whitespace-nowrap">
-          {title} <span className="ml-2 text-xl">🚀</span>
+        <h3 className="sm:text-lg font-bold flex items-center whitespace-nowrap">
+          {title} <span className="ml-2 sm:text-xl"></span>
         </h3>
-        <p className="text-sm opacity-90 mt-1">{description}</p>
+        <p className="text-xs sm:text-sm opacity-90 mt-1">{description}</p>
       </div>
       <div className="flex-shrink-0">
         <Button
           onClick={onClick}
           className="bg-white text-blue-600 hover:bg-gray-100 font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 transform hover:scale-105"
         >
-          {buttonText} 🔗
+          {buttonText}
         </Button>
       </div>
     </div>

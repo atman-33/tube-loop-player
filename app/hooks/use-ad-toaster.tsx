@@ -21,9 +21,9 @@ export const useAdToaster = () => {
         toast.custom(
           (t) => (
             <AdBanner
-              title="Check out this recommended site!"
-              description="Click to explore new content."
-              buttonText="Go"
+              title="Discover something new!"
+              description="Fresh content waiting for you."
+              buttonText="Let's go!"
               onClick={() => {
                 window.open(AD_URL, '_blank');
                 toast.dismiss(t);
