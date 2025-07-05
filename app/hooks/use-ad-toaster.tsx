@@ -4,7 +4,7 @@ import { AdBanner } from '~/components/ad-banner';
 import { getCookie, setCookie } from '~/lib/cookie';
 
 const AD_TOASTER_COOKIE_NAME = 'last_ad_display_time';
-const AD_DISPLAY_INTERVAL_MS = 5; // 30 * 60 * 1000; // 30 minutes in milliseconds
+const AD_DISPLAY_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
 const AD_URL = 'https://otieu.com/4/9519912';
 
 export const useAdToaster = () => {
@@ -30,7 +30,7 @@ export const useAdToaster = () => {
             />
           ),
           {
-            duration: 30 * 1000,
+            duration: 10 * 60 * 1000, // 10 minutes in milliseconds
             position: 'bottom-right',
           },
         );

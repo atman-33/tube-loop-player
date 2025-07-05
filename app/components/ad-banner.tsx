@@ -15,7 +15,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   onClick,
 }) => {
   return (
-    <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg relative overflow-hidden">
+    <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-2xl relative overflow-hidden">
       {/* Background effect */}
       <div
         className="absolute inset-0 opacity-10 -z-10"
@@ -27,7 +27,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
 
       <div className="flex-shrink-0 text-3xl">✨</div>
       <div className="flex-grow">
-        <h3 className="text-lg font-bold flex items-center">
+        <h3 className="text-lg font-bold flex items-center whitespace-nowrap">
           {title} <span className="ml-2 text-xl">🚀</span>
         </h3>
         <p className="text-sm opacity-90 mt-1">{description}</p>
