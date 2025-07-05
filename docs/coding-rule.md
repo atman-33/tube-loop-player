@@ -2,6 +2,10 @@
 
 ## Common Rules
 
+### Comments
+
+- All comments in source files must be written in English.
+
 ### File Naming Convention
 
 - All file names must be in **kebab-case**.
@@ -152,7 +156,3 @@ export const Default: Story = {
     children: 'Button',
   },
 };
-
-### Comments
-
-- All comments in source files must be written in English.
