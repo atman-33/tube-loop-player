@@ -9,8 +9,7 @@ export function ThemeToggle() {
     <Toggle
       onPressedChange={toggleTheme}
       aria-label="Toggle theme"
-      size="sm"
-      className="cursor-pointer"
+      className="transition-all duration-300 transform hover:scale-105 cursor-pointer"
     >
       {theme === 'light' ? (
         <Sun className="h-4 w-4" />
