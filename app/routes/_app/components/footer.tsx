@@ -18,20 +18,20 @@ const Footer = ({ contactEmail }: FooterProps) => {
         <div className="flex flex-col md:flex-row justify-center md:space-x-8 space-y-2 md:space-y-0">
           <Link
             to="/"
-            className="hover:underline hover:text-foreground transition-colors"
+            className="hover:underline hover:text-foreground transition-all duration-300 transform hover:scale-105"
           >
             Home
           </Link>
           <Link
             to="/privacy-terms"
-            className="hover:underline hover:text-foreground transition-colors"
+            className="hover:underline hover:text-foreground transition-all duration-300 transform hover:scale-105"
           >
             Privacy & Terms
           </Link>
           <button
             type="button"
             onClick={handleContactClick}
-            className="bg-transparent p-0 hover:underline hover:text-foreground transition-colors cursor-pointer"
+            className="bg-transparent p-0 hover:underline hover:text-foreground transition-all duration-300 transform hover:scale-105 cursor-pointer"
           >
             Contact
           </button>
@@ -42,7 +42,7 @@ const Footer = ({ contactEmail }: FooterProps) => {
             href={siteConfig.xUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:underline hover:text-foreground transition-colors"
+            className="hover:underline hover:text-foreground transition-color"
           >
             Atman
           </a>

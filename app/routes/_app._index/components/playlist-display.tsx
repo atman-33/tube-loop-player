@@ -59,7 +59,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
       }`}
       {...attributes}
     >
-      <div className="flex items-center w-full">
+      <div className="flex items-center w-full transition-all duration-300 transform hover:scale-105">
         <button
           type="button"
           className="p-3 cursor-grab text-muted-foreground hover:text-foreground"
@@ -95,7 +95,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
             }}
             className="flex-shrink-0 text-muted-foreground hover:text-destructive"
           >
-            <span>
+            <span className="transition-all duration-300 transform hover:scale-105">
               <Trash2 className="h-5 w-5" />
               <span className="sr-only">Remove</span>
             </span>
