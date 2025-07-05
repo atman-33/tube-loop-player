@@ -5,46 +5,53 @@ import { siteConfig } from '~/config/site-config';
 import { getCookie, setCookie } from '~/lib/cookie';
 
 const AD_TOASTER_COOKIE_NAME = 'last_ad_display_time';
-const AD_DISPLAY_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+const AD_DISPLAY_INTERVAL_MS = 30 * 60 * 1000; // 30 min
+const AD_TOAST_ID = 'ad-banner-toast'; // Fixed ID
 const AD_URL = siteConfig.adUrl;
 
 export const useAdToaster = () => {
   useEffect(() => {
-    const handleAdDisplay = () => {
-      const lastAdDisplayTime = parseInt(
-        getCookie(AD_TOASTER_COOKIE_NAME) || '0',
-        10,
-      );
-      const currentTime = Date.now();
+    const shouldShowAd = () => {
+      const lastTime = Number(getCookie(AD_TOASTER_COOKIE_NAME) || '0');
+      return Date.now() - lastTime >= AD_DISPLAY_INTERVAL_MS;
+    };
 
-      if (currentTime - lastAdDisplayTime >= AD_DISPLAY_INTERVAL_MS) {
-        toast.custom(
-          (t) => (
-            <AdBanner
-              title="Discover something new!"
-              description="Fresh content waiting for you."
-              buttonText="Let's go!"
-              onClick={() => {
-                window.open(AD_URL, '_blank');
-                toast.dismiss(t);
-              }}
-            />
-          ),
-          {
-            duration: 10 * 60 * 1000, // 10 minutes in milliseconds
-            position: 'bottom-right',
-          },
-        );
-        setCookie(AD_TOASTER_COOKIE_NAME, currentTime.toString(), 365); // Store for 1 year
+    const showAd = () => {
+      toast.custom(
+        (t) => (
+          <AdBanner
+            title="Discover something new!"
+            description="Fresh content waiting for you."
+            buttonText="Let's go!"
+            onClick={() => {
+              window.open(AD_URL, '_blank');
+              toast.dismiss(t);
+            }}
+          />
+        ),
+        {
+          id: AD_TOAST_ID, // If there's an existing toast with the same ID, it will be updated.
+          duration: Infinity,
+          position: 'bottom-right',
+          onDismiss: () =>
+            setCookie(AD_TOASTER_COOKIE_NAME, Date.now().toString(), 365),
+          onAutoClose: () =>
+            setCookie(AD_TOASTER_COOKIE_NAME, Date.now().toString(), 365),
+        },
+      );
+    };
+
+    const handleAdDisplay = () => {
+      if (shouldShowAd()) {
+        showAd();
       }
     };
 
-    // Check immediately on mount
+    // Initial check
     handleAdDisplay();
 
-    // Set up an interval to check periodically (e.g., every minute)
-    const intervalId = setInterval(handleAdDisplay, 60 * 1000); // Check every minute
-
-    return () => clearInterval(intervalId);
+    // Recheck every 1 minute
+    const id = setInterval(handleAdDisplay, 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 };
