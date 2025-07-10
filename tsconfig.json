@@ -15,8 +15,7 @@
     "strict": true,
     "noEmit": true,
     "types": [
-      "./worker-configuration.d.ts",
-      "vitest/globals"
+      "./worker-configuration.d.ts"
     ],
     "paths": {
       "~/*": [
