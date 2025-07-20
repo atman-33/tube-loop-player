@@ -55,6 +55,11 @@ export default function Home() {
           <PlaylistDisplay />
         </div>
       </div>
+      {/* Adsterra Native Banner */}
+      <div
+        className="mt-8"
+        id="container-5aa23d558292733924bbce492c900cef"
+      ></div>
       {/* NOTE: Use this space for ads if needed */}
       <Description />
     </div>

@@ -1,5 +1,6 @@
 export const siteConfig = {
   appUrl: 'https://tubeloopplayer.com',
   xUrl: 'https://x.com/atman_33',
-  adUrl: 'https://otieu.com/4/9519912',
+  adDirectLinkUrl:
+    'https://www.profitableratecpm.com/fnemuhyj?key=446506e10efbbe6940ad489ccb0e9156',
 };

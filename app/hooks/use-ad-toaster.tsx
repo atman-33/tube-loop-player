@@ -7,7 +7,7 @@ import { getCookie, setCookie } from '~/lib/cookie';
 const AD_TOASTER_COOKIE_NAME = 'last_ad_display_time';
 const AD_DISPLAY_INTERVAL_MS = 30 * 60 * 1000; // 30 min
 const AD_TOAST_ID = 'ad-banner-toast'; // Fixed ID
-const AD_URL = siteConfig.adUrl;
+const AD_URL = siteConfig.adDirectLinkUrl;
 
 export const useAdToaster = () => {
   useEffect(() => {
