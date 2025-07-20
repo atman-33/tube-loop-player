@@ -8,7 +8,7 @@ import { PlaylistInputForm } from './components/playlist-input-form';
 import { YouTubePlayer } from './components/you-tube-player';
 
 // biome-ignore lint/correctness/noEmptyPattern: <>
-export function meta({ }: Route.MetaArgs) {
+export function meta({}: Route.MetaArgs) {
   const title = 'TubeLoopPlayer - Loop & Playlist Your Favorite YouTube Videos';
   const description =
     'TubeLoopPlayer is a free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback. Perfect for music, tutorials, and more.';
@@ -56,7 +56,10 @@ export default function Home() {
         </div>
       </div>
       {/* Adsterra Native Banner */}
-      <div className='mt-8' id="container-5aa23d558292733924bbce492c900cef"></div>
+      <div
+        className="mt-8"
+        id="container-5aa23d558292733924bbce492c900cef"
+      ></div>
       {/* NOTE: Use this space for ads if needed */}
       <Description />
     </div>

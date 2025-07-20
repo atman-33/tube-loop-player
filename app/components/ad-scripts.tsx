@@ -23,7 +23,11 @@ const AdScripts = () => {
       </script>
 
       {/* Adsterra Native Banner */}
-      <script async data-cfasync="false" src="//pl27216237.profitableratecpm.com/5aa23d558292733924bbce492c900cef/invoke.js"></script>
+      <script
+        async
+        data-cfasync="false"
+        src="//pl27216237.profitableratecpm.com/5aa23d558292733924bbce492c900cef/invoke.js"
+      ></script>
     </>
   );
 };
