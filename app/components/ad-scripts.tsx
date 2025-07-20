@@ -22,20 +22,8 @@ const AdScripts = () => {
         `}
       </script>
 
-      {/* monetag - Vignette Banner  */}
-      {/* <script
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: Embedding external advertisement script
-        dangerouslySetInnerHTML={{
-          __html: `(function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('gizokraijaw.net',9519893,document.createElement('script'))`,
-        }}
-      /> */}
-      {/* monetag - In-Page Push  */}
-      {/* <script
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: Embedding external advertisement script
-        dangerouslySetInnerHTML={{
-          __html: `(function(d,z,s){s.src='https://'+d+'/400/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('vemtoutcheeg.com',9519899,document.createElement('script'))`,
-        }}
-      /> */}
+      {/* Adsterra Native Banner */}
+      <script async data-cfasync="false" src="//pl27216237.profitableratecpm.com/5aa23d558292733924bbce492c900cef/invoke.js"></script>
     </>
   );
 };
