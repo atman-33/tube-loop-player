@@ -44,7 +44,7 @@ export const links: Route.LinksFunction = () => [
     href: '/favicons/favicon-16x16.png',
   },
   { rel: 'manifest', href: '/site.webmanifest' },
-  { rel: 'icon', href: '/favicons/favicon.ico', type: 'image/x-icon' },
+  { rel: 'icon', href: '/favicon.ico', type: 'image/x-icon' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
