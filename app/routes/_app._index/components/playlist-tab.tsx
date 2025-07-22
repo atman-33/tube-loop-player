@@ -53,14 +53,7 @@ export const PlaylistTab = ({
   const width = getTabWidth();
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`relative group ${width} ${
-        isOver && !isActive
-          ? 'ring-2 ring-primary/50 ring-offset-2 ring-offset-background'
-          : ''
-      }`}
-    >
+    <div ref={setNodeRef} className={`relative group ${width}`}>
       <button
         type="button"
         id={`playlist-tab-${playlist.id}`}
@@ -71,7 +64,9 @@ export const PlaylistTab = ({
           ${
             isActive
               ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 z-0 bg-muted/10 border border-transparent hover:border-border/30'
+              : isOver
+                ? 'text-foreground bg-background/90 border border-primary/30 z-5'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 z-0 bg-muted/10 border border-transparent hover:border-border/30'
           }
           ${isActive ? 'rounded-t-lg' : 'rounded-t-md'}
         `}
@@ -148,9 +143,14 @@ export const PlaylistTab = ({
         </div>
       )}
 
-      {/* Drop indicator */}
+      {/* Drop indicator - improved visibility */}
       {isOver && !isActive && (
-        <div className="absolute inset-0 bg-primary/8 border-2 border-dashed border-primary/40 rounded-t-lg backdrop-blur-sm" />
+        <>
+          {/* Bright border highlight */}
+          <div className="absolute inset-0 border-2 border-primary rounded-t-lg pointer-events-none z-10" />
+          {/* Subtle background highlight without blur */}
+          <div className="absolute inset-0 bg-primary/10 rounded-t-lg pointer-events-none" />
+        </>
       )}
     </div>
   );
