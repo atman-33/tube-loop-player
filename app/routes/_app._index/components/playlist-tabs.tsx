@@ -7,6 +7,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -47,9 +48,9 @@ export const PlaylistTabs = () => {
     }),
   );
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = playlists.findIndex((p) => p.id === active.id);
       const newIndex = playlists.findIndex((p) => p.id === over.id);
       usePlayerStore.getState().reorderPlaylists(oldIndex, newIndex);
