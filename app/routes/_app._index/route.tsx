@@ -112,7 +112,32 @@ export default function Home() {
       const itemIndex = playlist.findIndex((item) => item.id === active.id);
 
       if (itemIndex !== -1 && targetPlaylistId !== activePlaylistId) {
-        moveItemBetweenPlaylists(itemIndex, activePlaylistId, targetPlaylistId);
+        const wasMoved = moveItemBetweenPlaylists(
+          itemIndex,
+          activePlaylistId,
+          targetPlaylistId,
+        );
+
+        if (!wasMoved) {
+          // Show visual feedback that the move was not allowed due to duplicate
+          const targetTab = document.getElementById(
+            `playlist-tab-${targetPlaylistId}`,
+          );
+          if (targetTab) {
+            targetTab.classList.add(
+              'ring-2',
+              'ring-destructive',
+              'bg-destructive/10',
+            );
+            setTimeout(() => {
+              targetTab.classList.remove(
+                'ring-2',
+                'ring-destructive',
+                'bg-destructive/10',
+              );
+            }, 1000);
+          }
+        }
       }
     } else if (active.id !== over.id) {
       // Reordering within the same playlist

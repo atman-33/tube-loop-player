@@ -33,7 +33,7 @@ interface PlayerState {
   resume: () => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
-  addToPlaylist: (item: PlaylistItem, playlistId?: string) => void;
+  addToPlaylist: (item: PlaylistItem, playlistId?: string) => boolean;
   removeFromPlaylist: (index: number, playlistId?: string) => void;
   reorderPlaylist: (
     fromIndex: number,
@@ -44,7 +44,7 @@ interface PlayerState {
     itemIndex: number,
     fromPlaylistId: string,
     toPlaylistId: string,
-  ) => void;
+  ) => boolean;
   clearPlaylist: (playlistId?: string) => void;
 
   renamePlaylist: (playlistId: string, newName: string) => void;
@@ -135,9 +135,24 @@ export const usePlayerStore = create<PlayerState>()(
           loopMode: state.loopMode === 'all' ? 'one' : 'all',
         })),
       toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
-      addToPlaylist: (item, playlistId) =>
+      addToPlaylist: (item, playlistId) => {
+        const state = get();
+        const targetPlaylistId = playlistId || state.activePlaylistId;
+        const targetPlaylist = state.playlists.find(
+          (p) => p.id === targetPlaylistId,
+        );
+
+        // Check if the item already exists in the target playlist
+        if (
+          targetPlaylist &&
+          targetPlaylist.items.some(
+            (existingItem) => existingItem.id === item.id,
+          )
+        ) {
+          return false; // Don't add if duplicate exists
+        }
+
         set((state) => {
-          const targetPlaylistId = playlistId || state.activePlaylistId;
           const updatedPlaylists = state.playlists.map((playlist) =>
             playlist.id === targetPlaylistId
               ? { ...playlist, items: [...playlist.items, item] }
@@ -147,7 +162,10 @@ export const usePlayerStore = create<PlayerState>()(
             playlists: updatedPlaylists,
             currentIndex: state.currentIndex === null ? 0 : state.currentIndex,
           };
-        }),
+        });
+
+        return true; // Successfully added
+      },
       removeFromPlaylist: (index, playlistId) =>
         set((state) => {
           const targetPlaylistId = playlistId || state.activePlaylistId;
@@ -196,15 +214,32 @@ export const usePlayerStore = create<PlayerState>()(
           }
           return { playlists: updatedPlaylists, currentIndex: newCurrentIndex };
         }),
-      moveItemBetweenPlaylists: (itemIndex, fromPlaylistId, toPlaylistId) =>
-        set((state) => {
-          const fromPlaylist = state.playlists.find(
-            (p) => p.id === fromPlaylistId,
-          );
-          if (!fromPlaylist || itemIndex >= fromPlaylist.items.length)
-            return state;
+      moveItemBetweenPlaylists: (itemIndex, fromPlaylistId, toPlaylistId) => {
+        const state = get();
+        const fromPlaylist = state.playlists.find(
+          (p) => p.id === fromPlaylistId,
+        );
+        const toPlaylist = state.playlists.find((p) => p.id === toPlaylistId);
 
-          const itemToMove = fromPlaylist.items[itemIndex];
+        if (
+          !fromPlaylist ||
+          itemIndex >= fromPlaylist.items.length ||
+          !toPlaylist
+        )
+          return false;
+
+        const itemToMove = fromPlaylist.items[itemIndex];
+
+        // Check if the item already exists in the target playlist
+        if (
+          toPlaylist.items.some(
+            (existingItem) => existingItem.id === itemToMove.id,
+          )
+        ) {
+          return false; // Don't move if duplicate exists
+        }
+
+        set((state) => {
           const updatedPlaylists = state.playlists.map((playlist) => {
             if (playlist.id === fromPlaylistId) {
               const newItems = [...playlist.items];
@@ -218,7 +253,10 @@ export const usePlayerStore = create<PlayerState>()(
           });
 
           return { playlists: updatedPlaylists };
-        }),
+        });
+
+        return true; // Successfully moved
+      },
       clearPlaylist: (playlistId) =>
         set((state) => {
           const targetPlaylistId = playlistId || state.activePlaylistId;
