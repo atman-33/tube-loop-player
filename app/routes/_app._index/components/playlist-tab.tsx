@@ -58,6 +58,10 @@ export const PlaylistTab = ({
         type="button"
         id={`playlist-tab-${playlist.id}`}
         onClick={() => onSetActive(playlist.id)}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          onStartEdit(playlist);
+        }}
         className={`
           relative px-1 py-3 font-medium text-xs transition-all duration-200 ease-out
           w-full h-12 flex items-center justify-center overflow-hidden
