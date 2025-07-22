@@ -121,13 +121,10 @@ export const PlaylistDisplay = () => {
   const playlist = activePlaylist?.items || [];
 
   return (
-    <div className="bg-background border-l border-r border-b border-border/50 rounded-b-xl shadow-lg mt-0 relative">
-      {/* Top connection line - seamlessly connects with active tab */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-background" />
-
+    <div className="bg-background border border-t-0 border-border/50 rounded-b-lg shadow-sm mt-0">
       <div className="p-6 space-y-4">
         {playlist.length === 0 ? (
-          <div className="text-center text-muted-foreground p-8 border border-dashed rounded-xl bg-muted/10 backdrop-blur-sm">
+          <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg bg-muted/10">
             <p className="mb-2 font-medium">The playlist is empty.</p>
             <p className="text-sm opacity-80">
               Add YouTube URLs to add videos!
