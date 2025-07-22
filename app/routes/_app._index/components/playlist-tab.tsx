@@ -31,14 +31,20 @@ export const PlaylistTab = ({
   onCancelEdit,
   onEditingNameChange,
 }: PlaylistTabProps) => {
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: `playlist-tab-${playlist.id}`,
   });
 
   return (
-    <div className="flex items-center group relative">
+    <div
+      ref={setNodeRef}
+      className={`flex items-center group relative p-1 rounded-lg transition-all ${
+        isOver && activePlaylistId !== playlist.id
+          ? 'ring-2 ring-primary bg-primary/10'
+          : ''
+      }`}
+    >
       <button
-        ref={setNodeRef}
         type="button"
         id={`playlist-tab-${playlist.id}`}
         onClick={() => onSetActive(playlist.id)}

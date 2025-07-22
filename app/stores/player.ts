@@ -144,8 +144,7 @@ export const usePlayerStore = create<PlayerState>()(
 
         // Check if the item already exists in the target playlist
         if (
-          targetPlaylist &&
-          targetPlaylist.items.some(
+          targetPlaylist?.items.some(
             (existingItem) => existingItem.id === item.id,
           )
         ) {

@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
+  rectIntersection,
 } from '@dnd-kit/core';
 import { siteConfig } from '~/config/site-config';
 import { usePlayerStore } from '../../stores/player';
@@ -76,23 +77,7 @@ export default function Home() {
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    if (over?.id.toString().startsWith('playlist-tab-')) {
-      const playlistId = over.id.toString().replace('playlist-tab-', '');
-      // Apply drag over state to playlist tabs
-      document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
-        tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
-      });
-      const targetTab = document.getElementById(`playlist-tab-${playlistId}`);
-      if (targetTab && playlistId !== activePlaylistId) {
-        targetTab.classList.add('ring-2', 'ring-primary', 'bg-primary/10');
-      }
-    } else {
-      // Remove drag over state from all tabs
-      document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
-        tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
-      });
-    }
+    // ドラッグオーバーの視覚的フィードバックは各PlaylistTabコンポーネントのisOverで処理
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -124,18 +109,21 @@ export default function Home() {
             `playlist-tab-${targetPlaylistId}`,
           );
           if (targetTab) {
-            targetTab.classList.add(
-              'ring-2',
-              'ring-destructive',
-              'bg-destructive/10',
-            );
-            setTimeout(() => {
-              targetTab.classList.remove(
+            const container = targetTab.parentElement;
+            if (container) {
+              container.classList.add(
                 'ring-2',
                 'ring-destructive',
                 'bg-destructive/10',
               );
-            }, 1000);
+              setTimeout(() => {
+                container.classList.remove(
+                  'ring-2',
+                  'ring-destructive',
+                  'bg-destructive/10',
+                );
+              }, 1000);
+            }
           }
         }
       }
@@ -150,10 +138,6 @@ export default function Home() {
     }
 
     setActiveId(null);
-    // Remove drag over state from all tabs when drag ends
-    document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
-      tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
-    });
   };
 
   const activePlaylist = getActivePlaylist();
@@ -165,6 +149,7 @@ export default function Home() {
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={rectIntersection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}

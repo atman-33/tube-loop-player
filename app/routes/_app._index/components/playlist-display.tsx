@@ -44,8 +44,8 @@ const SortableItem: React.FC<SortableItemProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 1 : 0,
-    opacity: isDragging ? 0.1 : 1,
+    zIndex: isDragging ? 1000 : 0,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
