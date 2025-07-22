@@ -40,6 +40,7 @@ interface PlayerState {
     toIndex: number,
     playlistId?: string,
   ) => void;
+  reorderPlaylists: (fromIndex: number, toIndex: number) => void;
   moveItemBetweenPlaylists: (
     itemIndex: number,
     fromPlaylistId: string,
@@ -212,6 +213,19 @@ export const usePlayerStore = create<PlayerState>()(
             }
           }
           return { playlists: updatedPlaylists, currentIndex: newCurrentIndex };
+        }),
+      reorderPlaylists: (fromIndex: number, toIndex: number) =>
+        set((state) => {
+          const newPlaylists = [...state.playlists];
+          const [removed] = newPlaylists.splice(fromIndex, 1);
+          newPlaylists.splice(toIndex, 0, removed);
+
+          // Update active playlist if it was moved
+          const newActivePlaylistId = state.activePlaylistId;
+          return {
+            playlists: newPlaylists,
+            activePlaylistId: newActivePlaylistId,
+          };
         }),
       moveItemBetweenPlaylists: (itemIndex, fromPlaylistId, toPlaylistId) => {
         const state = get();
