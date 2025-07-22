@@ -4,11 +4,10 @@ import {
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
-  type DragOverEvent,
   useSensor,
   useSensors,
   PointerSensor,
-  rectIntersection,
+  pointerWithin,
 } from '@dnd-kit/core';
 import { siteConfig } from '~/config/site-config';
 import { usePlayerStore } from '../../stores/player';
@@ -74,10 +73,6 @@ export default function Home() {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id.toString());
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    // ドラッグオーバーの視覚的フィードバックは各PlaylistTabコンポーネントのisOverで処理
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -149,9 +144,8 @@ export default function Home() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={rectIntersection}
+      collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="container mx-auto p-4">

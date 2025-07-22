@@ -60,7 +60,9 @@ const SortableItem: React.FC<SortableItemProps> = ({
       <div className="flex items-center w-full transition-all duration-300 transform hover:scale-105">
         <button
           type="button"
-          className="p-3 cursor-grab text-muted-foreground hover:text-foreground"
+          className={`p-3 text-muted-foreground hover:text-foreground ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
           {...listeners}
         >
           <GripVertical className="h-5 w-5" />

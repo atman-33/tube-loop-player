@@ -38,9 +38,9 @@ export const PlaylistTab = ({
   return (
     <div
       ref={setNodeRef}
-      className={`flex items-center group relative p-1 rounded-lg transition-all ${
+      className={`flex items-center group relative p-2 rounded-lg transition-all min-h-[48px] ${
         isOver && activePlaylistId !== playlist.id
-          ? 'ring-2 ring-primary bg-primary/10'
+          ? 'ring-2 ring-primary bg-primary/10 scale-105'
           : ''
       }`}
     >
