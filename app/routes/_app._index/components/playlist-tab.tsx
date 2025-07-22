@@ -41,16 +41,16 @@ export const PlaylistTab = ({
   const isActive = activePlaylistId === playlist.id;
   const isEditing = editingId === playlist.id;
 
-  // Calculate responsive width and content based on number of tabs
-  const getTabStyles = () => {
-    if (totalTabs === 1) return { width: 'flex-1 max-w-80', showCount: true };
-    if (totalTabs === 2) return { width: 'flex-1 max-w-40', showCount: true };
-    if (totalTabs === 3) return { width: 'flex-1 max-w-32', showCount: false };
-    if (totalTabs === 4) return { width: 'flex-1 max-w-24', showCount: false };
-    return { width: 'flex-1 max-w-20', showCount: false };
+  // Calculate responsive width based on number of tabs
+  const getTabWidth = () => {
+    if (totalTabs === 1) return 'flex-1 max-w-80';
+    if (totalTabs === 2) return 'flex-1 max-w-40';
+    if (totalTabs === 3) return 'flex-1 max-w-32';
+    if (totalTabs === 4) return 'flex-1 max-w-24';
+    return 'flex-1 max-w-20';
   };
 
-  const { width, showCount } = getTabStyles();
+  const width = getTabWidth();
 
   return (
     <div
@@ -110,30 +110,23 @@ export const PlaylistTab = ({
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-0.5 w-full min-w-0 overflow-hidden">
+          <div className="flex flex-col items-center justify-center w-full min-w-0 overflow-hidden">
             <div
-              className="font-medium text-base text-center flex-1 min-w-0 truncate"
+              className="font-medium text-xs text-center w-full truncate leading-tight"
               title={playlist.name} // Show full name on hover
-              style={{
-                maxWidth: showCount ? 'calc(100% - 1.5rem)' : '100%',
-              }}
             >
               {playlist.name}
             </div>
-            {showCount && (
-              <div
-                className={`
-                  text-xs px-0.5 py-0.5 rounded-full font-medium flex-shrink-0 transition-colors duration-200 min-w-[1rem] text-center leading-none
-                  ${
-                    isActive
-                      ? 'bg-primary/15 text-primary'
-                      : 'bg-muted-foreground/10 text-muted-foreground'
-                  }
-                `}
-              >
-                {playlist.items.length}
-              </div>
-            )}
+            <div
+              className={`
+                text-xs opacity-70 font-normal mt-0.5 transition-colors duration-200
+                ${isActive ? 'text-primary' : 'text-muted-foreground'}
+              `}
+            >
+              {totalTabs >= 4
+                ? playlist.items.length
+                : `${playlist.items.length} items`}
+            </div>
           </div>
         )}
       </button>
