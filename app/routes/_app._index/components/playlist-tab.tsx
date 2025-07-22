@@ -93,6 +93,7 @@ export const PlaylistTab = ({
                 if (e.key === 'Enter') onSaveEdit();
                 if (e.key === 'Escape') onCancelEdit();
               }}
+              onBlur={() => onSaveEdit()}
               onClick={(e) => e.stopPropagation()}
               autoFocus
             />
