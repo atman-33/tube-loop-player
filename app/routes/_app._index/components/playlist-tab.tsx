@@ -41,26 +41,16 @@ export const PlaylistTab = ({
   const isActive = activePlaylistId === playlist.id;
   const isEditing = editingId === playlist.id;
 
-  // Calculate responsive width and content based on number of tabs and screen size
+  // Calculate responsive width and content based on number of tabs
   const getTabStyles = () => {
-    if (totalTabs === 1)
-      return { width: 'flex-1 max-w-80', showCount: true, maxNameLength: 12 };
-    if (totalTabs === 2)
-      return { width: 'flex-1 max-w-40', showCount: true, maxNameLength: 6 };
-    if (totalTabs === 3)
-      return { width: 'flex-1 max-w-32', showCount: false, maxNameLength: 4 };
-    if (totalTabs === 4)
-      return { width: 'flex-1 max-w-24', showCount: false, maxNameLength: 3 };
-    return { width: 'flex-1 max-w-20', showCount: false, maxNameLength: 2 };
+    if (totalTabs === 1) return { width: 'flex-1 max-w-80', showCount: true };
+    if (totalTabs === 2) return { width: 'flex-1 max-w-40', showCount: true };
+    if (totalTabs === 3) return { width: 'flex-1 max-w-32', showCount: false };
+    if (totalTabs === 4) return { width: 'flex-1 max-w-24', showCount: false };
+    return { width: 'flex-1 max-w-20', showCount: false };
   };
 
-  const { width, showCount, maxNameLength } = getTabStyles();
-
-  // Get truncated name for display - more aggressive truncation
-  const getDisplayName = () => {
-    if (playlist.name.length <= maxNameLength) return playlist.name;
-    return `${playlist.name.substring(0, maxNameLength - 1)}…`;
-  };
+  const { width, showCount } = getTabStyles();
 
   return (
     <div
@@ -122,13 +112,13 @@ export const PlaylistTab = ({
         ) : (
           <div className="flex items-center gap-0.5 w-full min-w-0 overflow-hidden">
             <div
-              className="font-medium text-center flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
+              className="font-medium text-base text-center flex-1 min-w-0 truncate"
               title={playlist.name} // Show full name on hover
               style={{
                 maxWidth: showCount ? 'calc(100% - 1.5rem)' : '100%',
               }}
             >
-              {getDisplayName()}
+              {playlist.name}
             </div>
             {showCount && (
               <div

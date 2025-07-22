@@ -153,7 +153,7 @@ export default function Home() {
           <div className="flex-1">
             <YouTubePlayer />
           </div>
-          <div className="space-y-4 md:w-1/2">
+          <div className="space-y-4 md:w-2/5">
             <PlaylistInputForm />
             <PlaylistTabs />
             <PlaylistDisplay />
