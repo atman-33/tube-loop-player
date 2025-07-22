@@ -30,12 +30,12 @@ export const PlaylistTabs = () => {
   return (
     <div className="relative mb-0">
       {/* Tab Navigation Container */}
-      <div className="relative overflow-x-auto">
+      <div className="relative">
         {/* Background container with border */}
         <div className="absolute inset-x-0 bottom-0 h-px bg-border/50" />
 
-        {/* Tabs Container */}
-        <div className="flex items-end gap-1 px-2 min-w-max">
+        {/* Tabs Container - responsive flex layout */}
+        <div className="flex items-end gap-1 px-2">
           {playlists.map((playlist, index) => (
             <PlaylistTab
               key={playlist.id}
@@ -49,6 +49,7 @@ export const PlaylistTabs = () => {
               onCancelEdit={handleCancelEdit}
               onEditingNameChange={setEditingName}
               index={index}
+              totalTabs={playlists.length}
             />
           ))}
         </div>

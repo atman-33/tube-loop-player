@@ -19,6 +19,7 @@ interface PlaylistTabProps {
   onCancelEdit: () => void;
   onEditingNameChange: (name: string) => void;
   index: number;
+  totalTabs: number;
 }
 
 export const PlaylistTab = ({
@@ -31,6 +32,7 @@ export const PlaylistTab = ({
   onSaveEdit,
   onCancelEdit,
   onEditingNameChange,
+  totalTabs,
 }: PlaylistTabProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: `playlist-tab-${playlist.id}`,
@@ -39,10 +41,31 @@ export const PlaylistTab = ({
   const isActive = activePlaylistId === playlist.id;
   const isEditing = editingId === playlist.id;
 
+  // Calculate responsive width and content based on number of tabs
+  const getTabStyles = () => {
+    if (totalTabs === 1)
+      return { width: 'flex-1 max-w-xs', showCount: true, maxNameLength: 20 };
+    if (totalTabs === 2)
+      return { width: 'flex-1 max-w-48', showCount: true, maxNameLength: 15 };
+    if (totalTabs === 3)
+      return { width: 'flex-1 max-w-40', showCount: true, maxNameLength: 12 };
+    if (totalTabs === 4)
+      return { width: 'flex-1 max-w-32', showCount: false, maxNameLength: 8 };
+    return { width: 'flex-1 max-w-28', showCount: false, maxNameLength: 6 };
+  };
+
+  const { width, showCount, maxNameLength } = getTabStyles();
+
+  // Get truncated name for display
+  const getDisplayName = () => {
+    if (playlist.name.length <= maxNameLength) return playlist.name;
+    return playlist.name.substring(0, maxNameLength - 1) + '…';
+  };
+
   return (
     <div
       ref={setNodeRef}
-      className={`relative group ${
+      className={`relative group ${width} ${
         isOver && !isActive
           ? 'ring-2 ring-primary/50 ring-offset-2 ring-offset-background'
           : ''
@@ -53,8 +76,8 @@ export const PlaylistTab = ({
         id={`playlist-tab-${playlist.id}`}
         onClick={() => onSetActive(playlist.id)}
         className={`
-          relative px-4 py-3 font-medium text-sm transition-all duration-200 ease-out
-          min-w-[120px] max-w-[180px] h-12 flex items-center justify-center
+          relative px-3 py-3 font-medium text-sm transition-all duration-200 ease-out
+          w-full h-12 flex items-center justify-center
           ${
             isActive
               ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
@@ -72,11 +95,11 @@ export const PlaylistTab = ({
         }}
       >
         {isEditing ? (
-          <div className="flex items-center gap-2 w-full">
+          <div className="flex items-center gap-1 w-full">
             <Input
               value={editingName}
               onChange={(e) => onEditingNameChange(e.target.value)}
-              className="h-7 text-xs border-0 bg-transparent p-1 focus:bg-background/50 flex-1"
+              className="h-7 text-xs border-0 bg-transparent p-1 focus:bg-background/50 flex-1 min-w-0"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') onSaveEdit();
                 if (e.key === 'Escape') onCancelEdit();
@@ -87,7 +110,7 @@ export const PlaylistTab = ({
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6 hover:bg-primary/10 flex-shrink-0"
+              className="h-5 w-5 hover:bg-primary/10 flex-shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onSaveEdit();
@@ -97,37 +120,44 @@ export const PlaylistTab = ({
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-2 w-full min-w-0">
-            <span className="truncate font-medium flex-1">{playlist.name}</span>
+          <div className="flex items-center gap-1.5 w-full min-w-0">
             <span
-              className={`
-                text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 transition-colors duration-200
-                ${
-                  isActive
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-muted-foreground/10 text-muted-foreground'
-                }
-              `}
+              className="truncate font-medium flex-1 text-center"
+              title={playlist.name} // Show full name on hover
             >
-              {playlist.items.length}
+              {getDisplayName()}
             </span>
+            {showCount && (
+              <span
+                className={`
+                  text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 transition-colors duration-200
+                  ${
+                    isActive
+                      ? 'bg-primary/15 text-primary'
+                      : 'bg-muted-foreground/10 text-muted-foreground'
+                  }
+                `}
+              >
+                {playlist.items.length}
+              </span>
+            )}
           </div>
         )}
       </button>
 
-      {/* Edit button */}
-      {!isEditing && (
+      {/* Edit button - only show when there's space or on active tab */}
+      {!isEditing && (totalTabs <= 3 || isActive) && (
         <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-20">
           <Button
             size="icon"
             variant="ghost"
-            className="h-6 w-6 bg-background border shadow-sm hover:bg-muted hover:scale-105 transition-all duration-200"
+            className="h-5 w-5 bg-background border shadow-sm hover:bg-muted hover:scale-105 transition-all duration-200"
             onClick={(e) => {
               e.stopPropagation();
               onStartEdit(playlist);
             }}
           >
-            <Edit2 className="h-3 w-3" />
+            <Edit2 className="h-2.5 w-2.5" />
           </Button>
         </div>
       )}
