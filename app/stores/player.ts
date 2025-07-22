@@ -7,13 +7,20 @@ interface PlaylistItem {
   title?: string;
 }
 
+interface Playlist {
+  id: string;
+  name: string;
+  items: PlaylistItem[];
+}
+
 export type LoopMode = 'all' | 'one';
 
 interface PlayerState {
   isPlaying: boolean;
   currentVideoId: string | null;
   currentIndex: number | null;
-  playlist: PlaylistItem[];
+  playlists: Playlist[];
+  activePlaylistId: string;
   loopMode: LoopMode;
   isShuffle: boolean;
   // biome-ignore lint/suspicious/noExplicitAny: <>
@@ -26,10 +33,24 @@ interface PlayerState {
   resume: () => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
-  addToPlaylist: (item: PlaylistItem) => void;
-  removeFromPlaylist: (index: number) => void;
-  reorderPlaylist: (fromIndex: number, toIndex: number) => void;
-  clearPlaylist: () => void;
+  addToPlaylist: (item: PlaylistItem, playlistId?: string) => boolean;
+  removeFromPlaylist: (index: number, playlistId?: string) => void;
+  reorderPlaylist: (
+    fromIndex: number,
+    toIndex: number,
+    playlistId?: string,
+  ) => void;
+  moveItemBetweenPlaylists: (
+    itemIndex: number,
+    fromPlaylistId: string,
+    toPlaylistId: string,
+  ) => boolean;
+  clearPlaylist: (playlistId?: string) => void;
+
+  renamePlaylist: (playlistId: string, newName: string) => void;
+  setActivePlaylist: (playlistId: string) => void;
+  getActivePlaylist: () => Playlist | undefined;
+  getOrderedPlaylists: () => Playlist[];
   playNext: () => void;
   playPrevious: () => void;
 }
@@ -40,29 +61,56 @@ const defaultInitialPlaylistItem: PlaylistItem = {
   title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
+const defaultPlaylists: Playlist[] = [
+  {
+    id: 'playlist-1',
+    name: 'Playlist 1',
+    items: [defaultInitialPlaylistItem],
+  },
+  {
+    id: 'playlist-2',
+    name: 'Playlist 2',
+    items: [],
+  },
+  {
+    id: 'playlist-3',
+    name: 'Playlist 3',
+    items: [],
+  },
+];
+
+const defaultActivePlaylistId = 'playlist-1';
+
 export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => ({
       isPlaying: false,
       currentVideoId: null,
       currentIndex: null,
-      playlist: [defaultInitialPlaylistItem],
+      playlists: defaultPlaylists,
+      activePlaylistId: defaultActivePlaylistId,
       loopMode: 'all',
       isShuffle: false,
       playerInstance: null,
       setPlayerInstance: (player) => set({ playerInstance: player }),
+      getActivePlaylist: () => {
+        const { playlists, activePlaylistId } = get();
+        return playlists.find((p) => p.id === activePlaylistId);
+      },
       play: (videoId) => {
-        const { playerInstance, playlist } = get(); // Get playlist from state
+        const { playerInstance } = get();
+        const activePlaylist = get().getActivePlaylist();
         if (playerInstance) {
           playerInstance.loadVideoById(videoId);
           playerInstance.playVideo();
         }
-        // Add logic to update currentIndex
-        const newIndex = playlist.findIndex((item) => item.id === videoId);
+        // Update currentIndex based on the active playlist
+        const newIndex =
+          activePlaylist?.items.findIndex((item) => item.id === videoId) ?? -1;
         set({
           isPlaying: true,
           currentVideoId: videoId,
-          currentIndex: newIndex,
+          currentIndex: newIndex >= 0 ? newIndex : null,
         });
       },
       pause: () => {
@@ -87,26 +135,68 @@ export const usePlayerStore = create<PlayerState>()(
           loopMode: state.loopMode === 'all' ? 'one' : 'all',
         })),
       toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
-      addToPlaylist: (item) =>
-        set((state) => ({
-          playlist: [...state.playlist, item],
-          currentIndex: state.currentIndex === null ? 0 : state.currentIndex,
-        })),
-      removeFromPlaylist: (index) =>
-        set((state) => {
-          const newPlaylist = [...state.playlist];
-          newPlaylist.splice(index, 1);
-          return { playlist: newPlaylist };
-        }),
-      reorderPlaylist: (fromIndex, toIndex) =>
-        set((state) => {
-          const newPlaylist = [...state.playlist];
-          const [removed] = newPlaylist.splice(fromIndex, 1);
-          newPlaylist.splice(toIndex, 0, removed);
+      addToPlaylist: (item, playlistId) => {
+        const state = get();
+        const targetPlaylistId = playlistId || state.activePlaylistId;
+        const targetPlaylist = state.playlists.find(
+          (p) => p.id === targetPlaylistId,
+        );
 
-          // Update currentIndex if the currently playing video moved
+        // Check if the item already exists in the target playlist
+        if (
+          targetPlaylist?.items.some(
+            (existingItem) => existingItem.id === item.id,
+          )
+        ) {
+          return false; // Don't add if duplicate exists
+        }
+
+        set((state) => {
+          const updatedPlaylists = state.playlists.map((playlist) =>
+            playlist.id === targetPlaylistId
+              ? { ...playlist, items: [...playlist.items, item] }
+              : playlist,
+          );
+          return {
+            playlists: updatedPlaylists,
+            currentIndex: state.currentIndex === null ? 0 : state.currentIndex,
+          };
+        });
+
+        return true; // Successfully added
+      },
+      removeFromPlaylist: (index, playlistId) =>
+        set((state) => {
+          const targetPlaylistId = playlistId || state.activePlaylistId;
+          const updatedPlaylists = state.playlists.map((playlist) => {
+            if (playlist.id === targetPlaylistId) {
+              const newItems = [...playlist.items];
+              newItems.splice(index, 1);
+              return { ...playlist, items: newItems };
+            }
+            return playlist;
+          });
+          return { playlists: updatedPlaylists };
+        }),
+      reorderPlaylist: (fromIndex, toIndex, playlistId) =>
+        set((state) => {
+          const targetPlaylistId = playlistId || state.activePlaylistId;
+          const updatedPlaylists = state.playlists.map((playlist) => {
+            if (playlist.id === targetPlaylistId) {
+              const newItems = [...playlist.items];
+              const [removed] = newItems.splice(fromIndex, 1);
+              newItems.splice(toIndex, 0, removed);
+              return { ...playlist, items: newItems };
+            }
+            return playlist;
+          });
+
+          // Update currentIndex if the currently playing video moved in the active playlist
           let newCurrentIndex: number | null = state.currentIndex;
-          if (newCurrentIndex !== null) {
+          if (
+            targetPlaylistId === state.activePlaylistId &&
+            newCurrentIndex !== null
+          ) {
             if (newCurrentIndex === fromIndex) {
               newCurrentIndex = toIndex;
             } else {
@@ -121,14 +211,101 @@ export const usePlayerStore = create<PlayerState>()(
               }
             }
           }
-          return { playlist: newPlaylist, currentIndex: newCurrentIndex };
+          return { playlists: updatedPlaylists, currentIndex: newCurrentIndex };
         }),
-      clearPlaylist: () =>
-        set({ playlist: [], currentIndex: null, currentVideoId: null }),
+      moveItemBetweenPlaylists: (itemIndex, fromPlaylistId, toPlaylistId) => {
+        const state = get();
+        const fromPlaylist = state.playlists.find(
+          (p) => p.id === fromPlaylistId,
+        );
+        const toPlaylist = state.playlists.find((p) => p.id === toPlaylistId);
+
+        if (
+          !fromPlaylist ||
+          itemIndex >= fromPlaylist.items.length ||
+          !toPlaylist
+        )
+          return false;
+
+        const itemToMove = fromPlaylist.items[itemIndex];
+
+        // Check if the item already exists in the target playlist
+        if (
+          toPlaylist.items.some(
+            (existingItem) => existingItem.id === itemToMove.id,
+          )
+        ) {
+          return false; // Don't move if duplicate exists
+        }
+
+        set((state) => {
+          const updatedPlaylists = state.playlists.map((playlist) => {
+            if (playlist.id === fromPlaylistId) {
+              const newItems = [...playlist.items];
+              newItems.splice(itemIndex, 1);
+              return { ...playlist, items: newItems };
+            }
+            if (playlist.id === toPlaylistId) {
+              return { ...playlist, items: [...playlist.items, itemToMove] };
+            }
+            return playlist;
+          });
+
+          return { playlists: updatedPlaylists };
+        });
+
+        return true; // Successfully moved
+      },
+      clearPlaylist: (playlistId) =>
+        set((state) => {
+          const targetPlaylistId = playlistId || state.activePlaylistId;
+          const updatedPlaylists = state.playlists.map((playlist) =>
+            playlist.id === targetPlaylistId
+              ? { ...playlist, items: [] }
+              : playlist,
+          );
+
+          // Reset current state if clearing the active playlist
+          const resetState =
+            targetPlaylistId === state.activePlaylistId
+              ? { currentIndex: null, currentVideoId: null }
+              : {};
+
+          return { playlists: updatedPlaylists, ...resetState };
+        }),
+
+      renamePlaylist: (playlistId, newName) =>
+        set((state) => ({
+          playlists: state.playlists.map((playlist) =>
+            playlist.id === playlistId
+              ? { ...playlist, name: newName }
+              : playlist,
+          ),
+        })),
+      setActivePlaylist: (playlistId) => {
+        const targetPlaylist = get().playlists.find((p) => p.id === playlistId);
+        if (!targetPlaylist) return;
+
+        // Update state first
+        set({
+          playlists: get().playlists, // Keep original order
+          activePlaylistId: playlistId,
+          currentIndex: targetPlaylist.items.length > 0 ? 0 : null,
+          currentVideoId:
+            targetPlaylist.items.length > 0 ? targetPlaylist.items[0].id : null,
+          isPlaying: targetPlaylist.items.length > 0,
+        });
+
+        // Then trigger playback if needed
+        if (targetPlaylist.items.length > 0) {
+          get().play(targetPlaylist.items[0].id);
+        }
+      },
       playNext: () => {
-        const { playlist, currentIndex, loopMode, isShuffle, playerInstance } =
-          get();
-        if (playlist.length === 0) {
+        const activePlaylist = get().getActivePlaylist();
+        const { currentIndex, loopMode, isShuffle, playerInstance } = get();
+
+        if (!activePlaylist || activePlaylist.items.length === 0) {
           set({ isPlaying: false });
           return;
         }
@@ -136,9 +313,14 @@ export const usePlayerStore = create<PlayerState>()(
         if (isShuffle) {
           let randomIndex: number;
           do {
-            randomIndex = Math.floor(Math.random() * playlist.length);
-          } while (playlist.length > 1 && randomIndex === currentIndex);
-          const videoId = playlist[randomIndex].id;
+            randomIndex = Math.floor(
+              Math.random() * activePlaylist.items.length,
+            );
+          } while (
+            activePlaylist.items.length > 1 &&
+            randomIndex === currentIndex
+          );
+          const videoId = activePlaylist.items[randomIndex].id;
           if (playerInstance) {
             playerInstance.loadVideoById(videoId);
             playerInstance.playVideo();
@@ -152,9 +334,9 @@ export const usePlayerStore = create<PlayerState>()(
         }
 
         const nextIndex = (currentIndex ?? -1) + 1;
-        if (nextIndex >= playlist.length) {
+        if (nextIndex >= activePlaylist.items.length) {
           if (loopMode === 'all') {
-            const videoId = playlist[0].id;
+            const videoId = activePlaylist.items[0].id;
             if (playerInstance) {
               playerInstance.loadVideoById(videoId);
               playerInstance.playVideo();
@@ -164,7 +346,7 @@ export const usePlayerStore = create<PlayerState>()(
             set({ isPlaying: false });
           }
         } else {
-          const videoId = playlist[nextIndex].id;
+          const videoId = activePlaylist.items[nextIndex].id;
           if (playerInstance) {
             playerInstance.loadVideoById(videoId);
             playerInstance.playVideo();
@@ -177,16 +359,22 @@ export const usePlayerStore = create<PlayerState>()(
         }
       },
       playPrevious: () => {
-        const { playlist, currentIndex, loopMode, isShuffle, playerInstance } =
-          get();
-        if (playlist.length === 0) return;
+        const activePlaylist = get().getActivePlaylist();
+        const { currentIndex, loopMode, isShuffle, playerInstance } = get();
+
+        if (!activePlaylist || activePlaylist.items.length === 0) return;
 
         if (isShuffle) {
           let randomIndex: number;
           do {
-            randomIndex = Math.floor(Math.random() * playlist.length);
-          } while (playlist.length > 1 && randomIndex === currentIndex);
-          const videoId = playlist[randomIndex].id;
+            randomIndex = Math.floor(
+              Math.random() * activePlaylist.items.length,
+            );
+          } while (
+            activePlaylist.items.length > 1 &&
+            randomIndex === currentIndex
+          );
+          const videoId = activePlaylist.items[randomIndex].id;
           if (playerInstance) {
             playerInstance.loadVideoById(videoId);
             playerInstance.playVideo();
@@ -202,8 +390,8 @@ export const usePlayerStore = create<PlayerState>()(
         const prevIndex = (currentIndex ?? 0) - 1;
         if (prevIndex < 0) {
           if (loopMode === 'all') {
-            const lastIndex = playlist.length - 1;
-            const videoId = playlist[lastIndex].id;
+            const lastIndex = activePlaylist.items.length - 1;
+            const videoId = activePlaylist.items[lastIndex].id;
             if (playerInstance) {
               playerInstance.loadVideoById(videoId);
               playerInstance.playVideo();
@@ -217,7 +405,7 @@ export const usePlayerStore = create<PlayerState>()(
             set({ isPlaying: false });
           }
         } else {
-          const videoId = playlist[prevIndex].id;
+          const videoId = activePlaylist.items[prevIndex].id;
           if (playerInstance) {
             playerInstance.loadVideoById(videoId);
             playerInstance.playVideo();
@@ -228,6 +416,10 @@ export const usePlayerStore = create<PlayerState>()(
             isPlaying: true,
           });
         }
+      },
+      getOrderedPlaylists: () => {
+        const { playlists } = get();
+        return playlists;
       },
     }),
     {
@@ -245,27 +437,31 @@ export const usePlayerStore = create<PlayerState>()(
         },
       })),
       partialize: (state) => ({
-        playlist: state.playlist,
+        playlists: state.playlists,
+        activePlaylistId: state.activePlaylistId,
         loopMode: state.loopMode,
         isShuffle: state.isShuffle,
       }),
       merge: (persistedState, currentState) => {
-        const state = persistedState as PlayerState;
-        if (state?.playlist && state.playlist.length > 0) {
-          // If the restored playlist exists and is not empty
-          const firstVideo = state.playlist[0];
+        const state = persistedState as Partial<PlayerState>;
+        if (state?.playlists && state.playlists.length > 0) {
+          // If the restored playlists exist and are not empty
+          const activePlaylist =
+            state.playlists.find((p) => p.id === state.activePlaylistId) ||
+            state.playlists[0];
+          const firstVideo = activePlaylist.items[0];
           return {
             ...currentState,
             ...state,
             currentVideoId: firstVideo ? firstVideo.id : null,
-            currentIndex: 0,
+            currentIndex: firstVideo ? 0 : null,
           };
         } else {
-          // If the restored playlist does not exist or is empty, use the default initial values
+          // If the restored playlists do not exist or are empty, use the default initial values
           return {
             ...currentState,
-            // Consider the case where state is null
-            playlist: [defaultInitialPlaylistItem],
+            playlists: defaultPlaylists,
+            activePlaylistId: defaultActivePlaylistId,
             currentVideoId: defaultInitialVideoId,
             currentIndex: 0,
           };

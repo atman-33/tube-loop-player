@@ -14,7 +14,7 @@ export const YouTubePlayer = () => {
     resume,
     toggleLoop,
     toggleShuffle,
-    playlist, // For getting video title from playlist
+    getActivePlaylist,
   } = usePlayerStore();
   // biome-ignore lint/correctness/noUnusedVariables: <>
   const playerRef = useYouTubePlayer('youtube-player');
@@ -28,10 +28,12 @@ export const YouTubePlayer = () => {
     }
   };
 
-  const currentVideoTitle = currentVideoId
-    ? playlist.find((item) => item.id === currentVideoId)?.title ||
-      `Video ${currentVideoId.substring(0, 5)}`
-    : 'No video selected';
+  const activePlaylist = getActivePlaylist();
+  const currentVideoTitle =
+    currentVideoId && activePlaylist
+      ? activePlaylist.items.find((item) => item.id === currentVideoId)
+          ?.title || `Video ${currentVideoId.substring(0, 5)}`
+      : 'No video selected';
 
   return (
     <div className="space-y-4 rounded-lg bg-card p-4 shadow-lg">

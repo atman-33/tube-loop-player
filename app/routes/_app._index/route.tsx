@@ -1,10 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  type DragEndEvent,
+  type DragStartEvent,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  pointerWithin,
+} from '@dnd-kit/core';
 import { siteConfig } from '~/config/site-config';
 import { usePlayerStore } from '../../stores/player';
 import type { Route } from './+types/route';
 import { Description } from './components/description';
 import { PlaylistDisplay } from './components/playlist-display';
 import { PlaylistInputForm } from './components/playlist-input-form';
+import { PlaylistTabs } from './components/playlist-tabs';
 import { YouTubePlayer } from './components/you-tube-player';
 
 // biome-ignore lint/correctness/noEmptyPattern: <>
@@ -38,30 +49,138 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const { setPlayingStateToFalse } = usePlayerStore();
+  const {
+    setPlayingStateToFalse,
+    activePlaylistId,
+    moveItemBetweenPlaylists,
+    reorderPlaylist,
+    getActivePlaylist,
+  } = usePlayerStore();
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
 
   useEffect(() => {
     setPlayingStateToFalse();
   }, [setPlayingStateToFalse]);
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id.toString());
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) {
+      setActiveId(null);
+      return;
+    }
+
+    const activePlaylist = getActivePlaylist();
+    const playlist = activePlaylist?.items || [];
+
+    // Check if dropping on a playlist tab
+    if (over.id.toString().startsWith('playlist-tab-')) {
+      const targetPlaylistId = over.id.toString().replace('playlist-tab-', '');
+      const itemIndex = playlist.findIndex((item) => item.id === active.id);
+
+      if (itemIndex !== -1 && targetPlaylistId !== activePlaylistId) {
+        const wasMoved = moveItemBetweenPlaylists(
+          itemIndex,
+          activePlaylistId,
+          targetPlaylistId,
+        );
+
+        if (!wasMoved) {
+          // Show visual feedback that the move was not allowed due to duplicate
+          const targetTab = document.getElementById(
+            `playlist-tab-${targetPlaylistId}`,
+          );
+          if (targetTab) {
+            const container = targetTab.parentElement;
+            if (container) {
+              container.classList.add(
+                'ring-2',
+                'ring-destructive',
+                'bg-destructive/10',
+              );
+              setTimeout(() => {
+                container.classList.remove(
+                  'ring-2',
+                  'ring-destructive',
+                  'bg-destructive/10',
+                );
+              }, 1000);
+            }
+          }
+        }
+      }
+    } else if (active.id !== over.id) {
+      // Reordering within the same playlist
+      const oldIndex = playlist.findIndex((item) => item.id === active.id);
+      const newIndex = playlist.findIndex((item) => item.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderPlaylist(oldIndex, newIndex);
+      }
+    }
+
+    setActiveId(null);
+  };
+
+  const activePlaylist = getActivePlaylist();
+  const playlist = activePlaylist?.items || [];
+  const activeItem = activeId
+    ? playlist.find((item) => item.id === activeId)
+    : null;
+
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex flex-col gap-6 md:flex-row">
-        <div className="flex-1">
-          <YouTubePlayer />
+    <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="container mx-auto p-4">
+        <div className="flex flex-col gap-6 md:flex-row">
+          <div className="flex-1">
+            <YouTubePlayer />
+          </div>
+          <div className="space-y-4 md:w-2/5">
+            <PlaylistInputForm />
+            <PlaylistTabs />
+            <PlaylistDisplay />
+          </div>
         </div>
-        <div className="space-y-4 md:w-1/3">
-          <PlaylistInputForm />
-          <PlaylistDisplay />
-        </div>
+        {/* Adsterra Native Banner */}
+        <div
+          className="mt-8"
+          id="container-5aa23d558292733924bbce492c900cef"
+        ></div>
+        {/* NOTE: Use this space for ads if needed */}
+        <Description />
       </div>
-      {/* Adsterra Native Banner */}
-      <div
-        className="mt-8"
-        id="container-5aa23d558292733924bbce492c900cef"
-      ></div>
-      {/* NOTE: Use this space for ads if needed */}
-      <Description />
-    </div>
+      <DragOverlay>
+        {activeItem ? (
+          <div className="flex items-center gap-4 p-3 bg-card border rounded-lg shadow-lg opacity-90">
+            <img
+              src={`https://img.youtube.com/vi/${activeItem.id}/mqdefault.jpg`}
+              alt={activeItem.title}
+              className="w-24 h-14 object-cover rounded-md flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground">
+              {activeItem.title || 'Video'}
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

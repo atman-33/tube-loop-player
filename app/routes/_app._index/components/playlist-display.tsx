@@ -1,18 +1,11 @@
 import {
-  DndContext,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core';
-import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from 'lucide-react'; // Add GripVertical
+import { GripVertical, Trash2 } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import {
   Tooltip,
@@ -51,8 +44,8 @@ const SortableItem: React.FC<SortableItemProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 1 : 0, // Ensure dragging item is on top
-    opacity: isDragging ? 0.1 : 1, // Visual feedback for dragging
+    zIndex: isDragging ? 1000 : 0,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
@@ -67,8 +60,10 @@ const SortableItem: React.FC<SortableItemProps> = ({
       <div className="flex items-center w-full transition-all duration-300 transform hover:scale-105">
         <button
           type="button"
-          className="p-3 cursor-grab text-muted-foreground hover:text-foreground"
-          {...listeners} // Move listeners to the drag handle
+          className={`p-3 text-muted-foreground hover:text-foreground ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+          {...listeners}
         >
           <GripVertical className="h-5 w-5" />
           <span className="sr-only">Drag to reorder</span>
@@ -119,43 +114,23 @@ const SortableItem: React.FC<SortableItemProps> = ({
 };
 
 export const PlaylistDisplay = () => {
-  const { playlist, currentIndex, removeFromPlaylist, play, reorderPlaylist } =
+  const { currentIndex, removeFromPlaylist, play, getActivePlaylist } =
     usePlayerStore();
-  const [activeId, setActiveId] = useState<string | null>(null);
 
-  const handleDragStart = (event: DragStartEvent) => {
-    // Convert UniqueIdentifier to string and set as activeId
-    setActiveId(event.active.id.toString());
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (active.id !== over?.id) {
-      const oldIndex = playlist.findIndex((item) => item.id === active.id);
-      const newIndex = playlist.findIndex((item) => item.id === over?.id);
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        reorderPlaylist(oldIndex, newIndex);
-      }
-    }
-    setActiveId(null);
-  };
-
-  const activeItem = activeId
-    ? playlist.find((item) => item.id === activeId)
-    : null;
+  const activePlaylist = getActivePlaylist();
+  const playlist = activePlaylist?.items || [];
 
   return (
-    <div className="space-y-4 container mx-auto">
-      <h3 className="font-semibold text-lg">Playlist</h3>
-      {playlist.length === 0 ? (
-        <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg">
-          <p className="mb-2">Playlist is empty.</p>
-          <p className="text-sm">Add YouTube URLs to add videos here!</p>
-        </div>
-      ) : (
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <div className="bg-background border border-t-0 border-border/50 rounded-b-lg shadow-sm mt-0">
+      <div className="p-4 md:p-6 space-y-4">
+        {playlist.length === 0 ? (
+          <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg bg-muted/10">
+            <p className="mb-2 font-medium">The playlist is empty.</p>
+            <p className="text-sm opacity-80">
+              Add YouTube URLs to add videos!
+            </p>
+          </div>
+        ) : (
           <SortableContext
             items={playlist.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
@@ -173,19 +148,8 @@ export const PlaylistDisplay = () => {
               ))}
             </ul>
           </SortableContext>
-          <DragOverlay>
-            {activeItem ? (
-              <SortableItem
-                item={activeItem}
-                index={playlist.findIndex((item) => item.id === activeId)}
-                currentIndex={currentIndex}
-                play={play}
-                removeFromPlaylist={removeFromPlaylist}
-              />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      )}
+        )}
+      </div>
     </div>
   );
 };

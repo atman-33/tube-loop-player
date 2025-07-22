@@ -34,13 +34,26 @@ export const PlaylistInputForm = () => {
       }
       const data = (await response.json()) as { title: string };
       const title = data.title || `Video ${videoId.substring(0, 5)}`;
-      addToPlaylist({ id: videoId, title });
-      setInputUrl('');
+      const wasAdded = addToPlaylist({ id: videoId, title });
+
+      if (wasAdded) {
+        setInputUrl('');
+      } else {
+        setError('This video is already in the playlist.');
+      }
     } catch (err) {
       console.error('Failed to fetch video title:', err);
-      setError('An error occurred while fetching video information.');
       // Fallback to adding with just the ID
-      addToPlaylist({ id: videoId, title: `Video ${videoId.substring(0, 5)}` });
+      const wasAdded = addToPlaylist({
+        id: videoId,
+        title: `Video ${videoId.substring(0, 5)}`,
+      });
+
+      if (wasAdded) {
+        setInputUrl('');
+      } else {
+        setError('This video is already in the playlist.');
+      }
     } finally {
       setIsLoading(false);
     }
