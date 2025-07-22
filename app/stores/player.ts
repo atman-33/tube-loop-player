@@ -282,24 +282,25 @@ export const usePlayerStore = create<PlayerState>()(
               : playlist,
           ),
         })),
-      setActivePlaylist: (playlistId) =>
-        set((state) => {
-          const targetPlaylist = state.playlists.find(
-            (p) => p.id === playlistId,
-          );
-          if (!targetPlaylist) return state;
+      setActivePlaylist: (playlistId) => {
+        const targetPlaylist = get().playlists.find((p) => p.id === playlistId);
+        if (!targetPlaylist) return;
 
-          return {
-            playlists: state.playlists, // Keep original order
-            activePlaylistId: playlistId,
-            currentIndex: targetPlaylist.items.length > 0 ? 0 : null,
-            currentVideoId:
-              targetPlaylist.items.length > 0
-                ? targetPlaylist.items[0].id
-                : null,
-            isPlaying: false,
-          };
-        }),
+        // Update state first
+        set({
+          playlists: get().playlists, // Keep original order
+          activePlaylistId: playlistId,
+          currentIndex: targetPlaylist.items.length > 0 ? 0 : null,
+          currentVideoId:
+            targetPlaylist.items.length > 0 ? targetPlaylist.items[0].id : null,
+          isPlaying: targetPlaylist.items.length > 0,
+        });
+
+        // Then trigger playback if needed
+        if (targetPlaylist.items.length > 0) {
+          get().play(targetPlaylist.items[0].id);
+        }
+      },
       playNext: () => {
         const activePlaylist = get().getActivePlaylist();
         const { currentIndex, loopMode, isShuffle, playerInstance } = get();
