@@ -289,16 +289,9 @@ export const usePlayerStore = create<PlayerState>()(
           );
           if (!targetPlaylist) return state;
 
-          // Reorder playlists to put the active one first
-          const otherPlaylists = state.playlists.filter(
-            (p) => p.id !== playlistId,
-          );
-          const reorderedPlaylists = [targetPlaylist, ...otherPlaylists];
-
           return {
-            playlists: reorderedPlaylists,
+            playlists: state.playlists, // Keep original order
             activePlaylistId: playlistId,
-            // Reset current state when switching playlists
             currentIndex: targetPlaylist.items.length > 0 ? 0 : null,
             currentVideoId:
               targetPlaylist.items.length > 0
