@@ -13,3 +13,9 @@ TubeLoopPlayer is a web application for seamless YouTube playlist looping. Users
 - Background music for studying, working, or relaxing
 - Continuous playback of favorite video collections
 - Custom music curation and organization
+
+## Language Requirements
+- **English Only**: This application targets English-speaking users
+- All UI text, labels, messages, and user-facing content must be in English
+- Source code comments and documentation should be written in English
+- Error messages and notifications must be in English
