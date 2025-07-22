@@ -5,6 +5,7 @@ import type { Route } from './+types/route';
 import { Description } from './components/description';
 import { PlaylistDisplay } from './components/playlist-display';
 import { PlaylistInputForm } from './components/playlist-input-form';
+import { PlaylistTabs } from './components/playlist-tabs';
 import { YouTubePlayer } from './components/you-tube-player';
 
 // biome-ignore lint/correctness/noEmptyPattern: <>
@@ -51,6 +52,7 @@ export default function Home() {
           <YouTubePlayer />
         </div>
         <div className="space-y-4 md:w-1/3">
+          <PlaylistTabs />
           <PlaylistInputForm />
           <PlaylistDisplay />
         </div>

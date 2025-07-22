@@ -3,6 +3,10 @@ import {
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
+  type DragOverEvent,
+  useSensor,
+  useSensors,
+  PointerSensor,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -10,7 +14,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from 'lucide-react'; // Add GripVertical
+import { GripVertical, Trash2 } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
@@ -119,27 +123,76 @@ const SortableItem: React.FC<SortableItemProps> = ({
 };
 
 export const PlaylistDisplay = () => {
-  const { playlist, currentIndex, removeFromPlaylist, play, reorderPlaylist } =
-    usePlayerStore();
+  const {
+    playlists,
+    activePlaylistId,
+    currentIndex,
+    removeFromPlaylist,
+    play,
+    reorderPlaylist,
+    moveItemBetweenPlaylists,
+    getActivePlaylist,
+  } = usePlayerStore();
+
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [dragOverPlaylistId, setDragOverPlaylistId] = useState<string | null>(
+    null,
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
+
+  const activePlaylist = getActivePlaylist();
+  const playlist = activePlaylist?.items || [];
 
   const handleDragStart = (event: DragStartEvent) => {
-    // Convert UniqueIdentifier to string and set as activeId
     setActiveId(event.active.id.toString());
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+    if (over?.id.toString().startsWith('playlist-tab-')) {
+      const playlistId = over.id.toString().replace('playlist-tab-', '');
+      setDragOverPlaylistId(playlistId);
+    } else {
+      setDragOverPlaylistId(null);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over?.id) {
+    if (!over) {
+      setActiveId(null);
+      setDragOverPlaylistId(null);
+      return;
+    }
+
+    // Check if dropping on a playlist tab
+    if (over.id.toString().startsWith('playlist-tab-')) {
+      const targetPlaylistId = over.id.toString().replace('playlist-tab-', '');
+      const itemIndex = playlist.findIndex((item) => item.id === active.id);
+
+      if (itemIndex !== -1 && targetPlaylistId !== activePlaylistId) {
+        moveItemBetweenPlaylists(itemIndex, activePlaylistId, targetPlaylistId);
+      }
+    } else if (active.id !== over.id) {
+      // Reordering within the same playlist
       const oldIndex = playlist.findIndex((item) => item.id === active.id);
-      const newIndex = playlist.findIndex((item) => item.id === over?.id);
+      const newIndex = playlist.findIndex((item) => item.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         reorderPlaylist(oldIndex, newIndex);
       }
     }
+
     setActiveId(null);
+    setDragOverPlaylistId(null);
   };
 
   const activeItem = activeId
@@ -148,14 +201,49 @@ export const PlaylistDisplay = () => {
 
   return (
     <div className="space-y-4 container mx-auto">
-      <h3 className="font-semibold text-lg">Playlist</h3>
+      <h3 className="font-semibold text-lg">
+        {activePlaylist?.name || 'Playlist'}
+      </h3>
+
       {playlist.length === 0 ? (
         <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg">
-          <p className="mb-2">Playlist is empty.</p>
-          <p className="text-sm">Add YouTube URLs to add videos here!</p>
+          <p className="mb-2">The playlist is empty.</p>
+          <p className="text-sm">Add YouTube URLs to add videos!</p>
         </div>
       ) : (
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          {/* Drop zones for other playlists */}
+          {playlists.filter((pl) => pl.id !== activePlaylistId).length > 0 && (
+            <div className="flex gap-2 mb-4 overflow-x-auto">
+              <p className="text-sm text-muted-foreground py-2">
+                Drag to other playlists:
+              </p>
+              {playlists
+                .filter((pl) => pl.id !== activePlaylistId)
+                .map((pl) => (
+                  <div
+                    key={pl.id}
+                    id={`playlist-tab-${pl.id}`}
+                    className={`px-3 py-2 rounded-lg border transition-all bg-card hover:bg-card-foreground/5 ${
+                      dragOverPlaylistId === pl.id
+                        ? 'ring-2 ring-primary bg-primary/10'
+                        : ''
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{pl.name}</span>
+                    <span className="ml-2 text-xs opacity-70">
+                      ({pl.items.length})
+                    </span>
+                  </div>
+                ))}
+            </div>
+          )}
+
           <SortableContext
             items={playlist.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
