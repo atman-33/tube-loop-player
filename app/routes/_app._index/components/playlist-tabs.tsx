@@ -59,8 +59,9 @@ export const PlaylistTabs = () => {
             <div key={playlist.id} className="flex items-center group relative">
               <button
                 type="button"
+                id={`playlist-tab-${playlist.id}`}
                 onClick={() => setActivePlaylist(playlist.id)}
-                className={`relative px-4 py-2 rounded-lg border transition-all cursor-pointer ${
+                className={`relative px-4 py-2 rounded-lg border transition-all ${
                   activePlaylistId === playlist.id
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-card hover:bg-card-foreground/5'

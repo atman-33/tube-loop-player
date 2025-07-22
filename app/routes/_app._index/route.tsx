@@ -52,8 +52,8 @@ export default function Home() {
           <YouTubePlayer />
         </div>
         <div className="space-y-4 md:w-1/3">
-          <PlaylistTabs />
           <PlaylistInputForm />
+          <PlaylistTabs />
           <PlaylistDisplay />
         </div>
       </div>

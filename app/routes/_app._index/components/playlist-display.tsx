@@ -124,7 +124,6 @@ const SortableItem: React.FC<SortableItemProps> = ({
 
 export const PlaylistDisplay = () => {
   const {
-    playlists,
     activePlaylistId,
     currentIndex,
     removeFromPlaylist,
@@ -135,9 +134,6 @@ export const PlaylistDisplay = () => {
   } = usePlayerStore();
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [dragOverPlaylistId, setDragOverPlaylistId] = useState<string | null>(
-    null,
-  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -158,9 +154,19 @@ export const PlaylistDisplay = () => {
     const { over } = event;
     if (over?.id.toString().startsWith('playlist-tab-')) {
       const playlistId = over.id.toString().replace('playlist-tab-', '');
-      setDragOverPlaylistId(playlistId);
+      // Apply drag over state to playlist tabs
+      document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
+        tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
+      });
+      const targetTab = document.getElementById(`playlist-tab-${playlistId}`);
+      if (targetTab && playlistId !== activePlaylistId) {
+        targetTab.classList.add('ring-2', 'ring-primary', 'bg-primary/10');
+      }
     } else {
-      setDragOverPlaylistId(null);
+      // Remove drag over state from all tabs
+      document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
+        tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
+      });
     }
   };
 
@@ -169,7 +175,6 @@ export const PlaylistDisplay = () => {
 
     if (!over) {
       setActiveId(null);
-      setDragOverPlaylistId(null);
       return;
     }
 
@@ -192,7 +197,10 @@ export const PlaylistDisplay = () => {
     }
 
     setActiveId(null);
-    setDragOverPlaylistId(null);
+    // Remove drag over state from all tabs when drag ends
+    document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
+      tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
+    });
   };
 
   const activeItem = activeId
@@ -201,10 +209,6 @@ export const PlaylistDisplay = () => {
 
   return (
     <div className="space-y-4 container mx-auto">
-      <h3 className="font-semibold text-lg">
-        {activePlaylist?.name || 'Playlist'}
-      </h3>
-
       {playlist.length === 0 ? (
         <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg">
           <p className="mb-2">The playlist is empty.</p>
@@ -217,33 +221,6 @@ export const PlaylistDisplay = () => {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {/* Drop zones for other playlists */}
-          {playlists.filter((pl) => pl.id !== activePlaylistId).length > 0 && (
-            <div className="flex gap-2 mb-4 overflow-x-auto">
-              <p className="text-sm text-muted-foreground py-2">
-                Drag to other playlists:
-              </p>
-              {playlists
-                .filter((pl) => pl.id !== activePlaylistId)
-                .map((pl) => (
-                  <div
-                    key={pl.id}
-                    id={`playlist-tab-${pl.id}`}
-                    className={`px-3 py-2 rounded-lg border transition-all bg-card hover:bg-card-foreground/5 ${
-                      dragOverPlaylistId === pl.id
-                        ? 'ring-2 ring-primary bg-primary/10'
-                        : ''
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{pl.name}</span>
-                    <span className="ml-2 text-xs opacity-70">
-                      ({pl.items.length})
-                    </span>
-                  </div>
-                ))}
-            </div>
-          )}
-
           <SortableContext
             items={playlist.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
