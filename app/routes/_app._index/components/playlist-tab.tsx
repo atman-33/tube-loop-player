@@ -41,25 +41,25 @@ export const PlaylistTab = ({
   const isActive = activePlaylistId === playlist.id;
   const isEditing = editingId === playlist.id;
 
-  // Calculate responsive width and content based on number of tabs
+  // Calculate responsive width and content based on number of tabs and screen size
   const getTabStyles = () => {
     if (totalTabs === 1)
-      return { width: 'flex-1 max-w-xs', showCount: true, maxNameLength: 20 };
+      return { width: 'flex-1 max-w-80', showCount: true, maxNameLength: 12 };
     if (totalTabs === 2)
-      return { width: 'flex-1 max-w-48', showCount: true, maxNameLength: 15 };
+      return { width: 'flex-1 max-w-40', showCount: true, maxNameLength: 6 };
     if (totalTabs === 3)
-      return { width: 'flex-1 max-w-40', showCount: true, maxNameLength: 12 };
+      return { width: 'flex-1 max-w-32', showCount: false, maxNameLength: 4 };
     if (totalTabs === 4)
-      return { width: 'flex-1 max-w-32', showCount: false, maxNameLength: 8 };
-    return { width: 'flex-1 max-w-28', showCount: false, maxNameLength: 6 };
+      return { width: 'flex-1 max-w-24', showCount: false, maxNameLength: 3 };
+    return { width: 'flex-1 max-w-20', showCount: false, maxNameLength: 2 };
   };
 
   const { width, showCount, maxNameLength } = getTabStyles();
 
-  // Get truncated name for display
+  // Get truncated name for display - more aggressive truncation
   const getDisplayName = () => {
     if (playlist.name.length <= maxNameLength) return playlist.name;
-    return playlist.name.substring(0, maxNameLength - 1) + '…';
+    return `${playlist.name.substring(0, maxNameLength - 1)}…`;
   };
 
   return (
@@ -76,8 +76,8 @@ export const PlaylistTab = ({
         id={`playlist-tab-${playlist.id}`}
         onClick={() => onSetActive(playlist.id)}
         className={`
-          relative px-3 py-3 font-medium text-sm transition-all duration-200 ease-out
-          w-full h-12 flex items-center justify-center
+          relative px-1 py-3 font-medium text-xs transition-all duration-200 ease-out
+          w-full h-12 flex items-center justify-center overflow-hidden
           ${
             isActive
               ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
@@ -95,7 +95,7 @@ export const PlaylistTab = ({
         }}
       >
         {isEditing ? (
-          <div className="flex items-center gap-1 w-full">
+          <div className="flex items-center gap-1 w-full overflow-hidden">
             <Input
               value={editingName}
               onChange={(e) => onEditingNameChange(e.target.value)}
@@ -120,17 +120,20 @@ export const PlaylistTab = ({
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 w-full min-w-0">
-            <span
-              className="truncate font-medium flex-1 text-center"
+          <div className="flex items-center gap-0.5 w-full min-w-0 overflow-hidden">
+            <div
+              className="font-medium text-center flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
               title={playlist.name} // Show full name on hover
+              style={{
+                maxWidth: showCount ? 'calc(100% - 1.5rem)' : '100%',
+              }}
             >
               {getDisplayName()}
-            </span>
+            </div>
             {showCount && (
-              <span
+              <div
                 className={`
-                  text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 transition-colors duration-200
+                  text-xs px-0.5 py-0.5 rounded-full font-medium flex-shrink-0 transition-colors duration-200 min-w-[1rem] text-center leading-none
                   ${
                     isActive
                       ? 'bg-primary/15 text-primary'
@@ -139,7 +142,7 @@ export const PlaylistTab = ({
                 `}
               >
                 {playlist.items.length}
-              </span>
+              </div>
             )}
           </div>
         )}

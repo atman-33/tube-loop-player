@@ -35,7 +35,7 @@ export const PlaylistTabs = () => {
         <div className="absolute inset-x-0 bottom-0 h-px bg-border/50" />
 
         {/* Tabs Container - responsive flex layout */}
-        <div className="flex items-end gap-1 px-2">
+        <div className="flex items-end gap-0.5 px-1">
           {playlists.map((playlist, index) => (
             <PlaylistTab
               key={playlist.id}

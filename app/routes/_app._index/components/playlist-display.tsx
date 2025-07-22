@@ -122,7 +122,7 @@ export const PlaylistDisplay = () => {
 
   return (
     <div className="bg-background border border-t-0 border-border/50 rounded-b-lg shadow-sm mt-0">
-      <div className="p-6 space-y-4">
+      <div className="p-4 md:p-6 space-y-4">
         {playlist.length === 0 ? (
           <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg bg-muted/10">
             <p className="mb-2 font-medium">The playlist is empty.</p>
