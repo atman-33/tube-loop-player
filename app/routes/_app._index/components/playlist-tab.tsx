@@ -1,7 +1,7 @@
-import { X, Edit2, Check } from 'lucide-react';
+import { Edit2, Check } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 
 interface PlaylistItem {
   id: string;
@@ -17,9 +17,7 @@ interface PlaylistTabProps {
   onStartEdit: (playlist: { id: string; name: string }) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
-  onDelete: (id: string) => void;
   onEditingNameChange: (name: string) => void;
-  playlistsLength: number;
 }
 
 export const PlaylistTab = ({
@@ -31,9 +29,7 @@ export const PlaylistTab = ({
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
-  onDelete,
   onEditingNameChange,
-  playlistsLength,
 }: PlaylistTabProps) => {
   const { setNodeRef } = useDroppable({
     id: `playlist-tab-${playlist.id}`,
@@ -90,7 +86,7 @@ export const PlaylistTab = ({
       </button>
 
       {editingId !== playlist.id && (
-        <div className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+        <div className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             size="icon"
             variant="ghost"
@@ -102,19 +98,6 @@ export const PlaylistTab = ({
           >
             <Edit2 className="h-3 w-3" />
           </Button>
-          {playlistsLength > 1 && (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-6 w-6 bg-background border text-destructive hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(playlist.id);
-              }}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
         </div>
       )}
     </div>

@@ -46,11 +46,11 @@ interface PlayerState {
     toPlaylistId: string,
   ) => void;
   clearPlaylist: (playlistId?: string) => void;
-  createPlaylist: (name: string) => string;
-  deletePlaylist: (playlistId: string) => void;
+
   renamePlaylist: (playlistId: string, newName: string) => void;
   setActivePlaylist: (playlistId: string) => void;
   getActivePlaylist: () => Playlist | undefined;
+  getOrderedPlaylists: () => Playlist[];
   playNext: () => void;
   playPrevious: () => void;
 }
@@ -61,12 +61,25 @@ const defaultInitialPlaylistItem: PlaylistItem = {
   title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
-const defaultPlaylistId = 'default-playlist';
-const defaultPlaylist: Playlist = {
-  id: defaultPlaylistId,
-  name: 'My Playlist',
-  items: [defaultInitialPlaylistItem],
-};
+const defaultPlaylists: Playlist[] = [
+  {
+    id: 'playlist-1',
+    name: 'Playlist 1',
+    items: [defaultInitialPlaylistItem],
+  },
+  {
+    id: 'playlist-2',
+    name: 'Playlist 2',
+    items: [],
+  },
+  {
+    id: 'playlist-3',
+    name: 'Playlist 3',
+    items: [],
+  },
+];
+
+const defaultActivePlaylistId = 'playlist-1';
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -74,8 +87,8 @@ export const usePlayerStore = create<PlayerState>()(
       isPlaying: false,
       currentVideoId: null,
       currentIndex: null,
-      playlists: [defaultPlaylist],
-      activePlaylistId: defaultPlaylistId,
+      playlists: defaultPlaylists,
+      activePlaylistId: defaultActivePlaylistId,
       loopMode: 'all',
       isShuffle: false,
       playerInstance: null,
@@ -223,46 +236,7 @@ export const usePlayerStore = create<PlayerState>()(
 
           return { playlists: updatedPlaylists, ...resetState };
         }),
-      createPlaylist: (name) => {
-        const newId = `playlist-${Date.now()}`;
-        const newPlaylist: Playlist = {
-          id: newId,
-          name,
-          items: [],
-        };
-        set((state) => ({
-          playlists: [...state.playlists, newPlaylist],
-        }));
-        return newId;
-      },
-      deletePlaylist: (playlistId) =>
-        set((state) => {
-          // Don't delete if it's the only playlist
-          if (state.playlists.length <= 1) return state;
 
-          const updatedPlaylists = state.playlists.filter(
-            (p) => p.id !== playlistId,
-          );
-
-          // If deleting the active playlist, switch to the first remaining one
-          const newActivePlaylistId =
-            state.activePlaylistId === playlistId
-              ? updatedPlaylists[0].id
-              : state.activePlaylistId;
-
-          return {
-            playlists: updatedPlaylists,
-            activePlaylistId: newActivePlaylistId,
-            // Reset current state if deleting the active playlist
-            ...(state.activePlaylistId === playlistId
-              ? {
-                  currentIndex: null,
-                  currentVideoId: null,
-                  isPlaying: false,
-                }
-              : {}),
-          };
-        }),
       renamePlaylist: (playlistId, newName) =>
         set((state) => ({
           playlists: state.playlists.map((playlist) =>
@@ -278,7 +252,14 @@ export const usePlayerStore = create<PlayerState>()(
           );
           if (!targetPlaylist) return state;
 
+          // Reorder playlists to put the active one first
+          const otherPlaylists = state.playlists.filter(
+            (p) => p.id !== playlistId,
+          );
+          const reorderedPlaylists = [targetPlaylist, ...otherPlaylists];
+
           return {
+            playlists: reorderedPlaylists,
             activePlaylistId: playlistId,
             // Reset current state when switching playlists
             currentIndex: targetPlaylist.items.length > 0 ? 0 : null,
@@ -405,6 +386,10 @@ export const usePlayerStore = create<PlayerState>()(
           });
         }
       },
+      getOrderedPlaylists: () => {
+        const { playlists } = get();
+        return playlists;
+      },
     }),
     {
       name: 'tube-loop-player-storage', // name of the item in storage (must be unique)
@@ -444,8 +429,8 @@ export const usePlayerStore = create<PlayerState>()(
           // If the restored playlists do not exist or are empty, use the default initial values
           return {
             ...currentState,
-            playlists: [defaultPlaylist],
-            activePlaylistId: defaultPlaylistId,
+            playlists: defaultPlaylists,
+            activePlaylistId: defaultActivePlaylistId,
             currentVideoId: defaultInitialVideoId,
             currentIndex: 0,
           };
