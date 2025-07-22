@@ -60,7 +60,7 @@ export const PlaylistTabs = () => {
               <button
                 type="button"
                 onClick={() => setActivePlaylist(playlist.id)}
-                className={`relative px-4 py-2 rounded-lg border transition-all ${
+                className={`relative px-4 py-2 rounded-lg border transition-all cursor-pointer ${
                   activePlaylistId === playlist.id
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-card hover:bg-card-foreground/5'
