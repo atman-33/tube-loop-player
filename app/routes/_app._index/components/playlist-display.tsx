@@ -121,31 +121,38 @@ export const PlaylistDisplay = () => {
   const playlist = activePlaylist?.items || [];
 
   return (
-    <div className="space-y-4 container mx-auto">
-      {playlist.length === 0 ? (
-        <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg">
-          <p className="mb-2">The playlist is empty.</p>
-          <p className="text-sm">Add YouTube URLs to add videos!</p>
-        </div>
-      ) : (
-        <SortableContext
-          items={playlist.map((item) => item.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <ul className="space-y-3">
-            {playlist.map((item, index) => (
-              <SortableItem
-                key={item.id}
-                item={item}
-                index={index}
-                currentIndex={currentIndex}
-                play={play}
-                removeFromPlaylist={removeFromPlaylist}
-              />
-            ))}
-          </ul>
-        </SortableContext>
-      )}
+    <div className="bg-background border-l border-r border-b border-border/50 rounded-b-xl shadow-lg mt-0 relative">
+      {/* Top connection line - seamlessly connects with active tab */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-background" />
+
+      <div className="p-6 space-y-4">
+        {playlist.length === 0 ? (
+          <div className="text-center text-muted-foreground p-8 border border-dashed rounded-xl bg-muted/10 backdrop-blur-sm">
+            <p className="mb-2 font-medium">The playlist is empty.</p>
+            <p className="text-sm opacity-80">
+              Add YouTube URLs to add videos!
+            </p>
+          </div>
+        ) : (
+          <SortableContext
+            items={playlist.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="space-y-3">
+              {playlist.map((item, index) => (
+                <SortableItem
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  currentIndex={currentIndex}
+                  play={play}
+                  removeFromPlaylist={removeFromPlaylist}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        )}
+      </div>
     </div>
   );
 };
