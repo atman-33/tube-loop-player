@@ -1,14 +1,4 @@
 import {
-  DndContext,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-  type DragOverEvent,
-  useSensor,
-  useSensors,
-  PointerSensor,
-} from '@dnd-kit/core';
-import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
@@ -16,7 +6,6 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import {
   Tooltip,
@@ -55,8 +44,8 @@ const SortableItem: React.FC<SortableItemProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 1 : 0, // Ensure dragging item is on top
-    opacity: isDragging ? 0.1 : 1, // Visual feedback for dragging
+    zIndex: isDragging ? 1 : 0,
+    opacity: isDragging ? 0.1 : 1,
   };
 
   return (
@@ -72,7 +61,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
         <button
           type="button"
           className="p-3 cursor-grab text-muted-foreground hover:text-foreground"
-          {...listeners} // Move listeners to the drag handle
+          {...listeners}
         >
           <GripVertical className="h-5 w-5" />
           <span className="sr-only">Drag to reorder</span>
@@ -123,89 +112,11 @@ const SortableItem: React.FC<SortableItemProps> = ({
 };
 
 export const PlaylistDisplay = () => {
-  const {
-    activePlaylistId,
-    currentIndex,
-    removeFromPlaylist,
-    play,
-    reorderPlaylist,
-    moveItemBetweenPlaylists,
-    getActivePlaylist,
-  } = usePlayerStore();
-
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-  );
+  const { currentIndex, removeFromPlaylist, play, getActivePlaylist } =
+    usePlayerStore();
 
   const activePlaylist = getActivePlaylist();
   const playlist = activePlaylist?.items || [];
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id.toString());
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    if (over?.id.toString().startsWith('playlist-tab-')) {
-      const playlistId = over.id.toString().replace('playlist-tab-', '');
-      // Apply drag over state to playlist tabs
-      document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
-        tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
-      });
-      const targetTab = document.getElementById(`playlist-tab-${playlistId}`);
-      if (targetTab && playlistId !== activePlaylistId) {
-        targetTab.classList.add('ring-2', 'ring-primary', 'bg-primary/10');
-      }
-    } else {
-      // Remove drag over state from all tabs
-      document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
-        tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
-      });
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over) {
-      setActiveId(null);
-      return;
-    }
-
-    // Check if dropping on a playlist tab
-    if (over.id.toString().startsWith('playlist-tab-')) {
-      const targetPlaylistId = over.id.toString().replace('playlist-tab-', '');
-      const itemIndex = playlist.findIndex((item) => item.id === active.id);
-
-      if (itemIndex !== -1 && targetPlaylistId !== activePlaylistId) {
-        moveItemBetweenPlaylists(itemIndex, activePlaylistId, targetPlaylistId);
-      }
-    } else if (active.id !== over.id) {
-      // Reordering within the same playlist
-      const oldIndex = playlist.findIndex((item) => item.id === active.id);
-      const newIndex = playlist.findIndex((item) => item.id === over.id);
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        reorderPlaylist(oldIndex, newIndex);
-      }
-    }
-
-    setActiveId(null);
-    // Remove drag over state from all tabs when drag ends
-    document.querySelectorAll('[id^="playlist-tab-"]').forEach((tab) => {
-      tab.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
-    });
-  };
-
-  const activeItem = activeId
-    ? playlist.find((item) => item.id === activeId)
-    : null;
 
   return (
     <div className="space-y-4 container mx-auto">
@@ -215,41 +126,23 @@ export const PlaylistDisplay = () => {
           <p className="text-sm">Add YouTube URLs to add videos!</p>
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
+        <SortableContext
+          items={playlist.map((item) => item.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <SortableContext
-            items={playlist.map((item) => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <ul className="space-y-3">
-              {playlist.map((item, index) => (
-                <SortableItem
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  currentIndex={currentIndex}
-                  play={play}
-                  removeFromPlaylist={removeFromPlaylist}
-                />
-              ))}
-            </ul>
-          </SortableContext>
-          <DragOverlay>
-            {activeItem ? (
+          <ul className="space-y-3">
+            {playlist.map((item, index) => (
               <SortableItem
-                item={activeItem}
-                index={playlist.findIndex((item) => item.id === activeId)}
+                key={item.id}
+                item={item}
+                index={index}
                 currentIndex={currentIndex}
                 play={play}
                 removeFromPlaylist={removeFromPlaylist}
               />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+            ))}
+          </ul>
+        </SortableContext>
       )}
     </div>
   );
