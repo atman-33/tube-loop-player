@@ -1,5 +1,7 @@
 import { Edit2, Check } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 
@@ -9,6 +11,7 @@ interface PlaylistItem {
 }
 
 interface PlaylistTabProps {
+  id: string;
   playlist: { id: string; name: string; items: PlaylistItem[] };
   activePlaylistId: string;
   editingId: string | null;
@@ -23,6 +26,7 @@ interface PlaylistTabProps {
 }
 
 export const PlaylistTab = ({
+  id,
   playlist,
   activePlaylistId,
   editingId,
@@ -34,9 +38,28 @@ export const PlaylistTab = ({
   onEditingNameChange,
   totalTabs,
 }: PlaylistTabProps) => {
-  const { setNodeRef, isOver } = useDroppable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
     id: `playlist-tab-${playlist.id}`,
   });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const setCombinedRefs = (el: HTMLElement | null) => {
+    setNodeRef(el);
+    setDroppableRef(el);
+  };
 
   const isActive = activePlaylistId === playlist.id;
   const isEditing = editingId === playlist.id;
@@ -53,7 +76,13 @@ export const PlaylistTab = ({
   const width = getTabWidth();
 
   return (
-    <div ref={setNodeRef} className={`relative group ${width}`}>
+    <div
+      ref={setCombinedRefs}
+      className={`relative group ${width}`}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
       <button
         type="button"
         id={`playlist-tab-${playlist.id}`}
