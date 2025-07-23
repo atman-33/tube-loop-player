@@ -2,7 +2,7 @@ import { getAuthClient } from "~/lib/auth/auth-client";
 import { getAuth } from "~/lib/auth/auth.server";
 import type { Route } from './+types/route';
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [
     { title: "Better Auth / React Router App + Cloudflare Workers" },
     {

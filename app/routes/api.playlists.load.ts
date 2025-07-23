@@ -1,6 +1,6 @@
 import { getAuth } from "~/lib/auth/auth.server";
 import { PlaylistService } from "~/lib/playlist.server";
-import type { Route } from "./+types/api.playlists.load";
+import type { Route } from "../+types/root";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   try {

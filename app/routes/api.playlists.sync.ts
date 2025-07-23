@@ -1,6 +1,6 @@
 import { getAuth } from "~/lib/auth/auth.server";
 import { PlaylistService, type UserPlaylistData } from "~/lib/playlist.server";
-import type { Route } from "./+types/api.playlists.sync";
+import type { Route } from "../+types/root";
 
 export async function action({ request, context }: Route.ActionArgs) {
   if (request.method !== "POST") {
