@@ -23,7 +23,7 @@ export const PlaylistTabs = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
-  const handleStartEdit = (playlist: { id: string; name: string }) => {
+  const handleStartEdit = (playlist: { id: string; name: string; }) => {
     setEditingId(playlist.id);
     setEditingName(playlist.name);
   };
@@ -42,7 +42,11 @@ export const PlaylistTabs = () => {
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px移動してからドラッグ開始
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),

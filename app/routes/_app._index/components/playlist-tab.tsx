@@ -81,6 +81,7 @@ export const PlaylistTab = ({
       className={`relative group ${width}`}
       style={style}
       {...attributes}
+      {...listeners}
     >
       <button
         type="button"
@@ -110,12 +111,16 @@ export const PlaylistTab = ({
           }),
         }}
       >
-        {/* Drag handle - small area for dragging */}
+        {/* Drag handle - visible area for dragging */}
         <div
           {...listeners}
-          className="absolute top-1 left-1 w-2 h-2 opacity-0 group-hover:opacity-30 bg-muted-foreground rounded-sm cursor-grab active:cursor-grabbing transition-opacity"
-          title="Drag to reorder"
-        />
+          className="absolute top-0 left-0 w-4 h-full opacity-0 hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity z-10"
+          title="Drag to reorder tabs"
+        >
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-1 h-6 bg-muted-foreground/40 rounded-full" />
+          </div>
+        </div>
         {isEditing ? (
           <div className="flex items-center gap-1 w-full overflow-hidden">
             <Input
