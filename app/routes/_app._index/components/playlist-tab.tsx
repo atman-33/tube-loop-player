@@ -93,7 +93,7 @@ export const PlaylistTab = ({
         }}
         className={`
           relative px-1 py-3 font-medium text-xs transition-all duration-200 ease-out
-          w-full h-12 flex items-center justify-center overflow-hidden
+          w-full h-12 flex items-center justify-center overflow-hidden cursor-grab
           ${isActive
             ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
             : isOver
@@ -111,16 +111,6 @@ export const PlaylistTab = ({
           }),
         }}
       >
-        {/* Drag handle - visible area for dragging */}
-        <div
-          {...listeners}
-          className="absolute top-0 left-0 w-4 h-full opacity-0 hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity z-10"
-          title="Drag to reorder tabs"
-        >
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-1 h-6 bg-muted-foreground/40 rounded-full" />
-          </div>
-        </div>
         {isEditing ? (
           <div className="flex items-center gap-1 w-full overflow-hidden">
             <Input
