@@ -118,8 +118,14 @@ export const PlaylistTab = ({
               onChange={(e) => onEditingNameChange(e.target.value)}
               className="h-7 text-xs border-0 bg-transparent p-1 focus:bg-background/50 flex-1 min-w-0"
               onKeyDown={(e) => {
-                if (e.key === 'Enter') onSaveEdit();
-                if (e.key === 'Escape') onCancelEdit();
+                e.stopPropagation(); // Prevent parent event handlers from interfering
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  onSaveEdit();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  onCancelEdit();
+                }
               }}
               onBlur={() => onSaveEdit()}
               onClick={(e) => e.stopPropagation()}
