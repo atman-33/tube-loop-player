@@ -12,12 +12,12 @@ interface PlaylistItem {
 
 interface PlaylistTabProps {
   id: string;
-  playlist: { id: string; name: string; items: PlaylistItem[] };
+  playlist: { id: string; name: string; items: PlaylistItem[]; };
   activePlaylistId: string;
   editingId: string | null;
   editingName: string;
   onSetActive: (id: string) => void;
-  onStartEdit: (playlist: { id: string; name: string }) => void;
+  onStartEdit: (playlist: { id: string; name: string; }) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onEditingNameChange: (name: string) => void;
@@ -81,7 +81,6 @@ export const PlaylistTab = ({
       className={`relative group ${width}`}
       style={style}
       {...attributes}
-      {...listeners}
     >
       <button
         type="button"
@@ -94,12 +93,11 @@ export const PlaylistTab = ({
         className={`
           relative px-1 py-3 font-medium text-xs transition-all duration-200 ease-out
           w-full h-12 flex items-center justify-center overflow-hidden
-          ${
-            isActive
-              ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
-              : isOver
-                ? 'text-foreground bg-background/90 border border-primary/30 z-5'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 z-0 bg-muted/10 border border-transparent hover:border-border/30'
+          ${isActive
+            ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
+            : isOver
+              ? 'text-foreground bg-background/90 border border-primary/30 z-5'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 z-0 bg-muted/10 border border-transparent hover:border-border/30'
           }
           ${isActive ? 'rounded-t-lg' : 'rounded-t-md'}
         `}
@@ -112,6 +110,12 @@ export const PlaylistTab = ({
           }),
         }}
       >
+        {/* Drag handle - small area for dragging */}
+        <div
+          {...listeners}
+          className="absolute top-1 left-1 w-2 h-2 opacity-0 group-hover:opacity-30 bg-muted-foreground rounded-sm cursor-grab active:cursor-grabbing transition-opacity"
+          title="Drag to reorder"
+        />
         {isEditing ? (
           <div className="flex items-center gap-1 w-full overflow-hidden">
             <Input

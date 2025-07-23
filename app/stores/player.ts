@@ -316,20 +316,14 @@ export const usePlayerStore = create<PlayerState>()(
         const targetPlaylist = get().playlists.find((p) => p.id === playlistId);
         if (!targetPlaylist) return;
 
-        // Update state first
+        // Update state without automatically starting playback
         set({
-          playlists: get().playlists, // Keep original order
           activePlaylistId: playlistId,
           currentIndex: targetPlaylist.items.length > 0 ? 0 : null,
           currentVideoId:
             targetPlaylist.items.length > 0 ? targetPlaylist.items[0].id : null,
-          isPlaying: targetPlaylist.items.length > 0,
+          // Don't automatically set isPlaying to true - let user control playback
         });
-
-        // Then trigger playback if needed
-        if (targetPlaylist.items.length > 0) {
-          get().play(targetPlaylist.items[0].id);
-        }
       },
       playNext: () => {
         const activePlaylist = get().getActivePlaylist();
