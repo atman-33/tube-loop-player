@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -10,7 +9,6 @@ import {
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { usePlayerStore } from '../../../stores/player';
@@ -46,9 +44,6 @@ export const PlaylistTabs = () => {
       activationConstraint: {
         distance: 8, // 8px移動してからドラッグ開始
       },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
