@@ -1,6 +1,7 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import { deleteCookie, getCookie, setCookie } from '../lib/cookie';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import type { User } from "~/hooks/use-auth";
+import { deleteCookie, getCookie, setCookie } from "../lib/cookie";
 
 interface PlaylistItem {
   id: string;
@@ -13,7 +14,7 @@ interface Playlist {
   items: PlaylistItem[];
 }
 
-export type LoopMode = 'all' | 'one';
+export type LoopMode = "all" | "one";
 
 interface PlayerState {
   isPlaying: boolean;
@@ -25,6 +26,9 @@ interface PlayerState {
   isShuffle: boolean;
   // biome-ignore lint/suspicious/noExplicitAny: <>
   playerInstance: any | null;
+  // Auth-related state
+  user: User | null;
+  isDataSynced: boolean;
   // biome-ignore lint/suspicious/noExplicitAny: <>
   setPlayerInstance: (player: any) => void;
   play: (videoId: string) => void;
@@ -33,6 +37,16 @@ interface PlayerState {
   resume: () => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
+  // Auth-related methods
+  setUser: (user: User | null) => void;
+  loadUserData: (userData: {
+    playlists: Playlist[];
+    activePlaylistId: string;
+    loopMode: LoopMode;
+    isShuffle: boolean;
+  }) => void;
+  syncToServer: () => Promise<void>;
+  markAsSynced: () => void;
   addToPlaylist: (item: PlaylistItem, playlistId?: string) => boolean;
   removeFromPlaylist: (index: number, playlistId?: string) => void;
   reorderPlaylist: (
@@ -56,7 +70,7 @@ interface PlayerState {
   playPrevious: () => void;
 }
 
-const defaultInitialVideoId = 'V4UL6BYgUXw';
+const defaultInitialVideoId = "V4UL6BYgUXw";
 const defaultInitialPlaylistItem: PlaylistItem = {
   id: defaultInitialVideoId,
   title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
@@ -64,23 +78,23 @@ const defaultInitialPlaylistItem: PlaylistItem = {
 
 const defaultPlaylists: Playlist[] = [
   {
-    id: 'playlist-1',
-    name: 'Playlist 1',
+    id: "playlist-1",
+    name: "Playlist 1",
     items: [defaultInitialPlaylistItem],
   },
   {
-    id: 'playlist-2',
-    name: 'Playlist 2',
+    id: "playlist-2",
+    name: "Playlist 2",
     items: [],
   },
   {
-    id: 'playlist-3',
-    name: 'Playlist 3',
+    id: "playlist-3",
+    name: "Playlist 3",
     items: [],
   },
 ];
 
-const defaultActivePlaylistId = 'playlist-1';
+const defaultActivePlaylistId = "playlist-1";
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -90,9 +104,11 @@ export const usePlayerStore = create<PlayerState>()(
       currentIndex: null,
       playlists: defaultPlaylists,
       activePlaylistId: defaultActivePlaylistId,
-      loopMode: 'all',
+      loopMode: "all",
       isShuffle: false,
       playerInstance: null,
+      user: null,
+      isDataSynced: false,
       setPlayerInstance: (player) => set({ playerInstance: player }),
       getActivePlaylist: () => {
         const { playlists, activePlaylistId } = get();
@@ -133,7 +149,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
       toggleLoop: () =>
         set((state) => ({
-          loopMode: state.loopMode === 'all' ? 'one' : 'all',
+          loopMode: state.loopMode === "all" ? "one" : "all",
         })),
       toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
       addToPlaylist: (item, playlistId) => {
@@ -349,7 +365,7 @@ export const usePlayerStore = create<PlayerState>()(
 
         const nextIndex = (currentIndex ?? -1) + 1;
         if (nextIndex >= activePlaylist.items.length) {
-          if (loopMode === 'all') {
+          if (loopMode === "all") {
             const videoId = activePlaylist.items[0].id;
             if (playerInstance) {
               playerInstance.loadVideoById(videoId);
@@ -403,7 +419,7 @@ export const usePlayerStore = create<PlayerState>()(
 
         const prevIndex = (currentIndex ?? 0) - 1;
         if (prevIndex < 0) {
-          if (loopMode === 'all') {
+          if (loopMode === "all") {
             const lastIndex = activePlaylist.items.length - 1;
             const videoId = activePlaylist.items[lastIndex].id;
             if (playerInstance) {
@@ -435,9 +451,57 @@ export const usePlayerStore = create<PlayerState>()(
         const { playlists } = get();
         return playlists;
       },
+      setUser: (user) => {
+        set({ user, isDataSynced: false });
+      },
+      loadUserData: (userData) => {
+        const activePlaylist =
+          userData.playlists.find((p) => p.id === userData.activePlaylistId) ||
+          userData.playlists[0];
+        const firstVideo = activePlaylist?.items[0];
+
+        set({
+          playlists: userData.playlists,
+          activePlaylistId: userData.activePlaylistId,
+          loopMode: userData.loopMode,
+          isShuffle: userData.isShuffle,
+          currentVideoId: firstVideo ? firstVideo.id : null,
+          currentIndex: firstVideo ? 0 : null,
+          isDataSynced: true,
+        });
+      },
+      syncToServer: async () => {
+        const { user, playlists, activePlaylistId, loopMode, isShuffle } =
+          get();
+        if (!user) return;
+
+        try {
+          const response = await fetch("/api/playlists/sync", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              playlists,
+              activePlaylistId,
+              loopMode,
+              isShuffle,
+            }),
+          });
+
+          if (response.ok) {
+            set({ isDataSynced: true });
+          }
+        } catch (error) {
+          console.error("Failed to sync to server:", error);
+        }
+      },
+      markAsSynced: () => {
+        set({ isDataSynced: true });
+      },
     }),
     {
-      name: 'tube-loop-player-storage', // name of the item in storage (must be unique)
+      name: "tube-loop-player-storage", // name of the item in storage (must be unique)
       storage: createJSONStorage(() => ({
         getItem: (name) => {
           const cookie = getCookie(name);

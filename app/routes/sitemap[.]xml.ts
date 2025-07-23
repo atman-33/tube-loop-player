@@ -1,4 +1,4 @@
-import { siteConfig } from '~/config/site-config';
+import { siteConfig } from "~/config/site-config";
 
 export const loader = () => {
   const content = `
@@ -21,8 +21,8 @@ export const loader = () => {
   return new Response(content, {
     status: 200,
     headers: {
-      'Content-Type': 'application/xml',
-      'xml-stylesheet': 'type="text/xsl" href="/sitemap.xsl"',
+      "Content-Type": "application/xml",
+      "xml-stylesheet": 'type="text/xsl" href="/sitemap.xsl"',
     },
   });
 };

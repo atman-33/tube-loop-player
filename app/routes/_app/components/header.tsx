@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { ThemeToggle } from '~/components/theme-toggle';
+import { UserMenu } from './user-menu';
 
 const Header = () => {
   return (
@@ -12,7 +13,10 @@ const Header = () => {
         />
         <h1 className="font-bold text-2xl">TubeLoopPlayer</h1>
       </Link>
-      <ThemeToggle />
+      <div className="flex items-center gap-2">
+        <UserMenu />
+        <ThemeToggle />
+      </div>
     </header>
   );
 };

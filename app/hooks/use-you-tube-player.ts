@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { usePlayerStore } from '../stores/player';
+import { useCallback, useEffect, useRef } from "react";
+import { usePlayerStore } from "../stores/player";
 
 interface YouTubePlayer {
   cueVideoById: (id: string) => void;
@@ -71,9 +71,9 @@ export const useYouTubePlayer = (elementId: string) => {
   const handleStateChange = useCallback((event: YouTubePlayerEvent) => {
     if (event.data === window.YT.PlayerState.ENDED) {
       const { loopMode, currentVideoId, play, playNext } = stateRef.current;
-      if (loopMode === 'one' && currentVideoId) {
+      if (loopMode === "one" && currentVideoId) {
         play(currentVideoId);
-      } else if (loopMode === 'all') {
+      } else if (loopMode === "all") {
         playNext();
       } else {
         // This case handles when loop is off, if that mode is ever re-introduced.
@@ -95,9 +95,9 @@ export const useYouTubePlayer = (elementId: string) => {
     };
 
     if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
       window.onYouTubeIframeAPIReady = createPlayer;
     } else {
@@ -108,7 +108,7 @@ export const useYouTubePlayer = (elementId: string) => {
       if (playerRef.current) {
         // biome-ignore lint/suspicious/noExplicitAny: <>
         const player = playerRef.current as any;
-        if (player && typeof player.destroy === 'function') {
+        if (player && typeof player.destroy === "function") {
           player.destroy();
         }
         playerRef.current = null;

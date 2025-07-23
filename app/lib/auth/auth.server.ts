@@ -1,13 +1,13 @@
-import type { BetterAuthOptions } from 'better-auth';
-import { betterAuth } from 'better-auth';
-import { CamelCasePlugin, Kysely } from 'kysely';
-import { D1Dialect } from 'kysely-d1';
-import type { AppLoadContext } from 'react-router';
+import type { BetterAuthOptions } from "better-auth";
+import { betterAuth } from "better-auth";
+import { CamelCasePlugin, Kysely } from "kysely";
+import { D1Dialect } from "kysely-d1";
+import type { AppLoadContext } from "react-router";
 
 let authInstance: ReturnType<typeof betterAuth>;
 
 export function createBetterAuth(
-  database: BetterAuthOptions['database'],
+  database: BetterAuthOptions["database"],
   env: {
     BETTER_AUTH_SECRET: string;
     OAUTH_GITHUB_CLIENT_ID: string;
@@ -55,7 +55,7 @@ export function getAuth(ctx: AppLoadContext): ReturnType<typeof betterAuth> {
             new CamelCasePlugin(),
           ],
         }),
-        type: 'sqlite',
+        type: "sqlite",
       },
       ctx.cloudflare.env,
     );
