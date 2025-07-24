@@ -10,10 +10,10 @@ import {
 import { siteConfig } from '~/config/site-config';
 import { AdScripts } from './components/ad-scripts';
 import { JsonLdSoftwareApp } from './components/json-ld-software-app';
-import { useThemeStore } from './stores/theme';
 
 import type { Route } from './+types/root';
 import './app.css';
+import { ThemeProvider } from './components/theme-provider';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -47,16 +47,9 @@ export const links: Route.LinksFunction = () => [
   { rel: 'icon', href: '/favicon.ico', type: 'image/x-icon' },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
-  const theme = useThemeStore((state) => state.theme);
-
-  useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(theme);
-  }, [theme]);
-
+export function Layout({ children }: { children: React.ReactNode; }) {
   return (
-    <html lang="en" className={theme} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -67,7 +60,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          storageKey="acme-theme"
+        >
+          {children}
+        </ThemeProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

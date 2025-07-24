@@ -1,5 +1,5 @@
 export function setCookie(name: string, value: string, days: number) {
-  let expires = '';
+  let expires = "";
   if (days) {
     const date = new Date();
     date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
@@ -11,16 +11,16 @@ export function setCookie(name: string, value: string, days: number) {
 
 export function getCookie(name: string): string | null {
   const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
+  const ca = document.cookie.split(";");
   for (let i = 0; i < ca.length; i++) {
     let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    while (c.charAt(0) === " ") c = c.substring(1, c.length);
     if (c.indexOf(nameEQ) === 0) {
       const value = c.substring(nameEQ.length, c.length);
       try {
         return decodeURIComponent(value);
       } catch (e) {
-        console.error('Error decoding cookie:', e);
+        console.error("Error decoding cookie:", e);
         return null;
       }
     }

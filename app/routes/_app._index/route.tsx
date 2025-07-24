@@ -19,7 +19,7 @@ import { PlaylistTabs } from './components/playlist-tabs';
 import { YouTubePlayer } from './components/you-tube-player';
 
 // biome-ignore lint/correctness/noEmptyPattern: <>
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   const title = 'TubeLoopPlayer - Loop & Playlist Your Favorite YouTube Videos';
   const description =
     'TubeLoopPlayer is a free web app that lets you loop YouTube videos endlessly or create custom playlists for continuous playback. Perfect for music, tutorials, and more.';
@@ -54,10 +54,13 @@ export default function Home() {
     activePlaylistId,
     moveItemBetweenPlaylists,
     reorderPlaylist,
+    reorderPlaylists,
     getActivePlaylist,
+    playlists,
   } = usePlayerStore();
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [dragType, setDragType] = useState<'item' | 'tab' | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -72,7 +75,12 @@ export default function Home() {
   }, [setPlayingStateToFalse]);
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id.toString());
+    const activeIdStr = event.active.id.toString();
+    setActiveId(activeIdStr);
+
+    // Determine if we're dragging a playlist item or a tab
+    const isPlaylistTab = playlists.some(p => p.id === activeIdStr);
+    setDragType(isPlaylistTab ? 'tab' : 'item');
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -80,65 +88,85 @@ export default function Home() {
 
     if (!over) {
       setActiveId(null);
+      setDragType(null);
       return;
     }
 
-    const activePlaylist = getActivePlaylist();
-    const playlist = activePlaylist?.items || [];
+    const activeIdStr = active.id.toString();
+    const overIdStr = over.id.toString();
 
-    // Check if dropping on a playlist tab
-    if (over.id.toString().startsWith('playlist-tab-')) {
-      const targetPlaylistId = over.id.toString().replace('playlist-tab-', '');
-      const itemIndex = playlist.findIndex((item) => item.id === active.id);
+    if (dragType === 'tab') {
+      // Handle tab reordering
+      if (activeIdStr !== overIdStr) {
+        const oldIndex = playlists.findIndex((p) => p.id === activeIdStr);
+        const newIndex = playlists.findIndex((p) => p.id === overIdStr);
 
-      if (itemIndex !== -1 && targetPlaylistId !== activePlaylistId) {
-        const wasMoved = moveItemBetweenPlaylists(
-          itemIndex,
-          activePlaylistId,
-          targetPlaylistId,
-        );
+        if (oldIndex !== -1 && newIndex !== -1) {
+          reorderPlaylists(oldIndex, newIndex);
+        }
+      }
+    } else if (dragType === 'item') {
+      const activePlaylist = getActivePlaylist();
+      const playlist = activePlaylist?.items || [];
 
-        if (!wasMoved) {
-          // Show visual feedback that the move was not allowed due to duplicate
-          const targetTab = document.getElementById(
-            `playlist-tab-${targetPlaylistId}`,
+      // Check if dropping on a playlist tab
+      if (overIdStr.startsWith('playlist-tab-')) {
+        const targetPlaylistId = overIdStr.replace('playlist-tab-', '');
+        const itemIndex = playlist.findIndex((item) => item.id === activeIdStr);
+
+        if (itemIndex !== -1 && targetPlaylistId !== activePlaylistId) {
+          const wasMoved = moveItemBetweenPlaylists(
+            itemIndex,
+            activePlaylistId,
+            targetPlaylistId,
           );
-          if (targetTab) {
-            const container = targetTab.parentElement;
-            if (container) {
-              container.classList.add(
-                'ring-2',
-                'ring-destructive',
-                'bg-destructive/10',
-              );
-              setTimeout(() => {
-                container.classList.remove(
+
+          if (!wasMoved) {
+            // Show visual feedback that the move was not allowed due to duplicate
+            const targetTab = document.getElementById(
+              `playlist-tab-${targetPlaylistId}`,
+            );
+            if (targetTab) {
+              const container = targetTab.parentElement;
+              if (container) {
+                container.classList.add(
                   'ring-2',
                   'ring-destructive',
                   'bg-destructive/10',
                 );
-              }, 1000);
+                setTimeout(() => {
+                  container.classList.remove(
+                    'ring-2',
+                    'ring-destructive',
+                    'bg-destructive/10',
+                  );
+                }, 1000);
+              }
             }
           }
         }
-      }
-    } else if (active.id !== over.id) {
-      // Reordering within the same playlist
-      const oldIndex = playlist.findIndex((item) => item.id === active.id);
-      const newIndex = playlist.findIndex((item) => item.id === over.id);
+      } else if (activeIdStr !== overIdStr) {
+        // Reordering within the same playlist
+        const oldIndex = playlist.findIndex((item) => item.id === activeIdStr);
+        const newIndex = playlist.findIndex((item) => item.id === overIdStr);
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        reorderPlaylist(oldIndex, newIndex);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          reorderPlaylist(oldIndex, newIndex);
+        }
       }
     }
 
     setActiveId(null);
+    setDragType(null);
   };
 
   const activePlaylist = getActivePlaylist();
   const playlist = activePlaylist?.items || [];
-  const activeItem = activeId
+  const activeItem = activeId && dragType === 'item'
     ? playlist.find((item) => item.id === activeId)
+    : null;
+  const activeTab = activeId && dragType === 'tab'
+    ? playlists.find((p) => p.id === activeId)
     : null;
 
   return (
@@ -178,6 +206,10 @@ export default function Home() {
             <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground">
               {activeItem.title || 'Video'}
             </div>
+          </div>
+        ) : activeTab ? (
+          <div className="px-4 py-3 bg-card border rounded-lg shadow-lg opacity-90 font-medium text-sm">
+            {activeTab.name}
           </div>
         ) : null}
       </DragOverlay>

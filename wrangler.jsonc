@@ -6,6 +6,9 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "tube-loop-player",
 	"compatibility_date": "2025-04-04",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "./workers/app.ts",
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
@@ -14,6 +17,14 @@
 	"observability": {
 		"enabled": true
 	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "tube-loop-player-db",
+			"database_id": "e2d5fa9f-1f60-4753-ad18-7e8f67e5d5a7",
+			"migrations_dir": "drizzle"
+		}
+	],
 	"routes": [
 		{
 			"pattern": "tubeloopplayer.com",

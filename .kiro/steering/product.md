@@ -1,18 +1,29 @@
 # Product Overview
 
-TubeLoopPlayer is a web application for seamless YouTube playlist looping. Users can create custom playlists from YouTube URLs and enjoy uninterrupted playback with features like drag-and-drop reordering, loop modes, shuffle, and theme switching.
+TubeLoopPlayer is a web application for seamless YouTube playlist looping. Users can create custom playlists from YouTube URLs and enjoy uninterrupted playback with features like drag-and-drop reordering, loop modes, shuffle, theme switching, and cloud synchronization.
 
 ## Key Features
 - Custom playlist creation from YouTube video/playlist URLs
-- Flexible playback controls (loop all/single, shuffle, drag-and-drop ordering)
-- Persistent storage via browser cookies
+- Flexible playbook controls (loop all/single, shuffle, drag-and-drop ordering)
+- **OAuth Authentication** - Sign in with Google or GitHub
+- **Cloud Storage** - Playlists automatically sync to cloud database
+- **Multi-device Access** - Access your playlists from any device when signed in
+- **User Profiles** - Personal user accounts with avatar and profile management
 - Light/dark theme support
-- Simple, intuitive interface
+- Simple, intuitive interface with tabbed playlist management
+
+## Authentication & Storage
+- **Guest Mode**: Local cookie-based storage for anonymous users
+- **Authenticated Mode**: Cloud database storage with automatic synchronization
+- **Hybrid Approach**: Cookie data automatically migrates to cloud when user signs in
+- **Real-time Sync**: Changes sync to cloud within 1 second for authenticated users
 
 ## Target Use Cases
 - Background music for studying, working, or relaxing
 - Continuous playback of favorite video collections
 - Custom music curation and organization
+- **Cross-device playlist management** - Start on desktop, continue on mobile
+- **Persistent user libraries** - Never lose your carefully curated playlists
 
 ## Language Requirements
 - **English Only**: This application targets English-speaking users

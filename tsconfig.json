@@ -18,6 +18,9 @@
       "./worker-configuration.d.ts"
     ],
     "paths": {
+      "~/database/*": [
+        "./database/*"
+      ],
       "~/*": [
         "./app/*"
       ]

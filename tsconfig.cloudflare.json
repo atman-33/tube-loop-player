@@ -5,6 +5,7 @@
     "app/**/*",
     "app/**/.server/**/*",
     "app/**/.client/**/*",
+    "database/**/*",
     "workers/**/*",
     "worker-configuration.d.ts"
   ],
@@ -17,6 +18,7 @@
       "ES2022"
     ],
     "types": [
+      "node",
       "vite/client",
       "vitest/globals"
     ],
@@ -30,6 +32,9 @@
       "./.react-router/types"
     ],
     "paths": {
+      "~/database/*": [
+        "./database/*"
+      ],
       "~/*": [
         "./app/*"
       ]

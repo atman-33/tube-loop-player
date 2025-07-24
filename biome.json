@@ -1,52 +1,40 @@
 {
-  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
   "vcs": {
-    "enabled": true,
+    "enabled": false,
     "clientKind": "git",
-    "useIgnoreFile": true
+    "useIgnoreFile": false
   },
   "files": {
-    "includes": ["app/**"]
+    "includes": [
+      "app/**/*.ts",
+      "database/**/*.ts",
+      "!worker-configuration.d.ts",
+      "!.react-router/**/*"
+    ],
+    "ignoreUnknown": false
   },
   "formatter": {
+    "enabled": true,
     "indentStyle": "space"
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
-      "nursery": {
-        "useSortedClasses": "off"
-      },
-      "correctness": {
-        "noUnusedImports": "warn",
-        "noUnusedVariables": "warn"
-      }
-    }
-  },
-  "assist": {
-    "actions": {
-      "source": {
-        "organizeImports": "off"
-      }
+      "recommended": true
     }
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "single",
-      "semicolons": "always"
+      "quoteStyle": "double"
     }
   },
-  "overrides": [
-    {
-      "includes": ["app/components/shadcn/ui/**"],
-      "linter": {
-        "rules": {
-          "nursery": {
-            "useSortedClasses": "off"
-          }
-        }
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
       }
     }
-  ]
+  }
 }
