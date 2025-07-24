@@ -1,9 +1,10 @@
 import { Edit2, Check } from 'lucide-react';
-import { useDroppable } from '@dnd-kit/core';
+import { useDroppable, useDndContext } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
+import { usePlayerStore } from '../../../stores/player';
 
 interface PlaylistItem {
   id: string;
@@ -60,6 +61,18 @@ export const PlaylistTab = ({
   const isActive = activePlaylistId === playlist.id;
   const isEditing = editingId === playlist.id;
 
+  // Get current drag context to determine what's being dragged
+  const { active } = useDndContext();
+
+  // Get all playlists to determine if the active drag item is a tab or playlist item
+  const { playlists } = usePlayerStore();
+
+  // Determine if we're currently dragging a playlist item (not a tab)
+  const isDraggingPlaylistItem = active && !playlists.some(p => p.id === active.id.toString());
+
+  // Create conditional ref function
+  const conditionalSortableRef = isDraggingPlaylistItem ? () => { } : setSortableRef;
+
   const getTabWidth = () => {
     if (totalTabs === 1) return 'flex-1 max-w-80';
     if (totalTabs === 2) return 'flex-1 max-w-40';
@@ -72,7 +85,7 @@ export const PlaylistTab = ({
 
   return (
     <div
-      ref={setSortableRef}
+      ref={conditionalSortableRef}
       className={`relative group ${width}`}
       style={style}
       {...attributes}
