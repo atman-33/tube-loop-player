@@ -47,21 +47,24 @@ export const PlaylistNameDisplay = ({ name, className }: PlaylistNameDisplayProp
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
             <div
-              ref={textRef}
               className={`
                 cursor-pointer min-w-0 min-h-[2.5rem] max-h-[2.5rem] 
-                overflow-hidden leading-tight
-                line-clamp-2 break-words
+                flex items-center justify-center
                 ${className}
               `}
               onClick={handleMobileClick}
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-              }}
             >
-              {name}
+              <div
+                ref={textRef}
+                className="overflow-hidden leading-tight line-clamp-2 break-words text-center"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                }}
+              >
+                {name}
+              </div>
             </div>
           </PopoverTrigger>
           {/* Mobile: Popover on tap */}

@@ -44,14 +44,18 @@ export const YouTubePlayer = () => {
         id="youtube-player"
         className="aspect-video w-full overflow-hidden rounded-lg bg-black shadow-md" // Player styling
       />
-      {currentVideoId && (
-        <div className="text-center font-semibold text-foreground text-lg h-12 flex items-center justify-center px-4 w-full">
+      <div className="text-center font-semibold text-foreground text-lg h-12 flex items-center justify-center px-4 w-full">
+        {currentVideoId ? (
           <PlaylistNameDisplay
             name={currentVideoTitle}
             className="w-full text-center min-w-0"
           />
-        </div>
-      )}
+        ) : (
+          <span className="text-muted-foreground text-base">
+            Select a video to start playing
+          </span>
+        )}
+      </div>
       <div className="flex justify-center gap-4">
         <Button
           variant="default"
