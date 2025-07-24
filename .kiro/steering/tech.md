@@ -7,14 +7,19 @@
 - **Tailwind CSS v4** - Utility-first styling
 - **Vite** - Build tool and dev server
 - **Cloudflare Workers** - Serverless deployment platform
+- **Cloudflare D1** - SQLite-compatible serverless database
+- **Better Auth** - Modern authentication library with OAuth support
 
 ## Key Libraries
-- **Zustand** - State management
+- **Zustand** - State management with persistence
 - **@dnd-kit** - Drag and drop functionality
 - **Radix UI** - Accessible UI primitives
 - **Lucide React** - Icon library
 - **next-themes** - Theme switching
 - **Sonner** - Toast notifications
+- **Better Auth** - OAuth authentication system
+- **Drizzle ORM** - Database ORM for Cloudflare D1
+- **Kysely** - SQL query builder for Better Auth integration
 
 ## Development Tools
 - **Biome** - Linting and formatting (replaces ESLint/Prettier)
@@ -36,6 +41,13 @@ npm run preview      # Preview production build
 npm run test         # Run tests
 npm run typecheck    # Type checking
 npm run biome:check:write  # Format and lint code
+```
+
+### Database & Authentication
+```bash
+npm run db:generate  # Generate database schema
+npm run db:migrate   # Run database migrations
+npm run auth:db:generate  # Generate auth schema for Better Auth
 ```
 
 ### Deployment
