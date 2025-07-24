@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'; // Import Loader2
+import { Loader2, X } from 'lucide-react'; // Import Loader2 and X
 import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -32,7 +32,7 @@ export const PlaylistInputForm = () => {
       if (!response.ok) {
         throw new Error('Failed to fetch video information.');
       }
-      const data = (await response.json()) as { title: string };
+      const data = (await response.json()) as { title: string; };
       const title = data.title || `Video ${videoId.substring(0, 5)}`;
       const wasAdded = addToPlaylist({ id: videoId, title });
 
@@ -68,22 +68,35 @@ export const PlaylistInputForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      {' '}
-      {/* Changed to flex-col */} {/* Wrap Input and Button with flex */}
-      {/* <div className="flex flex-row md:flex-col lg:flex-row gap-2 items-center"> */}
       <div className="flex flex-row gap-2 items-center">
-        <Input
-          type="text"
-          value={inputUrl}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setInputUrl(e.target.value);
-            setError(null); // Clear error on input
-          }}
-          placeholder="Enter YouTube URL"
-          className="flex-1 md:w-full"
-          disabled={isLoading}
-          aria-invalid={error ? 'true' : 'false'} // Set aria-invalid on error
-        />
+        <div className="relative flex-1 md:w-full">
+          <Input
+            type="text"
+            value={inputUrl}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setInputUrl(e.target.value);
+              setError(null); // Clear error on input
+            }}
+            placeholder="Enter YouTube URL"
+            className="pr-8 w-full" // Add padding to the right side
+            disabled={isLoading}
+            aria-invalid={error ? 'true' : 'false'} // Set aria-invalid on error
+          />
+          {inputUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setInputUrl('');
+                setError(null);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
+              disabled={isLoading}
+              aria-label="Clear input"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
         <Button type="submit" variant="default" disabled={isLoading}>
           {isLoading ? (
             <>
