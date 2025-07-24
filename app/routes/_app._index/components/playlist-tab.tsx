@@ -41,11 +41,12 @@ export const PlaylistTab = ({
   const {
     attributes,
     listeners,
-    setNodeRef,
+    setNodeRef: setSortableRef,
     transform,
     transition,
     isDragging,
   } = useSortable({ id });
+
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({
     id: `playlist-tab-${playlist.id}`,
   });
@@ -57,7 +58,7 @@ export const PlaylistTab = ({
   };
 
   const setCombinedRefs = (el: HTMLElement | null) => {
-    setNodeRef(el);
+    setSortableRef(el);
     setDroppableRef(el);
   };
 
