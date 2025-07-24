@@ -178,7 +178,7 @@ export default function Home() {
     >
       <div className="container mx-auto p-4">
         <div className="flex flex-col gap-6 md:flex-row">
-          <div className="flex-1">
+          <div className="flex-1 md:w-3/5">
             <YouTubePlayer />
           </div>
           <div className="space-y-4 md:w-2/5">
