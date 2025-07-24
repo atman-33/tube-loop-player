@@ -21,7 +21,7 @@
 		{
 			"binding": "DB",
 			"database_name": "tube-loop-player-db",
-			"database_id": "xxx",
+			"database_id": "e2d5fa9f-1f60-4753-ad18-7e8f67e5d5a7",
 			"migrations_dir": "drizzle"
 		}
 	],
