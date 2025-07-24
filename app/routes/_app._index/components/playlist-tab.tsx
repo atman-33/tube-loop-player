@@ -133,6 +133,9 @@ export const PlaylistTab = ({
                   } else if (e.key === 'Escape') {
                     e.preventDefault();
                     onCancelEdit();
+                  } else if (e.key === ' ') {
+                    e.preventDefault();
+                    onEditingNameChange(editingName + ' ');
                   }
                 }}
                 onBlur={() => onSaveEdit()}
