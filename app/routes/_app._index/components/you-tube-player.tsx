@@ -3,6 +3,7 @@ import { Button } from '../../../components/ui/button';
 import { Toggle } from '../../../components/ui/toggle';
 import { useYouTubePlayer } from '../../../hooks/use-you-tube-player';
 import { usePlayerStore } from '../../../stores/player';
+import { PlaylistNameDisplay } from './playlist-name-display';
 
 export const YouTubePlayer = () => {
   const {
@@ -32,7 +33,7 @@ export const YouTubePlayer = () => {
   const currentVideoTitle =
     currentVideoId && activePlaylist
       ? activePlaylist.items.find((item) => item.id === currentVideoId)
-          ?.title || `Video ${currentVideoId.substring(0, 5)}`
+        ?.title || `Video ${currentVideoId.substring(0, 5)}`
       : 'No video selected';
 
   return (
@@ -44,8 +45,11 @@ export const YouTubePlayer = () => {
         className="aspect-video w-full overflow-hidden rounded-lg bg-black shadow-md" // Player styling
       />
       {currentVideoId && (
-        <div className="text-center font-semibold text-foreground text-lg">
-          {currentVideoTitle}
+        <div className="text-center font-semibold text-foreground text-lg h-12 flex items-center justify-center px-4 w-full">
+          <PlaylistNameDisplay
+            name={currentVideoTitle}
+            className="w-full text-center min-w-0"
+          />
         </div>
       )}
       <div className="flex justify-center gap-4">
