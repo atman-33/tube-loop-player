@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { authClient } from "~/lib/auth/auth.client";
+import { useRouteLoaderData } from "react-router";
+import { getAuthClient } from "~/lib/auth/auth-client";
 
 export interface User {
   id: string;
@@ -9,33 +9,15 @@ export interface User {
 }
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const loaderData = useRouteLoaderData("routes/_app") as {
+    baseURL: string;
+    user?: User;
+  } | null;
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const session = await authClient.getSession();
-        if (session?.data?.user) {
-          setUser({
-            id: session.data.user.id,
-            name: session.data.user.name,
-            email: session.data.user.email,
-            image: session.data.user.image || undefined,
-          });
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const user = loaderData?.user || null;
+  const baseURL = loaderData?.baseURL || "";
 
-    checkAuth();
-  }, []);
+  const authClient = getAuthClient({ baseURL });
 
   const signIn = async (provider: "google" | "github") => {
     try {
@@ -51,7 +33,8 @@ export function useAuth() {
   const signOut = async () => {
     try {
       await authClient.signOut();
-      setUser(null);
+      // Reload the page to refresh the session
+      window.location.reload();
     } catch (error) {
       console.error("Sign out failed:", error);
     }
@@ -59,7 +42,7 @@ export function useAuth() {
 
   return {
     user,
-    isLoading,
+    isLoading: false,
     isAuthenticated: !!user,
     signIn,
     signOut,
