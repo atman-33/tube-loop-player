@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePlayerStore } from "~/stores/player";
 import { useAuth } from "./use-auth";
 
@@ -42,6 +42,12 @@ export function usePlaylistSync() {
     isShuffle,
   } = usePlayerStore();
 
+  // State for conflict resolution
+  const [conflictData, setConflictData] = useState<{
+    local: UserPlaylistData;
+    cloud: UserPlaylistData;
+  } | null>(null);
+
   // Update user in store when auth state changes
   useEffect(() => {
     if (!authLoading) {
@@ -58,14 +64,47 @@ export function usePlaylistSync() {
         const response = await fetch("/api/playlists/load");
         if (response.ok) {
           const userData = await response.json();
-          if (
+
+          // Check if server has data
+          const hasServerData =
             isValidUserData(userData) &&
             userData.playlists &&
-            userData.playlists.length > 0
-          ) {
+            userData.playlists.length > 0;
+
+          // Check if local data exists and is not default
+          const localData: UserPlaylistData = {
+            playlists,
+            activePlaylistId,
+            loopMode,
+            isShuffle,
+          };
+
+          const hasLocalData =
+            playlists.length > 0 &&
+            !(
+              playlists.length === 3 &&
+              playlists[0].name === "Playlist 1" &&
+              playlists[1].name === "Playlist 2" &&
+              playlists[2].name === "Playlist 3" &&
+              playlists[0].items.length === 1 &&
+              playlists[1].items.length === 0 &&
+              playlists[2].items.length === 0
+            );
+
+          if (hasServerData && hasLocalData) {
+            // Data conflict detected - show resolution modal
+            setConflictData({
+              local: localData,
+              cloud: userData,
+            });
+          } else if (hasServerData) {
+            // Only server data exists - load it
             loadUserData(userData);
+          } else if (hasLocalData) {
+            // Only local data exists - sync to server
+            await syncToServer();
           } else {
-            // No server data, sync current cookie data to server
+            // No meaningful data on either side - mark as synced
             await syncToServer();
           }
         }
@@ -77,7 +116,16 @@ export function usePlaylistSync() {
     };
 
     loadServerData();
-  }, [user, isDataSynced, loadUserData, syncToServer]);
+  }, [
+    user,
+    isDataSynced,
+    loadUserData,
+    syncToServer,
+    playlists,
+    activePlaylistId,
+    loopMode,
+    isShuffle,
+  ]);
 
   // Auto-sync changes to server for authenticated users
   // biome-ignore lint/correctness/useExhaustiveDependencies: <>
@@ -99,9 +147,37 @@ export function usePlaylistSync() {
     syncToServer,
   ]);
 
+  // Conflict resolution functions
+  const resolveConflict = async (
+    selectedData: UserPlaylistData,
+    _source: "local" | "cloud",
+  ) => {
+    try {
+      // Load the selected data
+      loadUserData(selectedData);
+
+      // Sync the selected data to server to ensure consistency
+      await syncToServer();
+
+      // Clear conflict state
+      setConflictData(null);
+    } catch (error) {
+      console.error("Failed to resolve conflict:", error);
+    }
+  };
+
+  const cancelConflictResolution = () => {
+    // Keep current local data and sync to server
+    syncToServer();
+    setConflictData(null);
+  };
+
   return {
     isAuthenticated: !!user,
     isLoading: authLoading,
     isSynced: isDataSynced,
+    conflictData,
+    resolveConflict,
+    cancelConflictResolution,
   };
 }
