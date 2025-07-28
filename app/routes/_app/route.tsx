@@ -4,6 +4,7 @@ import Footer from '~/routes/_app/components/footer';
 import type { Route } from './+types/route';
 import Header from './components/header';
 import { usePlaylistSync } from '~/hooks/use-playlist-sync';
+import { DataConflictModal } from '~/components/data-conflict-modal';
 import { getAuth } from '~/lib/auth/auth.server';
 
 export const loader = async ({ context, request }: Route.LoaderArgs) => {
@@ -24,7 +25,7 @@ const AppLayout = ({ loaderData }: Route.ComponentProps) => {
   const { contactEmail } = loaderData;
 
   // Initialize playlist sync
-  usePlaylistSync();
+  const { conflictData, resolveConflict, cancelConflictResolution } = usePlaylistSync();
 
   return (
     <>
@@ -34,6 +35,17 @@ const AppLayout = ({ loaderData }: Route.ComponentProps) => {
       </div>
       <Footer contactEmail={contactEmail ?? ''} />
       <Toaster />
+
+      {/* Data Conflict Resolution Modal */}
+      {conflictData && (
+        <DataConflictModal
+          isOpen={true}
+          localData={conflictData.local}
+          cloudData={conflictData.cloud}
+          onResolve={resolveConflict}
+          onCancel={cancelConflictResolution}
+        />
+      )}
     </>
   );
 };
