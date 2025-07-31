@@ -447,7 +447,7 @@ describe("DataComparator", () => {
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       // Mock performance.now to simulate slow comparison
-      const originalNow = performance.now;
+      const _originalNow = performance.now;
       let callCount = 0;
       vi.spyOn(performance, "now").mockImplementation(() => {
         callCount++;
