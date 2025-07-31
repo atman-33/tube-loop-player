@@ -29,9 +29,9 @@ interface UserPlaylistData {
 
 interface DataConflictModalProps {
   isOpen: boolean;
-  localData: UserPlaylistData;
-  cloudData: UserPlaylistData;
-  onResolve: (selectedData: UserPlaylistData, source: 'local' | 'cloud') => void;
+  localData: UserPlaylistData | null;
+  cloudData: UserPlaylistData | null;
+  onResolve: (selectedData: UserPlaylistData | null, source: 'local' | 'cloud') => void;
   onCancel: () => void;
 }
 
@@ -51,7 +51,10 @@ export function DataConflictModal({
     }
   };
 
-  const getDataSummary = (data: UserPlaylistData) => {
+  const getDataSummary = (data: UserPlaylistData | null) => {
+    if (!data || !data.playlists) {
+      return { totalItems: 0, playlistNames: 'No data' };
+    }
     const totalItems = data.playlists.reduce((sum, playlist) => sum + playlist.items.length, 0);
     const playlistNames = data.playlists.map(p => p.name).join(', ');
     return { totalItems, playlistNames };
@@ -73,8 +76,8 @@ export function DataConflictModal({
         <div className="space-y-4">
           <div
             className={`border rounded-lg p-4 cursor-pointer transition-colors ${selectedSource === 'local'
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-                : 'border-gray-200 hover:border-gray-300'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+              : 'border-gray-200 hover:border-gray-300'
               }`}
             onClick={() => setSelectedSource('local')}
           >
@@ -90,14 +93,14 @@ export function DataConflictModal({
             <div className="text-sm text-gray-600 dark:text-gray-400">
               <p>Playlists: {localSummary.playlistNames}</p>
               <p>Total items: {localSummary.totalItems}</p>
-              <p>Loop mode: {localData.loopMode}, Shuffle: {localData.isShuffle ? 'On' : 'Off'}</p>
+              <p>Loop mode: {localData?.loopMode || 'Unknown'}, Shuffle: {localData?.isShuffle ? 'On' : 'Off'}</p>
             </div>
           </div>
 
           <div
             className={`border rounded-lg p-4 cursor-pointer transition-colors ${selectedSource === 'cloud'
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-                : 'border-gray-200 hover:border-gray-300'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+              : 'border-gray-200 hover:border-gray-300'
               }`}
             onClick={() => setSelectedSource('cloud')}
           >
@@ -113,7 +116,7 @@ export function DataConflictModal({
             <div className="text-sm text-gray-600 dark:text-gray-400">
               <p>Playlists: {cloudSummary.playlistNames}</p>
               <p>Total items: {cloudSummary.totalItems}</p>
-              <p>Loop mode: {cloudData.loopMode}, Shuffle: {cloudData.isShuffle ? 'On' : 'Off'}</p>
+              <p>Loop mode: {cloudData?.loopMode || 'Unknown'}, Shuffle: {cloudData?.isShuffle ? 'On' : 'Off'}</p>
             </div>
           </div>
         </div>

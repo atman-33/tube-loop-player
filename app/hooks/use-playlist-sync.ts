@@ -1,32 +1,17 @@
 import { useEffect, useState } from "react";
+import {
+  type ConflictResolution,
+  ConflictResolver,
+} from "~/lib/conflict-resolver";
+import {
+  isValidUserPlaylistData,
+  type UserPlaylistData,
+} from "~/lib/data-normalizer";
 import { usePlayerStore } from "~/stores/player";
 import { useAuth } from "./use-auth";
 
-interface UserPlaylistData {
-  playlists: Array<{
-    id: string;
-    name: string;
-    items: Array<{
-      id: string;
-      title?: string;
-    }>;
-  }>;
-  activePlaylistId: string;
-  loopMode: "all" | "one";
-  isShuffle: boolean;
-}
-
 function isValidUserData(data: unknown): data is UserPlaylistData {
-  if (!data || typeof data !== "object") return false;
-
-  const obj = data as Record<string, unknown>;
-
-  return (
-    Array.isArray(obj.playlists) &&
-    typeof obj.activePlaylistId === "string" &&
-    (obj.loopMode === "all" || obj.loopMode === "one") &&
-    typeof obj.isShuffle === "boolean"
-  );
+  return isValidUserPlaylistData(data);
 }
 
 export function usePlaylistSync() {
@@ -44,8 +29,8 @@ export function usePlaylistSync() {
 
   // State for conflict resolution
   const [conflictData, setConflictData] = useState<{
-    local: UserPlaylistData;
-    cloud: UserPlaylistData;
+    local: UserPlaylistData | null;
+    cloud: UserPlaylistData | null;
   } | null>(null);
 
   // Update user in store when auth state changes
@@ -55,63 +40,162 @@ export function usePlaylistSync() {
     }
   }, [user, authLoading, setUser]);
 
-  // Load user data from server when user logs in
+  // Load user data from server when user logs in with intelligent conflict resolution
   useEffect(() => {
     const loadServerData = async () => {
       if (!user || isDataSynced) return;
 
+      const conflictResolver = new ConflictResolver();
+      let response: Response | null = null;
+      let userData: unknown = null;
+
       try {
-        const response = await fetch("/api/playlists/load");
-        if (response.ok) {
-          const userData = await response.json();
+        // Fetch cloud data with timeout and error handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-          // Check if server has data
-          const hasServerData =
-            isValidUserData(userData) &&
-            userData.playlists &&
-            userData.playlists.length > 0;
+        try {
+          response = await fetch("/api/playlists/load", {
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError instanceof Error && fetchError.name === "AbortError") {
+            throw new Error("Request timeout while loading cloud data");
+          }
+          throw fetchError;
+        }
 
-          // Check if local data exists and is not default
-          const localData: UserPlaylistData = {
-            playlists,
-            activePlaylistId,
-            loopMode,
-            isShuffle,
-          };
+        if (!response.ok) {
+          throw new Error(
+            `Server responded with status ${response.status}: ${response.statusText}`,
+          );
+        }
 
-          const hasLocalData =
-            playlists.length > 0 &&
-            !(
-              playlists.length === 3 &&
-              playlists[0].name === "Playlist 1" &&
-              playlists[1].name === "Playlist 2" &&
-              playlists[2].name === "Playlist 3" &&
-              playlists[0].items.length === 1 &&
-              playlists[1].items.length === 0 &&
-              playlists[2].items.length === 0
-            );
+        try {
+          userData = await response.json();
+          // biome-ignore lint/correctness/noUnusedVariables: <>
+        } catch (parseError) {
+          throw new Error("Failed to parse cloud data response");
+        }
 
-          if (hasServerData && hasLocalData) {
-            // Data conflict detected - show resolution modal
+        // Prepare local data
+        const localData: UserPlaylistData = {
+          playlists,
+          activePlaylistId,
+          loopMode,
+          isShuffle,
+        };
+
+        // Validate cloud data
+        const validCloudData = isValidUserData(userData) ? userData : null;
+
+        // Use intelligent conflict resolution
+        let conflictResolution: ConflictResolution;
+        try {
+          conflictResolution = conflictResolver.analyzeConflict(
+            localData,
+            validCloudData,
+          );
+        } catch (analysisError) {
+          console.error("Conflict analysis failed:", analysisError);
+          // Fallback to showing modal when analysis fails
+          if (validCloudData) {
             setConflictData({
               local: localData,
-              cloud: userData,
+              cloud: validCloudData,
             });
-          } else if (hasServerData) {
-            // Only server data exists - load it
-            loadUserData(userData);
-          } else if (hasLocalData) {
-            // Only local data exists - sync to server
-            await syncToServer();
           } else {
-            // No meaningful data on either side - mark as synced
+            // No valid cloud data, sync local data
             await syncToServer();
           }
+          return;
+        }
+
+        // Handle conflict resolution result
+        switch (conflictResolution.type) {
+          case "auto-sync":
+            try {
+              // Perform automatic sync
+              await conflictResolver.performAutoSync(conflictResolution.data);
+              console.log("Automatically syncing identical cloud data");
+              loadUserData(conflictResolution.data);
+            } catch (autoSyncError) {
+              console.error(
+                "Auto-sync failed, falling back to conflict modal:",
+                autoSyncError,
+              );
+              // Fallback to showing modal when auto-sync fails
+              setConflictData({
+                local: localData,
+                cloud: conflictResolution.data,
+              });
+            }
+            break;
+
+          case "show-modal":
+            // Show conflict resolution modal
+            setConflictData({
+              local: conflictResolution.local,
+              cloud: conflictResolution.cloud,
+            });
+            break;
+
+          case "no-action":
+            // Sync local data to server (local data takes precedence)
+            try {
+              await syncToServer();
+            } catch (syncError) {
+              console.error("Failed to sync local data to server:", syncError);
+              // Continue without showing error to user
+            }
+            break;
+
+          default:
+            console.warn(
+              "Unknown conflict resolution type, falling back to modal",
+            );
+            if (validCloudData) {
+              setConflictData({
+                local: localData,
+                cloud: validCloudData,
+              });
+            } else {
+              await syncToServer();
+            }
+            break;
         }
       } catch (error) {
         console.error("Failed to load user data:", error);
-        // Fallback: sync current data to server
-        await syncToServer();
+
+        // Comprehensive error handling with different fallback strategies
+        if (error instanceof Error) {
+          if (error.message.includes("timeout")) {
+            console.warn("Cloud data loading timed out, using local data");
+          } else if (
+            error.message.includes("network") ||
+            error.message.includes("fetch")
+          ) {
+            console.warn(
+              "Network error while loading cloud data, using local data",
+            );
+          } else {
+            console.warn(
+              "Unknown error while loading cloud data:",
+              error.message,
+            );
+          }
+        }
+
+        // Fallback: sync current local data to server
+        try {
+          await syncToServer();
+        } catch (fallbackError) {
+          console.error("Fallback sync to server also failed:", fallbackError);
+          // At this point, we continue with local data only
+          // The user will see their local data and can manually sync later
+        }
       }
     };
 
@@ -147,29 +231,84 @@ export function usePlaylistSync() {
     syncToServer,
   ]);
 
-  // Conflict resolution functions
+  // Enhanced conflict resolution functions with error handling
   const resolveConflict = async (
-    selectedData: UserPlaylistData,
-    _source: "local" | "cloud",
+    selectedData: UserPlaylistData | null,
+    source: "local" | "cloud",
   ) => {
+    const startTime = performance.now();
+
     try {
-      // Load the selected data
-      loadUserData(selectedData);
+      // Validate selected data before proceeding
+      if (!selectedData || !isValidUserData(selectedData)) {
+        throw new Error(
+          `Invalid ${source} data structure selected for conflict resolution`,
+        );
+      }
+
+      console.log(`Resolving conflict with ${source} data`);
+
+      // Load the selected data with error handling
+      try {
+        loadUserData(selectedData);
+      } catch (loadError) {
+        throw new Error(
+          `Failed to load ${source} data: ${loadError instanceof Error ? loadError.message : "Unknown error"}`,
+        );
+      }
 
       // Sync the selected data to server to ensure consistency
-      await syncToServer();
+      try {
+        await syncToServer();
+        console.log(`Successfully synced ${source} data to server`);
+      } catch (syncError) {
+        console.error(`Failed to sync ${source} data to server:`, syncError);
+        // Don't throw here - the local data is already loaded
+        // The user can try syncing again later
+      }
 
       // Clear conflict state
       setConflictData(null);
+
+      const duration = performance.now() - startTime;
+      console.log(
+        `Conflict resolved with ${source} data in ${duration.toFixed(2)}ms`,
+      );
     } catch (error) {
-      console.error("Failed to resolve conflict:", error);
+      const duration = performance.now() - startTime;
+      console.error(
+        `Failed to resolve conflict after ${duration.toFixed(2)}ms:`,
+        error,
+      );
+
+      // Show user-friendly error handling
+      // In a real app, you might want to show a toast notification
+      alert(
+        `Failed to resolve conflict: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   };
 
   const cancelConflictResolution = () => {
-    // Keep current local data and sync to server
-    syncToServer();
-    setConflictData(null);
+    try {
+      console.log("Cancelling conflict resolution, keeping local data");
+
+      // Keep current local data and attempt to sync to server
+      syncToServer().catch((syncError) => {
+        console.error(
+          "Failed to sync local data after cancelling conflict resolution:",
+          syncError,
+        );
+        // Continue anyway - user can manually sync later
+      });
+
+      // Clear conflict state
+      setConflictData(null);
+    } catch (error) {
+      console.error("Error during conflict resolution cancellation:", error);
+      // Clear conflict state anyway to prevent UI from being stuck
+      setConflictData(null);
+    }
   };
 
   return {
