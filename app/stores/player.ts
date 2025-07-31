@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { User } from "~/hooks/use-auth";
-import { calculateDataHash, type UserPlaylistData } from "~/lib/data-hash";
 import { deleteCookie, getCookie, setCookie } from "../lib/cookie";
 
 interface PlaylistItem {
@@ -30,7 +29,6 @@ interface PlayerState {
   // Auth-related state
   user: User | null;
   isDataSynced: boolean;
-  lastSyncedHash: string | null;
   // biome-ignore lint/suspicious/noExplicitAny: <>
   setPlayerInstance: (player: any) => void;
   play: (videoId: string) => void;
@@ -49,8 +47,6 @@ interface PlayerState {
   }) => void;
   syncToServer: () => Promise<void>;
   markAsSynced: () => void;
-  getCurrentDataHash: () => string;
-  updateSyncedHash: (hash: string) => void;
   addToPlaylist: (item: PlaylistItem, playlistId?: string) => boolean;
   removeFromPlaylist: (index: number, playlistId?: string) => void;
   reorderPlaylist: (
@@ -113,7 +109,6 @@ export const usePlayerStore = create<PlayerState>()(
       playerInstance: null,
       user: null,
       isDataSynced: false,
-      lastSyncedHash: null,
       setPlayerInstance: (player) => set({ playerInstance: player }),
       getActivePlaylist: () => {
         const { playlists, activePlaylistId } = get();
@@ -456,16 +451,13 @@ export const usePlayerStore = create<PlayerState>()(
         return playlists;
       },
       setUser: (user) => {
-        set({ user, isDataSynced: false, lastSyncedHash: null });
+        set({ user, isDataSynced: false });
       },
       loadUserData: (userData) => {
         const activePlaylist =
           userData.playlists.find((p) => p.id === userData.activePlaylistId) ||
           userData.playlists[0];
         const firstVideo = activePlaylist?.items[0];
-
-        // Calculate hash for the loaded data
-        const dataHash = calculateDataHash(userData);
 
         set({
           playlists: userData.playlists,
@@ -475,16 +467,12 @@ export const usePlayerStore = create<PlayerState>()(
           currentVideoId: firstVideo ? firstVideo.id : null,
           currentIndex: firstVideo ? 0 : null,
           isDataSynced: true,
-          lastSyncedHash: dataHash,
         });
       },
       syncToServer: async () => {
         const { user, playlists, activePlaylistId, loopMode, isShuffle } =
           get();
         if (!user) return;
-
-        // Set syncing state at the start
-        set({ isDataSynced: false });
 
         try {
           const response = await fetch("/api/playlists/sync", {
@@ -501,49 +489,14 @@ export const usePlayerStore = create<PlayerState>()(
           });
 
           if (response.ok) {
-            // Update synced hash after successful sync
-            const currentData: UserPlaylistData = {
-              playlists,
-              activePlaylistId,
-              loopMode,
-              isShuffle,
-            };
-            const currentHash = calculateDataHash(currentData);
-            set({ isDataSynced: true, lastSyncedHash: currentHash });
-          } else {
-            // Handle failed response
-            console.error("Sync failed with status:", response.status);
-            set({ isDataSynced: false });
+            set({ isDataSynced: true });
           }
         } catch (error) {
           console.error("Failed to sync to server:", error);
-          // Keep isDataSynced as false on error
-          set({ isDataSynced: false });
         }
       },
       markAsSynced: () => {
-        const { playlists, activePlaylistId, loopMode, isShuffle } = get();
-        const currentData: UserPlaylistData = {
-          playlists,
-          activePlaylistId,
-          loopMode,
-          isShuffle,
-        };
-        const currentHash = calculateDataHash(currentData);
-        set({ isDataSynced: true, lastSyncedHash: currentHash });
-      },
-      getCurrentDataHash: () => {
-        const { playlists, activePlaylistId, loopMode, isShuffle } = get();
-        const currentData: UserPlaylistData = {
-          playlists,
-          activePlaylistId,
-          loopMode,
-          isShuffle,
-        };
-        return calculateDataHash(currentData);
-      },
-      updateSyncedHash: (hash) => {
-        set({ lastSyncedHash: hash });
+        set({ isDataSynced: true });
       },
     }),
     {
@@ -565,7 +518,6 @@ export const usePlayerStore = create<PlayerState>()(
         activePlaylistId: state.activePlaylistId,
         loopMode: state.loopMode,
         isShuffle: state.isShuffle,
-        lastSyncedHash: state.lastSyncedHash,
       }),
       merge: (persistedState, currentState) => {
         const state = persistedState as Partial<PlayerState>;
