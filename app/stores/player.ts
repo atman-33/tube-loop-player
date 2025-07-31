@@ -483,6 +483,9 @@ export const usePlayerStore = create<PlayerState>()(
           get();
         if (!user) return;
 
+        // Set syncing state at the start
+        set({ isDataSynced: false });
+
         try {
           const response = await fetch("/api/playlists/sync", {
             method: "POST",
@@ -507,9 +510,15 @@ export const usePlayerStore = create<PlayerState>()(
             };
             const currentHash = calculateDataHash(currentData);
             set({ isDataSynced: true, lastSyncedHash: currentHash });
+          } else {
+            // Handle failed response
+            console.error("Sync failed with status:", response.status);
+            set({ isDataSynced: false });
           }
         } catch (error) {
           console.error("Failed to sync to server:", error);
+          // Keep isDataSynced as false on error
+          set({ isDataSynced: false });
         }
       },
       markAsSynced: () => {
