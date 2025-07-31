@@ -1,5 +1,4 @@
 import { getAuth } from "~/lib/auth/auth.server";
-import { calculateDataHash } from "~/lib/data-hash";
 import { PlaylistService } from "~/lib/playlist.server";
 import type { Route } from "../+types/root";
 
@@ -16,32 +15,21 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const userData = await playlistService.getUserPlaylists(session.user.id);
 
     if (userData) {
-      // Calculate hash for the server data
-      const dataHash = calculateDataHash(userData);
-      const responseData = {
-        ...userData,
-        dataHash,
-      };
-
-      return new Response(JSON.stringify(responseData), {
+      return new Response(JSON.stringify(userData), {
         headers: { "Content-Type": "application/json" },
       });
     } else {
-      const emptyData = {
-        playlists: [],
-        activePlaylistId: "",
-        loopMode: "all" as const,
-        isShuffle: false,
-      };
-      const dataHash = calculateDataHash(emptyData);
-      const responseData = {
-        ...emptyData,
-        dataHash,
-      };
-
-      return new Response(JSON.stringify(responseData), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          playlists: [],
+          activePlaylistId: "",
+          loopMode: "all",
+          isShuffle: false,
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
   } catch (error) {
     console.error("Load error:", error);

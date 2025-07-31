@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
-import { calculateDataHash, type UserPlaylistData } from "~/lib/data-hash";
 import { usePlayerStore } from "~/stores/player";
 import { useAuth } from "./use-auth";
 
-interface ServerResponse extends UserPlaylistData {
-  dataHash: string;
+interface UserPlaylistData {
+  playlists: Array<{
+    id: string;
+    name: string;
+    items: Array<{
+      id: string;
+      title?: string;
+    }>;
+  }>;
+  activePlaylistId: string;
+  loopMode: "all" | "one";
+  isShuffle: boolean;
 }
 
 function isValidUserData(data: unknown): data is UserPlaylistData {
@@ -31,9 +40,6 @@ export function usePlaylistSync() {
     activePlaylistId,
     loopMode,
     isShuffle,
-    lastSyncedHash,
-    getCurrentDataHash,
-    markAsSynced,
   } = usePlayerStore();
 
   // State for conflict resolution
@@ -57,30 +63,21 @@ export function usePlaylistSync() {
       try {
         const response = await fetch("/api/playlists/load");
         if (response.ok) {
-          const serverResponse: ServerResponse = await response.json();
-          const { dataHash: serverHash, ...userData } = serverResponse;
+          const userData = await response.json();
 
-          // Calculate current local data hash
+          // Check if server has data
+          const hasServerData =
+            isValidUserData(userData) &&
+            userData.playlists &&
+            userData.playlists.length > 0;
+
+          // Check if local data exists and is not default
           const localData: UserPlaylistData = {
             playlists,
             activePlaylistId,
             loopMode,
             isShuffle,
           };
-          const localHash = calculateDataHash(localData);
-
-          // Check if data is identical by hash comparison
-          if (localHash === serverHash) {
-            // Data is identical - mark as synced without conflict
-            markAsSynced();
-            return;
-          }
-
-          // Data is different - check if we have meaningful data on both sides
-          const hasServerData =
-            isValidUserData(userData) &&
-            userData.playlists &&
-            userData.playlists.length > 0;
 
           const hasLocalData =
             playlists.length > 0 &&
@@ -95,7 +92,7 @@ export function usePlaylistSync() {
             );
 
           if (hasServerData && hasLocalData) {
-            // Both sides have meaningful data and they're different - show conflict resolution
+            // Data conflict detected - show resolution modal
             setConflictData({
               local: localData,
               cloud: userData,
@@ -108,7 +105,7 @@ export function usePlaylistSync() {
             await syncToServer();
           } else {
             // No meaningful data on either side - mark as synced
-            markAsSynced();
+            await syncToServer();
           }
         }
       } catch (error) {
@@ -124,7 +121,6 @@ export function usePlaylistSync() {
     isDataSynced,
     loadUserData,
     syncToServer,
-    markAsSynced,
     playlists,
     activePlaylistId,
     loopMode,
@@ -135,13 +131,6 @@ export function usePlaylistSync() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: <>
   useEffect(() => {
     if (user && isDataSynced) {
-      // Check if data has actually changed by comparing with last synced hash
-      const currentHash = getCurrentDataHash();
-      if (lastSyncedHash && currentHash === lastSyncedHash) {
-        // Data hasn't changed, no need to sync
-        return;
-      }
-
       const timeoutId = setTimeout(() => {
         syncToServer();
       }, 1000); // Debounce sync by 1 second
@@ -155,8 +144,6 @@ export function usePlaylistSync() {
     activePlaylistId,
     loopMode,
     isShuffle,
-    lastSyncedHash,
-    getCurrentDataHash,
     syncToServer,
   ]);
 
