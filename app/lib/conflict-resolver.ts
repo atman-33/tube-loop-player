@@ -44,6 +44,8 @@ export class ConflictResolver {
     local: UserPlaylistData,
     cloud: UserPlaylistData,
   ): ConflictResolution {
+    const startTime = performance.now();
+
     try {
       // Handle null/undefined cases
       if (!local && !cloud) {
@@ -51,6 +53,17 @@ export class ConflictResolver {
       }
 
       if (!local && cloud) {
+        // Validate cloud data before auto-sync
+        if (!this.isValidUserPlaylistData(cloud)) {
+          console.warn(
+            "Invalid cloud data structure detected, falling back to modal",
+          );
+          return {
+            type: "show-modal",
+            local: local || this.getEmptyUserData(),
+            cloud,
+          };
+        }
         // Only cloud data exists - auto-sync cloud data
         return { type: "auto-sync", data: cloud };
       }
@@ -66,13 +79,26 @@ export class ConflictResolver {
         !this.isValidUserPlaylistData(local) ||
         !this.isValidUserPlaylistData(cloud)
       ) {
+        console.warn(
+          "Invalid data structure detected during conflict analysis",
+        );
         // Malformed data - fallback to showing modal
         return { type: "show-modal", local, cloud };
       }
 
-      // Both datasets exist - perform intelligent comparison
-      const analysis = this.performConflictAnalysis(local, cloud);
+      // Both datasets exist - perform intelligent comparison with error handling
+      let analysis: ConflictAnalysis;
+      try {
+        analysis = this.performConflictAnalysis(local, cloud);
+      } catch (analysisError) {
+        console.error(
+          "Conflict analysis failed, falling back to modal:",
+          analysisError,
+        );
+        return { type: "show-modal", local, cloud };
+      }
 
+      // Handle analysis results with fallback logic
       switch (analysis.conflictType) {
         case "identical":
           // Data is functionally identical - auto-sync cloud data
@@ -91,37 +117,68 @@ export class ConflictResolver {
           return { type: "show-modal", local, cloud };
 
         default:
+          console.warn(
+            `Unknown conflict type: ${analysis.conflictType}, falling back to modal`,
+          );
           // Fallback to showing modal for unknown cases
           return { type: "show-modal", local, cloud };
       }
     } catch (error) {
-      console.error("Conflict analysis failed:", error);
-      // Fallback to showing modal when analysis fails
-      return { type: "show-modal", local, cloud };
+      const duration = performance.now() - startTime;
+      console.error(
+        `Conflict analysis failed after ${duration.toFixed(2)}ms:`,
+        error,
+      );
+
+      // Comprehensive fallback to showing modal when analysis fails
+      const fallbackLocal = local || this.getEmptyUserData();
+      const fallbackCloud = cloud || this.getEmptyUserData();
+
+      return { type: "show-modal", local: fallbackLocal, cloud: fallbackCloud };
     }
   }
 
   /**
    * Performs automatic sync when data is identical
    * @param cloudData - Cloud data to sync
+   * @throws {Error} When cloud data is invalid or sync operation fails
    */
   public async performAutoSync(cloudData: UserPlaylistData): Promise<void> {
+    const startTime = performance.now();
+
     try {
-      // In a real implementation, this would update the local state
-      // For now, we'll just log the action since the actual state update
-      // is handled by the calling code (usePlaylistSync hook)
       console.log("Performing automatic sync with cloud data");
 
       // Validate the cloud data before syncing
       if (!this.isValidUserPlaylistData(cloudData)) {
-        throw new Error("Invalid cloud data structure");
+        throw new Error(
+          "Invalid cloud data structure - cannot perform auto-sync",
+        );
       }
 
+      // Additional validation for data integrity
+      if (!this.validateDataIntegrity(cloudData)) {
+        throw new Error(
+          "Cloud data failed integrity checks - cannot perform auto-sync",
+        );
+      }
+
+      // Simulate potential network or processing delays
+      // In a real implementation, this would update the local state
       // The actual sync operation is handled by the caller
       // This method serves as a validation and logging point
+
+      const duration = performance.now() - startTime;
+      console.log(`Auto-sync validation completed in ${duration.toFixed(2)}ms`);
     } catch (error) {
-      console.error("Auto-sync failed:", error);
-      throw error; // Re-throw to allow caller to handle fallback
+      const duration = performance.now() - startTime;
+      console.error(`Auto-sync failed after ${duration.toFixed(2)}ms:`, error);
+
+      // Re-throw with additional context for caller to handle fallback
+      if (error instanceof Error) {
+        throw new Error(`Auto-sync failed: ${error.message}`);
+      }
+      throw new Error("Auto-sync failed due to unknown error");
     }
   }
 
@@ -130,70 +187,123 @@ export class ConflictResolver {
    * @param local - Local playlist data
    * @param cloud - Cloud playlist data
    * @returns ConflictAnalysis with detailed information
+   * @throws {Error} When analysis encounters critical errors
    */
   private performConflictAnalysis(
     local: UserPlaylistData,
     cloud: UserPlaylistData,
   ): ConflictAnalysis {
-    // Calculate metadata
-    const metadata = {
-      localItemCount: this.countTotalItems(local),
-      cloudItemCount: this.countTotalItems(cloud),
-      localPlaylistCount: local?.playlists?.length || 0,
-      cloudPlaylistCount: cloud?.playlists?.length || 0,
-    };
+    const startTime = performance.now();
 
-    // Check if local data is empty or default
-    const isLocalEmpty = this.isEmptyOrDefaultData(local);
-    const isCloudEmpty = this.isEmptyOrDefaultData(cloud);
+    try {
+      // Calculate metadata with error handling
+      let metadata: ConflictAnalysis["metadata"];
+      try {
+        metadata = {
+          localItemCount: this.countTotalItems(local),
+          cloudItemCount: this.countTotalItems(cloud),
+          localPlaylistCount: local?.playlists?.length || 0,
+          cloudPlaylistCount: cloud?.playlists?.length || 0,
+        };
+      } catch (metadataError) {
+        console.warn("Failed to calculate conflict metadata:", metadataError);
+        // Fallback metadata
+        metadata = {
+          localItemCount: 0,
+          cloudItemCount: 0,
+          localPlaylistCount: 0,
+          cloudPlaylistCount: 0,
+        };
+      }
 
-    // Special case: both datasets are empty - treat as identical
-    if (isLocalEmpty && isCloudEmpty) {
+      // Check if local data is empty or default with error handling
+      let isLocalEmpty: boolean;
+      let isCloudEmpty: boolean;
+
+      try {
+        isLocalEmpty = this.isEmptyOrDefaultData(local);
+        isCloudEmpty = this.isEmptyOrDefaultData(cloud);
+      } catch (emptyCheckError) {
+        console.warn("Failed to check empty data status:", emptyCheckError);
+        // Conservative fallback - assume data is not empty to trigger comparison
+        isLocalEmpty = false;
+        isCloudEmpty = false;
+      }
+
+      // Special case: both datasets are empty - treat as identical
+      if (isLocalEmpty && isCloudEmpty) {
+        return {
+          hasConflict: false,
+          conflictType: "identical",
+          recommendedAction: "auto-sync",
+          metadata,
+        };
+      }
+
+      if (isLocalEmpty && !isCloudEmpty) {
+        return {
+          hasConflict: false,
+          conflictType: "empty-local",
+          recommendedAction: "auto-sync",
+          metadata,
+        };
+      }
+
+      if (!isLocalEmpty && isCloudEmpty) {
+        return {
+          hasConflict: false,
+          conflictType: "empty-cloud",
+          recommendedAction: "sync-local-to-cloud",
+          metadata,
+        };
+      }
+
+      // Perform deep comparison for identical data with timeout handling
+      let areIdentical: boolean;
+      try {
+        areIdentical = this.dataComparator.areDataSetsIdentical(local, cloud);
+      } catch (comparisonError) {
+        const duration = performance.now() - startTime;
+        console.error(
+          `Data comparison failed during conflict analysis after ${duration.toFixed(2)}ms:`,
+          comparisonError,
+        );
+
+        // If comparison times out or fails, treat as different to show modal
+        return {
+          hasConflict: true,
+          conflictType: "different",
+          recommendedAction: "show-modal",
+          metadata,
+        };
+      }
+
+      if (areIdentical) {
+        return {
+          hasConflict: false,
+          conflictType: "identical",
+          recommendedAction: "auto-sync",
+          metadata,
+        };
+      }
+
+      // Data has meaningful differences
       return {
-        hasConflict: false,
-        conflictType: "identical",
-        recommendedAction: "auto-sync",
+        hasConflict: true,
+        conflictType: "different",
+        recommendedAction: "show-modal",
         metadata,
       };
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      console.error(
+        `Conflict analysis failed after ${duration.toFixed(2)}ms:`,
+        error,
+      );
+      throw new Error(
+        `Conflict analysis failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
-
-    if (isLocalEmpty && !isCloudEmpty) {
-      return {
-        hasConflict: false,
-        conflictType: "empty-local",
-        recommendedAction: "auto-sync",
-        metadata,
-      };
-    }
-
-    if (!isLocalEmpty && isCloudEmpty) {
-      return {
-        hasConflict: false,
-        conflictType: "empty-cloud",
-        recommendedAction: "sync-local-to-cloud",
-        metadata,
-      };
-    }
-
-    // Perform deep comparison for identical data
-    const areIdentical = this.dataComparator.areDataSetsIdentical(local, cloud);
-
-    if (areIdentical) {
-      return {
-        hasConflict: false,
-        conflictType: "identical",
-        recommendedAction: "auto-sync",
-        metadata,
-      };
-    }
-
-    // Data has meaningful differences
-    return {
-      hasConflict: true,
-      conflictType: "different",
-      recommendedAction: "show-modal",
-      metadata,
-    };
   }
 
   /**
@@ -247,12 +357,85 @@ export class ConflictResolver {
 
     const obj = data as Record<string, unknown>;
 
-    return (
-      Array.isArray(obj.playlists) &&
-      typeof obj.activePlaylistId === "string" &&
-      (obj.loopMode === "all" || obj.loopMode === "one") &&
-      typeof obj.isShuffle === "boolean"
-    );
+    try {
+      return (
+        Array.isArray(obj.playlists) &&
+        typeof obj.activePlaylistId === "string" &&
+        (obj.loopMode === "all" || obj.loopMode === "one") &&
+        typeof obj.isShuffle === "boolean" &&
+        obj.playlists.every((playlist) => {
+          if (!playlist || typeof playlist !== "object") return false;
+          const playlistObj = playlist as Record<string, unknown>;
+          return (
+            typeof playlistObj.id === "string" &&
+            typeof playlistObj.name === "string" &&
+            Array.isArray(playlistObj.items)
+          );
+        })
+      );
+    } catch (error) {
+      console.warn("UserPlaylistData validation failed:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Validates data integrity beyond basic structure
+   * @param data - Data to validate
+   * @returns true if data passes integrity checks
+   */
+  private validateDataIntegrity(data: UserPlaylistData): boolean {
+    try {
+      // Check for circular references or malformed data
+      JSON.stringify(data);
+
+      // Validate playlist IDs are unique
+      const playlistIds = data.playlists.map((p) => p.id);
+      const uniqueIds = new Set(playlistIds);
+      if (playlistIds.length !== uniqueIds.size) {
+        console.warn("Duplicate playlist IDs detected");
+        return false;
+      }
+
+      // Validate active playlist ID exists
+      if (
+        data.activePlaylistId &&
+        !playlistIds.includes(data.activePlaylistId)
+      ) {
+        console.warn("Active playlist ID does not exist in playlists");
+        return false;
+      }
+
+      // Validate item IDs within each playlist are unique
+      for (const playlist of data.playlists) {
+        const itemIds = playlist.items.map((item) => item.id);
+        const uniqueItemIds = new Set(itemIds);
+        if (itemIds.length !== uniqueItemIds.size) {
+          console.warn(
+            `Duplicate item IDs detected in playlist ${playlist.id}`,
+          );
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.warn("Data integrity validation failed:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Returns empty UserPlaylistData structure for fallback scenarios
+   * @returns Empty UserPlaylistData
+   */
+  private getEmptyUserData(): UserPlaylistData {
+    return {
+      playlists: [],
+      activePlaylistId: "",
+      loopMode: "all",
+      isShuffle: false,
+    };
   }
 }
 

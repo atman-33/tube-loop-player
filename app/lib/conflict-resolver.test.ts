@@ -271,7 +271,9 @@ describe("ConflictResolver", () => {
           cloud: meaningfulCloudData,
         });
         expect(consoleSpy).toHaveBeenCalledWith(
-          "Conflict analysis failed:",
+          expect.stringContaining(
+            "Data comparison failed during conflict analysis",
+          ),
           expect.any(Error),
         );
 
@@ -287,6 +289,147 @@ describe("ConflictResolver", () => {
         );
 
         expect(result.type).toBe("show-modal");
+      });
+
+      it("should handle timeout errors from data comparison", () => {
+        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockImplementation(
+          () => {
+            throw new Error("Comparison timeout after 100ms");
+          },
+        );
+
+        const consoleSpy = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => {});
+
+        const result = conflictResolver.analyzeConflict(
+          meaningfulLocalData,
+          meaningfulCloudData,
+        );
+
+        expect(result.type).toBe("show-modal");
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "Data comparison failed during conflict analysis",
+          ),
+          expect.any(Error),
+        );
+
+        consoleSpy.mockRestore();
+      });
+
+      it("should handle invalid cloud data in auto-sync scenario", () => {
+        const consoleWarnSpy = vi
+          .spyOn(console, "warn")
+          .mockImplementation(() => {});
+
+        const invalidCloudData = {
+          playlists: "not an array",
+          activePlaylistId: 123,
+          loopMode: "invalid",
+          isShuffle: "not boolean",
+        } as any;
+
+        const result = conflictResolver.analyzeConflict(
+          null as any,
+          invalidCloudData,
+        );
+
+        expect(result.type).toBe("show-modal");
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          "Invalid cloud data structure detected, falling back to modal",
+        );
+
+        consoleWarnSpy.mockRestore();
+      });
+
+      it("should handle metadata calculation errors", () => {
+        const consoleSpy = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => {});
+        const consoleWarnSpy = vi
+          .spyOn(console, "warn")
+          .mockImplementation(() => {});
+
+        // Mock countTotalItems to throw an error
+        const originalCountTotalItems = (conflictResolver as any)
+          .countTotalItems;
+        (conflictResolver as any).countTotalItems = vi
+          .fn()
+          .mockImplementation(() => {
+            throw new Error("Count failed");
+          });
+
+        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+          false,
+        );
+
+        const result = conflictResolver.analyzeConflict(
+          meaningfulLocalData,
+          meaningfulCloudData,
+        );
+
+        expect(result.type).toBe("show-modal");
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          "Failed to calculate conflict metadata:",
+          expect.any(Error),
+        );
+
+        // Restore original method
+        (conflictResolver as any).countTotalItems = originalCountTotalItems;
+        consoleSpy.mockRestore();
+        consoleWarnSpy.mockRestore();
+      });
+
+      it("should handle empty data check errors", () => {
+        const consoleWarnSpy = vi
+          .spyOn(console, "warn")
+          .mockImplementation(() => {});
+
+        // Mock isEmptyOrDefaultData to throw an error
+        const originalIsEmptyOrDefaultData = (conflictResolver as any)
+          .isEmptyOrDefaultData;
+        (conflictResolver as any).isEmptyOrDefaultData = vi
+          .fn()
+          .mockImplementation(() => {
+            throw new Error("Empty check failed");
+          });
+
+        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+          false,
+        );
+
+        const result = conflictResolver.analyzeConflict(
+          meaningfulLocalData,
+          meaningfulCloudData,
+        );
+
+        expect(result.type).toBe("show-modal");
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          "Failed to check empty data status:",
+          expect.any(Error),
+        );
+
+        // Restore original method
+        (conflictResolver as any).isEmptyOrDefaultData =
+          originalIsEmptyOrDefaultData;
+        consoleWarnSpy.mockRestore();
+      });
+
+      it("should provide fallback data when both inputs are invalid", () => {
+        const consoleSpy = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => {});
+
+        const result = conflictResolver.analyzeConflict(
+          null as any,
+          null as any,
+        );
+
+        // Should return no-action for both null
+        expect(result.type).toBe("no-action");
+
+        consoleSpy.mockRestore();
       });
     });
   });
@@ -306,12 +449,38 @@ describe("ConflictResolver", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should throw error for invalid cloud data", async () => {
+    it("should throw error for invalid cloud data structure", async () => {
       const invalidData = { invalid: "structure" } as any;
 
       await expect(
         conflictResolver.performAutoSync(invalidData),
-      ).rejects.toThrow("Invalid cloud data structure");
+      ).rejects.toThrow(
+        "Auto-sync failed: Invalid cloud data structure - cannot perform auto-sync",
+      );
+    });
+
+    it("should throw error for data that fails integrity checks", async () => {
+      const dataWithDuplicateIds = {
+        playlists: [
+          {
+            id: "1",
+            name: "Playlist 1",
+            items: [
+              { id: "item1", title: "Song 1" },
+              { id: "item1", title: "Song 2" }, // Duplicate ID
+            ],
+          },
+        ],
+        activePlaylistId: "1",
+        loopMode: "all",
+        isShuffle: false,
+      } as UserPlaylistData;
+
+      await expect(
+        conflictResolver.performAutoSync(dataWithDuplicateIds),
+      ).rejects.toThrow(
+        "Auto-sync failed: Cloud data failed integrity checks - cannot perform auto-sync",
+      );
     });
 
     it("should log error and re-throw when validation fails", async () => {
@@ -322,11 +491,47 @@ describe("ConflictResolver", () => {
 
       await expect(
         conflictResolver.performAutoSync(invalidData),
-      ).rejects.toThrow();
+      ).rejects.toThrow("Auto-sync failed:");
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Auto-sync failed:",
+        expect.stringContaining("Auto-sync failed"),
         expect.any(Error),
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle unknown errors gracefully", async () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      // Mock validateDataIntegrity to throw a non-Error object
+      const originalValidateDataIntegrity = (conflictResolver as any)
+        .validateDataIntegrity;
+      (conflictResolver as any).validateDataIntegrity = vi
+        .fn()
+        .mockImplementation(() => {
+          throw "String error"; // Non-Error object
+        });
+
+      await expect(
+        conflictResolver.performAutoSync(meaningfulCloudData),
+      ).rejects.toThrow("Auto-sync failed due to unknown error");
+
+      // Restore original method
+      (conflictResolver as any).validateDataIntegrity =
+        originalValidateDataIntegrity;
+      consoleSpy.mockRestore();
+    });
+
+    it("should log performance metrics", async () => {
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await conflictResolver.performAutoSync(meaningfulCloudData);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/Auto-sync validation completed in \d+\.\d+ms/),
       );
 
       consoleSpy.mockRestore();
@@ -412,6 +617,121 @@ describe("ConflictResolver", () => {
         allEmptyPlaylists,
       );
       expect(isEmptyOrDefault).toBe(true);
+    });
+  });
+
+  describe("data integrity validation", () => {
+    it("should detect duplicate playlist IDs", () => {
+      const dataWithDuplicatePlaylistIds = {
+        playlists: [
+          { id: "1", name: "Playlist 1", items: [] },
+          { id: "1", name: "Duplicate ID", items: [] }, // Duplicate ID
+        ],
+        activePlaylistId: "1",
+        loopMode: "all",
+        isShuffle: false,
+      } as UserPlaylistData;
+
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      const isValid = (conflictResolver as any).validateDataIntegrity(
+        dataWithDuplicatePlaylistIds,
+      );
+      expect(isValid).toBe(false);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Duplicate playlist IDs detected",
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should detect invalid active playlist ID", () => {
+      const dataWithInvalidActiveId = {
+        playlists: [{ id: "1", name: "Playlist 1", items: [] }],
+        activePlaylistId: "nonexistent",
+        loopMode: "all",
+        isShuffle: false,
+      } as UserPlaylistData;
+
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      const isValid = (conflictResolver as any).validateDataIntegrity(
+        dataWithInvalidActiveId,
+      );
+      expect(isValid).toBe(false);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Active playlist ID does not exist in playlists",
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should detect duplicate item IDs within playlist", () => {
+      const dataWithDuplicateItemIds = {
+        playlists: [
+          {
+            id: "1",
+            name: "Playlist 1",
+            items: [
+              { id: "item1", title: "Song 1" },
+              { id: "item1", title: "Song 2" }, // Duplicate ID
+            ],
+          },
+        ],
+        activePlaylistId: "1",
+        loopMode: "all",
+        isShuffle: false,
+      } as UserPlaylistData;
+
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      const isValid = (conflictResolver as any).validateDataIntegrity(
+        dataWithDuplicateItemIds,
+      );
+      expect(isValid).toBe(false);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Duplicate item IDs detected in playlist 1",
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should handle circular reference errors", () => {
+      const circularData: any = {
+        playlists: [],
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      };
+      circularData.self = circularData; // Create circular reference
+
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      const isValid = (conflictResolver as any).validateDataIntegrity(
+        circularData,
+      );
+      expect(isValid).toBe(false);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Data integrity validation failed:",
+        expect.any(Error),
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should pass validation for valid data", () => {
+      const isValid = (conflictResolver as any).validateDataIntegrity(
+        meaningfulLocalData,
+      );
+      expect(isValid).toBe(true);
     });
   });
 

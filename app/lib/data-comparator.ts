@@ -35,6 +35,15 @@ export class DataComparator {
       if (!local && !cloud) return true;
       if (!local || !cloud) return false;
 
+      // Validate input data structures
+      if (
+        !this.isValidDataStructure(local) ||
+        !this.isValidDataStructure(cloud)
+      ) {
+        console.warn("Invalid data structure detected during comparison");
+        return false;
+      }
+
       // Normalize both datasets for consistent comparison
       const normalizedLocal = normalizeUserPlaylistData(local);
       const normalizedCloud = normalizeUserPlaylistData(cloud);
@@ -55,8 +64,13 @@ export class DataComparator {
 
       return result;
     } catch (error) {
-      console.error("Data comparison failed:", error);
-      // Fallback to false to trigger conflict modal
+      const duration = performance.now() - startTime;
+      console.error(
+        `Data comparison failed after ${duration.toFixed(2)}ms:`,
+        error,
+      );
+
+      // For other errors, return false to trigger conflict modal fallback
       return false;
     }
   }
@@ -134,6 +148,47 @@ export class DataComparator {
     cloud: NormalizedUserPlaylistData["playlists"][0]["items"][0],
   ): boolean {
     return local.id === cloud.id && local.title === cloud.title;
+  }
+
+  /**
+   * Validates the basic structure of UserPlaylistData
+   * @param data - Data to validate
+   * @returns true if data has valid structure
+   */
+  private isValidDataStructure(data: unknown): data is UserPlaylistData {
+    if (!data || typeof data !== "object") return false;
+
+    const obj = data as Record<string, unknown>;
+
+    try {
+      return (
+        Array.isArray(obj.playlists) &&
+        typeof obj.activePlaylistId === "string" &&
+        (obj.loopMode === "all" || obj.loopMode === "one") &&
+        typeof obj.isShuffle === "boolean" &&
+        obj.playlists.every((playlist) => {
+          if (!playlist || typeof playlist !== "object") return false;
+          const playlistObj = playlist as Record<string, unknown>;
+          return (
+            typeof playlistObj.id === "string" &&
+            typeof playlistObj.name === "string" &&
+            Array.isArray(playlistObj.items) &&
+            playlistObj.items.every((item) => {
+              if (!item || typeof item !== "object") return false;
+              const itemObj = item as Record<string, unknown>;
+              return (
+                typeof itemObj.id === "string" &&
+                (typeof itemObj.title === "string" ||
+                  itemObj.title === undefined)
+              );
+            })
+          );
+        })
+      );
+    } catch (error) {
+      console.warn("Data structure validation failed:", error);
+      return false;
+    }
   }
 
   /**

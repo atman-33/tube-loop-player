@@ -390,8 +390,8 @@ describe("DataComparator", () => {
     });
 
     it("should handle malformed data gracefully", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
         .mockImplementation(() => {});
 
       const malformedData = {
@@ -410,9 +410,11 @@ describe("DataComparator", () => {
 
       const result = comparator.areDataSetsIdentical(malformedData, validData);
       expect(result).toBe(false);
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Invalid data structure detected during comparison",
+      );
 
-      consoleSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
     });
 
     it("should handle large datasets efficiently", () => {
@@ -439,6 +441,204 @@ describe("DataComparator", () => {
 
       expect(result).toBe(true);
       expect(duration).toBeLessThan(100); // Should complete within 100ms
+    });
+  });
+
+  describe("error handling and fallback mechanisms", () => {
+    it("should return false for invalid data structures", () => {
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      const invalidLocal = {
+        playlists: null,
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      } as any;
+
+      const validData: UserPlaylistData = {
+        playlists: [],
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      };
+
+      const result = comparator.areDataSetsIdentical(invalidLocal, validData);
+      expect(result).toBe(false);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Invalid data structure detected during comparison",
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should handle comparison errors gracefully", () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      // Mock compareNormalizedData to throw an error
+      const originalCompare = (comparator as any).compareNormalizedData;
+      (comparator as any).compareNormalizedData = vi
+        .fn()
+        .mockImplementation(() => {
+          throw new Error("Comparison failed");
+        });
+
+      const data: UserPlaylistData = {
+        playlists: [],
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      };
+
+      const result = comparator.areDataSetsIdentical(data, data);
+      expect(result).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      // Restore original method
+      (comparator as any).compareNormalizedData = originalCompare;
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should handle normalization errors gracefully", () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      // Create data that will cause normalization to fail
+      const problematicData = {
+        playlists: [
+          {
+            id: "1",
+            name: "Test",
+            items: [
+              { id: "item1", title: "Song 1" },
+              null, // This will cause issues during normalization
+            ],
+          },
+        ],
+        activePlaylistId: "1",
+        loopMode: "all",
+        isShuffle: false,
+      } as any;
+
+      const validData: UserPlaylistData = {
+        playlists: [],
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      };
+
+      const result = comparator.areDataSetsIdentical(
+        problematicData,
+        validData,
+      );
+      expect(result).toBe(false);
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should validate playlist structure in data validation", () => {
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      const invalidPlaylistData = {
+        playlists: [
+          {
+            id: "1",
+            name: "Valid Playlist",
+            items: [
+              { id: "item1", title: "Song 1" },
+              { id: "item2" }, // Missing title
+            ],
+          },
+        ],
+        activePlaylistId: "1",
+        loopMode: "all",
+        isShuffle: false,
+      } as any;
+
+      const validData: UserPlaylistData = {
+        playlists: [],
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      };
+
+      const result = comparator.areDataSetsIdentical(
+        invalidPlaylistData,
+        validData,
+      );
+      expect(result).toBe(false);
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should handle circular reference errors in validation", () => {
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      // Create data with invalid structure that will fail validation
+      const invalidData: any = {
+        playlists: [
+          {
+            id: "1",
+            name: "Test",
+            items: "not an array", // This will fail validation
+          },
+        ],
+        activePlaylistId: "1",
+        loopMode: "all",
+        isShuffle: false,
+      };
+
+      const validData: UserPlaylistData = {
+        playlists: [],
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      };
+
+      const result = comparator.areDataSetsIdentical(invalidData, validData);
+      expect(result).toBe(false);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Invalid data structure detected during comparison",
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should handle data structure validation errors", () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      // Mock isValidDataStructure to throw an error
+      const originalValidate = (comparator as any).isValidDataStructure;
+      (comparator as any).isValidDataStructure = vi
+        .fn()
+        .mockImplementation(() => {
+          throw new Error("Validation failed");
+        });
+
+      const data: UserPlaylistData = {
+        playlists: [],
+        activePlaylistId: "",
+        loopMode: "all",
+        isShuffle: false,
+      };
+
+      const result = comparator.areDataSetsIdentical(data, data);
+      expect(result).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      // Restore original method
+      (comparator as any).isValidDataStructure = originalValidate;
+      consoleErrorSpy.mockRestore();
     });
   });
 

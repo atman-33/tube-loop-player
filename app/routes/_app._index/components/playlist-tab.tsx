@@ -102,7 +102,7 @@ export const PlaylistTab = ({
           }}
           className={`
             relative px-1 py-3 font-medium text-xs transition-all duration-200 ease-out
-            w-full h-12 flex items-center justify-center overflow-hidden cursor-grab
+            w-full h-12 flex items-center justify-center overflow-hidden cursor-pointer
             ${isActive
               ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
               : isOver
