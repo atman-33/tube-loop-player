@@ -1,32 +1,10 @@
 import { useEffect, useState } from "react";
+import { DataNormalizer, type UserPlaylistData } from "~/lib/data-normalizer";
 import { usePlayerStore } from "~/stores/player";
 import { useAuth } from "./use-auth";
 
-interface UserPlaylistData {
-  playlists: Array<{
-    id: string;
-    name: string;
-    items: Array<{
-      id: string;
-      title?: string;
-    }>;
-  }>;
-  activePlaylistId: string;
-  loopMode: "all" | "one";
-  isShuffle: boolean;
-}
-
 function isValidUserData(data: unknown): data is UserPlaylistData {
-  if (!data || typeof data !== "object") return false;
-
-  const obj = data as Record<string, unknown>;
-
-  return (
-    Array.isArray(obj.playlists) &&
-    typeof obj.activePlaylistId === "string" &&
-    (obj.loopMode === "all" || obj.loopMode === "one") &&
-    typeof obj.isShuffle === "boolean"
-  );
+  return DataNormalizer.isValidUserPlaylistData(data);
 }
 
 export function usePlaylistSync() {
