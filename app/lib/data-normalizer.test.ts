@@ -1,12 +1,13 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <> */
 import { describe, expect, it } from "vitest";
 import {
-  DataNormalizer,
-  type NormalizedUserPlaylistData,
+  isValidUserPlaylistData,
+  normalizeUserPlaylistData,
   type UserPlaylistData,
 } from "./data-normalizer";
 
-describe("DataNormalizer", () => {
-  describe("normalize", () => {
+describe("Data Normalizer", () => {
+  describe("normalizeUserPlaylistData", () => {
     it("should normalize basic playlist data with sorting", () => {
       const input: UserPlaylistData = {
         playlists: [
@@ -32,7 +33,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       expect(result.playlists).toHaveLength(2);
       // Playlists should be sorted by ID
@@ -64,7 +65,7 @@ describe("DataNormalizer", () => {
         isShuffle: true,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       expect(result.playlists[0].items[0].title).toBe("");
       expect(result.playlists[0].items[1].title).toBe("Has Title");
@@ -79,7 +80,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       expect(result.playlists).toHaveLength(0);
       expect(result.activePlaylistId).toBe("");
@@ -99,7 +100,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       expect(result.playlists).toHaveLength(1);
       expect(result.playlists[0].items).toHaveLength(0);
@@ -113,7 +114,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
       expect(result.isShuffle).toBe(false);
 
       const inputTrue: UserPlaylistData = {
@@ -121,7 +122,7 @@ describe("DataNormalizer", () => {
         isShuffle: true,
       };
 
-      const resultTrue = DataNormalizer.normalize(inputTrue);
+      const resultTrue = normalizeUserPlaylistData(inputTrue);
       expect(resultTrue.isShuffle).toBe(true);
     });
 
@@ -132,7 +133,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       } as unknown as UserPlaylistData;
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
       expect(result.activePlaylistId).toBe("");
     });
 
@@ -143,24 +144,24 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       } as unknown as UserPlaylistData;
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
       expect(result.loopMode).toBe("all");
     });
 
     it("should throw error for null or undefined input", () => {
-      expect(() => DataNormalizer.normalize(null as any)).toThrow(
+      expect(() => normalizeUserPlaylistData(null as any)).toThrow(
         "Invalid data: expected UserPlaylistData object",
       );
-      expect(() => DataNormalizer.normalize(undefined as any)).toThrow(
+      expect(() => normalizeUserPlaylistData(undefined as any)).toThrow(
         "Invalid data: expected UserPlaylistData object",
       );
     });
 
     it("should throw error for non-object input", () => {
-      expect(() => DataNormalizer.normalize("string" as any)).toThrow(
+      expect(() => normalizeUserPlaylistData("string" as any)).toThrow(
         "Invalid data: expected UserPlaylistData object",
       );
-      expect(() => DataNormalizer.normalize(123 as any)).toThrow(
+      expect(() => normalizeUserPlaylistData(123 as any)).toThrow(
         "Invalid data: expected UserPlaylistData object",
       );
     });
@@ -173,7 +174,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       } as any;
 
-      expect(() => DataNormalizer.normalize(input)).toThrow(
+      expect(() => normalizeUserPlaylistData(input)).toThrow(
         "Invalid data: playlists must be an array",
       );
     });
@@ -196,7 +197,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       } as any;
 
-      expect(() => DataNormalizer.normalize(input)).toThrow(
+      expect(() => normalizeUserPlaylistData(input)).toThrow(
         "Invalid playlist: expected Playlist object",
       );
     });
@@ -215,7 +216,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       } as any;
 
-      expect(() => DataNormalizer.normalize(input)).toThrow(
+      expect(() => normalizeUserPlaylistData(input)).toThrow(
         "Invalid playlist: items must be an array",
       );
     });
@@ -237,7 +238,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       } as any;
 
-      expect(() => DataNormalizer.normalize(input)).toThrow(
+      expect(() => normalizeUserPlaylistData(input)).toThrow(
         "Invalid playlist item: expected PlaylistItem object",
       );
     });
@@ -273,7 +274,7 @@ describe("DataNormalizer", () => {
         isShuffle: true,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       // Verify playlist sorting
       expect(result.playlists.map((p) => p.id)).toEqual([
@@ -309,7 +310,7 @@ describe("DataNormalizer", () => {
         isShuffle: true,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       expect(result.activePlaylistId).toBe("test-playlist");
       expect(result.loopMode).toBe("one");
@@ -337,29 +338,29 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       };
 
-      expect(DataNormalizer.isValidUserPlaylistData(validData)).toBe(true);
+      expect(isValidUserPlaylistData(validData)).toBe(true);
     });
 
     it("should return false for null or undefined", () => {
-      expect(DataNormalizer.isValidUserPlaylistData(null)).toBe(false);
-      expect(DataNormalizer.isValidUserPlaylistData(undefined)).toBe(false);
+      expect(isValidUserPlaylistData(null)).toBe(false);
+      expect(isValidUserPlaylistData(undefined)).toBe(false);
     });
 
     it("should return false for non-object types", () => {
-      expect(DataNormalizer.isValidUserPlaylistData("string")).toBe(false);
-      expect(DataNormalizer.isValidUserPlaylistData(123)).toBe(false);
-      expect(DataNormalizer.isValidUserPlaylistData([])).toBe(false);
+      expect(isValidUserPlaylistData("string")).toBe(false);
+      expect(isValidUserPlaylistData(123)).toBe(false);
+      expect(isValidUserPlaylistData([])).toBe(false);
     });
 
     it("should return false for missing required properties", () => {
-      expect(DataNormalizer.isValidUserPlaylistData({})).toBe(false);
+      expect(isValidUserPlaylistData({})).toBe(false);
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [],
         }),
       ).toBe(false);
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [],
           activePlaylistId: "test",
         }),
@@ -368,7 +369,7 @@ describe("DataNormalizer", () => {
 
     it("should return false for invalid property types", () => {
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: "not-array",
           activePlaylistId: "test",
           loopMode: "all",
@@ -377,7 +378,7 @@ describe("DataNormalizer", () => {
       ).toBe(false);
 
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [],
           activePlaylistId: 123,
           loopMode: "all",
@@ -386,7 +387,7 @@ describe("DataNormalizer", () => {
       ).toBe(false);
 
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [],
           activePlaylistId: "test",
           loopMode: "invalid",
@@ -395,7 +396,7 @@ describe("DataNormalizer", () => {
       ).toBe(false);
 
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [],
           activePlaylistId: "test",
           loopMode: "all",
@@ -406,7 +407,7 @@ describe("DataNormalizer", () => {
 
     it("should return false for invalid playlist structure", () => {
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [
             {
               // Missing id
@@ -421,7 +422,7 @@ describe("DataNormalizer", () => {
       ).toBe(false);
 
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [
             {
               id: "test",
@@ -438,7 +439,7 @@ describe("DataNormalizer", () => {
 
     it("should return false for invalid playlist item structure", () => {
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [
             {
               id: "test",
@@ -458,7 +459,7 @@ describe("DataNormalizer", () => {
       ).toBe(false);
 
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [
             {
               id: "test",
@@ -478,7 +479,7 @@ describe("DataNormalizer", () => {
       ).toBe(false);
 
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [
             {
               id: "test",
@@ -500,7 +501,7 @@ describe("DataNormalizer", () => {
 
     it("should return true for empty playlists and items", () => {
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [],
           activePlaylistId: "",
           loopMode: "all",
@@ -509,7 +510,7 @@ describe("DataNormalizer", () => {
       ).toBe(true);
 
       expect(
-        DataNormalizer.isValidUserPlaylistData({
+        isValidUserPlaylistData({
           playlists: [
             {
               id: "empty",
@@ -542,7 +543,7 @@ describe("DataNormalizer", () => {
       };
 
       const startTime = Date.now();
-      const result = DataNormalizer.normalize(largeData);
+      const result = normalizeUserPlaylistData(largeData);
       const endTime = Date.now();
 
       // Should complete within reasonable time (less than 100ms for this size)
@@ -568,7 +569,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       expect(result.playlists[0].id).toBe(
         "playlist-with-special-chars-!@#$%^&*()",
@@ -613,8 +614,8 @@ describe("DataNormalizer", () => {
         isShuffle: true,
       };
 
-      const result1 = DataNormalizer.normalize(input);
-      const result2 = DataNormalizer.normalize(input);
+      const result1 = normalizeUserPlaylistData(input);
+      const result2 = normalizeUserPlaylistData(input);
 
       // Results should be identical
       expect(JSON.stringify(result1)).toBe(JSON.stringify(result2));
@@ -634,7 +635,7 @@ describe("DataNormalizer", () => {
         isShuffle: false,
       };
 
-      const result = DataNormalizer.normalize(input);
+      const result = normalizeUserPlaylistData(input);
 
       expect(result.playlists[0].id).toBe("");
       expect(result.playlists[0].name).toBe("");

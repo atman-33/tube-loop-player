@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { DataNormalizer, type UserPlaylistData } from "~/lib/data-normalizer";
+import {
+  isValidUserPlaylistData,
+  type UserPlaylistData,
+} from "~/lib/data-normalizer";
 import { usePlayerStore } from "~/stores/player";
 import { useAuth } from "./use-auth";
 
 function isValidUserData(data: unknown): data is UserPlaylistData {
-  return DataNormalizer.isValidUserPlaylistData(data);
+  return isValidUserPlaylistData(data);
 }
 
 export function usePlaylistSync() {
