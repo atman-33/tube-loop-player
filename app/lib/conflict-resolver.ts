@@ -8,7 +8,11 @@ import type { UserPlaylistData } from "./data-normalizer";
 
 export type ConflictResolution =
   | { type: "auto-sync"; data: UserPlaylistData }
-  | { type: "show-modal"; local: UserPlaylistData; cloud: UserPlaylistData }
+  | {
+      type: "show-modal";
+      local: UserPlaylistData | null;
+      cloud: UserPlaylistData | null;
+    }
   | { type: "no-action" };
 
 export interface ConflictAnalysis {
@@ -36,13 +40,13 @@ export class ConflictResolver {
 
   /**
    * Determines if conflict resolution is needed and what action to take
-   * @param local - Local playlist data
-   * @param cloud - Cloud playlist data
+   * @param local - Local playlist data (can be null)
+   * @param cloud - Cloud playlist data (can be null)
    * @returns ConflictResolution indicating action to take
    */
   public analyzeConflict(
-    local: UserPlaylistData,
-    cloud: UserPlaylistData,
+    local: UserPlaylistData | null,
+    cloud: UserPlaylistData | null,
   ): ConflictResolution {
     const startTime = performance.now();
 
@@ -184,14 +188,14 @@ export class ConflictResolver {
 
   /**
    * Performs detailed conflict analysis between local and cloud data
-   * @param local - Local playlist data
-   * @param cloud - Cloud playlist data
+   * @param local - Local playlist data (can be null)
+   * @param cloud - Cloud playlist data (can be null)
    * @returns ConflictAnalysis with detailed information
    * @throws {Error} When analysis encounters critical errors
    */
   private performConflictAnalysis(
-    local: UserPlaylistData,
-    cloud: UserPlaylistData,
+    local: UserPlaylistData | null,
+    cloud: UserPlaylistData | null,
   ): ConflictAnalysis {
     const startTime = performance.now();
 
@@ -308,10 +312,10 @@ export class ConflictResolver {
 
   /**
    * Checks if the data is empty or represents default/initial state
-   * @param data - UserPlaylistData to check
+   * @param data - UserPlaylistData to check (can be null)
    * @returns true if data is empty or default
    */
-  private isEmptyOrDefaultData(data: UserPlaylistData): boolean {
+  private isEmptyOrDefaultData(data: UserPlaylistData | null): boolean {
     if (!data || !data.playlists || data.playlists.length === 0) {
       return true;
     }
@@ -336,10 +340,10 @@ export class ConflictResolver {
 
   /**
    * Counts total items across all playlists
-   * @param data - UserPlaylistData to count
+   * @param data - UserPlaylistData to count (can be null)
    * @returns total number of items
    */
-  private countTotalItems(data: UserPlaylistData): number {
+  private countTotalItems(data: UserPlaylistData | null): number {
     if (!data?.playlists) return 0;
     return data.playlists.reduce(
       (total, playlist) => total + (playlist?.items?.length || 0),
@@ -349,7 +353,7 @@ export class ConflictResolver {
 
   /**
    * Validates UserPlaylistData structure
-   * @param data - Data to validate
+   * @param data - Data to validate (can be null)
    * @returns true if data is valid
    */
   private isValidUserPlaylistData(data: unknown): data is UserPlaylistData {

@@ -29,8 +29,8 @@ export function usePlaylistSync() {
 
   // State for conflict resolution
   const [conflictData, setConflictData] = useState<{
-    local: UserPlaylistData;
-    cloud: UserPlaylistData;
+    local: UserPlaylistData | null;
+    cloud: UserPlaylistData | null;
   } | null>(null);
 
   // Update user in store when auth state changes
@@ -75,6 +75,7 @@ export function usePlaylistSync() {
 
         try {
           userData = await response.json();
+          // biome-ignore lint/correctness/noUnusedVariables: <>
         } catch (parseError) {
           throw new Error("Failed to parse cloud data response");
         }
@@ -232,14 +233,14 @@ export function usePlaylistSync() {
 
   // Enhanced conflict resolution functions with error handling
   const resolveConflict = async (
-    selectedData: UserPlaylistData,
+    selectedData: UserPlaylistData | null,
     source: "local" | "cloud",
   ) => {
     const startTime = performance.now();
 
     try {
       // Validate selected data before proceeding
-      if (!isValidUserData(selectedData)) {
+      if (!selectedData || !isValidUserData(selectedData)) {
         throw new Error(
           `Invalid ${source} data structure selected for conflict resolution`,
         );

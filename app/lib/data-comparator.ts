@@ -20,13 +20,13 @@ export class DataComparator {
    * Performs deep comparison of two UserPlaylistData objects
    * Returns true if the data is functionally identical after normalization
    *
-   * @param local - Local playlist data
-   * @param cloud - Cloud playlist data
+   * @param local - Local playlist data (can be null)
+   * @param cloud - Cloud playlist data (can be null)
    * @returns boolean indicating if data is identical
    */
   public areDataSetsIdentical(
-    local: UserPlaylistData,
-    cloud: UserPlaylistData,
+    local: UserPlaylistData | null,
+    cloud: UserPlaylistData | null,
   ): boolean {
     const startTime = performance.now();
 
@@ -195,8 +195,8 @@ export class DataComparator {
    * Static convenience method for one-off comparisons
    */
   public static areIdentical(
-    local: UserPlaylistData,
-    cloud: UserPlaylistData,
+    local: UserPlaylistData | null,
+    cloud: UserPlaylistData | null,
   ): boolean {
     const comparator = new DataComparator();
     return comparator.areDataSetsIdentical(local, cloud);
