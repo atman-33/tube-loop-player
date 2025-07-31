@@ -20,7 +20,11 @@ vi.mock("~/stores/player");
 global.fetch = vi.fn();
 
 describe("usePlaylistSync Integration Tests", () => {
-  const mockUser = { id: "user123", email: "test@example.com" };
+  const mockUser = {
+    id: "user123",
+    name: "Test User",
+    email: "test@example.com",
+  };
 
   // Get the mocked functions
   const mockUseAuth = vi.mocked(useAuth);
@@ -34,9 +38,8 @@ describe("usePlaylistSync Integration Tests", () => {
         name: "My Playlist",
         items: [
           {
-            id: "item1",
+            id: "V4UL6BYgUXw",
             title: "Song 1",
-            url: "https://youtube.com/watch?v=1",
           },
         ],
       },
@@ -53,9 +56,8 @@ describe("usePlaylistSync Integration Tests", () => {
         name: "My Playlist",
         items: [
           {
-            id: "item1",
+            id: "V4UL6BYgUXw",
             title: "Song 1",
-            url: "https://youtube.com/watch?v=1",
           },
         ],
       },
@@ -72,9 +74,8 @@ describe("usePlaylistSync Integration Tests", () => {
         name: "Different Playlist",
         items: [
           {
-            id: "item1",
+            id: "dQw4w9WgXcQ",
             title: "Different Song",
-            url: "https://youtube.com/watch?v=2",
           },
         ],
       },
@@ -105,6 +106,9 @@ describe("usePlaylistSync Integration Tests", () => {
     mockUseAuth.mockReturnValue({
       user: null,
       isLoading: false,
+      isAuthenticated: false,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
     });
 
     mockUsePlayerStore.mockReturnValue(mockPlayerStore);
@@ -115,6 +119,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         isLoading: false,
+        isAuthenticated: true,
+        signIn: vi.fn(),
+        signOut: vi.fn(),
       });
 
       mockUsePlayerStore.mockReturnValue({
@@ -154,6 +161,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         isLoading: false,
+        isAuthenticated: true,
+        signIn: vi.fn(),
+        signOut: vi.fn(),
       });
 
       mockUsePlayerStore.mockReturnValue({
@@ -188,9 +198,8 @@ describe("usePlaylistSync Integration Tests", () => {
             name: "Test Playlist",
             items: [
               {
-                id: "item1",
-                title: undefined as any,
-                url: "https://youtube.com/watch?v=1",
+                id: "V4UL6BYgUXw",
+                title: undefined as unknown as string,
               },
             ],
           },
@@ -205,9 +214,7 @@ describe("usePlaylistSync Integration Tests", () => {
           {
             id: "playlist1",
             name: "Test Playlist",
-            items: [
-              { id: "item1", title: "", url: "https://youtube.com/watch?v=1" },
-            ],
+            items: [{ id: "V4UL6BYgUXw", title: "" }],
           },
         ],
         activePlaylistId: "playlist1",
@@ -218,6 +225,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         isLoading: false,
+        isAuthenticated: true,
+        signIn: vi.fn(),
+        signOut: vi.fn(),
       });
 
       mockUsePlayerStore.mockReturnValue({
@@ -245,6 +255,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         isLoading: false,
+        isAuthenticated: true,
+        signIn: vi.fn(),
+        signOut: vi.fn(),
       });
 
       mockUsePlayerStore.mockReturnValue({
@@ -282,6 +295,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         isLoading: false,
+        isAuthenticated: true,
+        signIn: vi.fn(),
+        signOut: vi.fn(),
       });
 
       const { result } = renderHook(() => usePlaylistSync());
@@ -307,6 +323,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         isLoading: false,
+        isAuthenticated: true,
+        signIn: vi.fn(),
+        signOut: vi.fn(),
       });
 
       mockUsePlayerStore.mockReturnValue({
@@ -319,9 +338,8 @@ describe("usePlaylistSync Integration Tests", () => {
         id: "large-playlist",
         name: "Large Playlist",
         items: Array.from({ length: 100 }, (_, i) => ({
-          id: `item-${i}`,
+          id: `V4UL6BYgUX${i.toString().padStart(1, "0")}`,
           title: `Song ${i}`,
-          url: `https://youtube.com/watch?v=${i}`,
         })),
       };
 
@@ -363,6 +381,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         isLoading: false,
+        isAuthenticated: true,
+        signIn: vi.fn(),
+        signOut: vi.fn(),
       });
 
       mockUsePlayerStore.mockReturnValue({
