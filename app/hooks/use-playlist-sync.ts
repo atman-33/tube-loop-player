@@ -105,7 +105,11 @@ export function usePlaylistSync() {
             loadUserData(userData);
           } else if (hasLocalData) {
             // Only local data exists - sync to server
-            await syncToServer();
+            try {
+              await syncToServer();
+            } catch (error) {
+              console.error("Failed to sync local data to server:", error);
+            }
           } else {
             // No meaningful data on either side - mark as synced
             markAsSynced();
@@ -114,7 +118,11 @@ export function usePlaylistSync() {
       } catch (error) {
         console.error("Failed to load user data:", error);
         // Fallback: sync current data to server
-        await syncToServer();
+        try {
+          await syncToServer();
+        } catch (syncError) {
+          console.error("Failed to sync data as fallback:", syncError);
+        }
       }
     };
 
@@ -179,10 +187,15 @@ export function usePlaylistSync() {
     }
   };
 
-  const cancelConflictResolution = () => {
-    // Keep current local data and sync to server
-    syncToServer();
-    setConflictData(null);
+  const cancelConflictResolution = async () => {
+    try {
+      // Keep current local data and sync to server
+      await syncToServer();
+      setConflictData(null);
+    } catch (error) {
+      console.error("Failed to cancel conflict resolution:", error);
+      setConflictData(null);
+    }
   };
 
   return {
