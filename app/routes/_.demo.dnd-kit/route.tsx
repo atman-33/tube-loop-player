@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   DndContext,
   type DragEndEvent,
@@ -188,6 +188,7 @@ export default function DndKitDemo() {
   ]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const isDragProcessingRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor)
@@ -198,47 +199,33 @@ export default function DndKitDemo() {
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id.toString();
-    const overId = over.id.toString();
-
-    // Handle item to container drop
-    if (activeId.startsWith('item-') && overId.startsWith('container-')) {
-      const activeItem = findItem(activeId);
-      const overContainer = containers.find(c => `container-${c.id}` === overId);
-
-      if (activeItem && overContainer && activeItem.containerId !== overContainer.id) {
-        setContainers(prev => {
-          const newContainers = [...prev];
-
-          // Remove from source
-          const sourceContainer = newContainers.find(c => c.id === activeItem.containerId);
-          if (sourceContainer) {
-            sourceContainer.items = sourceContainer.items.filter(item => item.id !== activeId);
-          }
-
-          // Add to target
-          const targetContainer = newContainers.find(c => c.id === overContainer.id);
-          if (targetContainer) {
-            targetContainer.items.push(activeItem.item);
-          }
-
-          return newContainers;
-        });
-      }
-    }
+    // Only used for visual feedback - no state changes here
+    // All actual item movements are handled in handleDragEnd
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+
+    // Prevent duplicate execution
+    if (isDragProcessingRef.current) {
+      console.log('🚫 Drag already processing - skipping duplicate execution');
+      return;
+    }
+
+    isDragProcessingRef.current = true;
+    console.log('🔒 Setting drag processing flag to true');
     setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      isDragProcessingRef.current = false;
+      console.log('🔓 Resetting drag processing flag (no over)');
+      return;
+    }
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
+
+    console.log('🎯 DRAG END START:', { activeId, overId });
 
     // Handle container reordering
     if (activeId.startsWith('container-') && overId.startsWith('container-')) {
@@ -248,28 +235,137 @@ export default function DndKitDemo() {
       if (activeIndex !== overIndex) {
         setContainers(prev => arrayMove(prev, activeIndex, overIndex));
       }
+      isDragProcessingRef.current = false;
+      console.log('🔓 Resetting drag processing flag (container reorder)');
+      return; // Exit early to prevent further processing
     }
 
-    // Handle item reordering within same container
-    if (activeId.startsWith('item-') && overId.startsWith('item-')) {
+    // Handle item operations
+    if (activeId.startsWith('item-')) {
       const activeItem = findItem(activeId);
-      const overItem = findItem(overId);
+      console.log('📦 Active Item:', activeItem);
+      if (!activeItem) return;
 
-      if (activeItem && overItem && activeItem.containerId === overItem.containerId) {
+      let targetContainerId: string | null = null;
+      let overItem: { item: DemoItem; containerId: string; } | null = null;
+
+      // Determine target container and get over item info
+      if (overId.startsWith('container-')) {
+        // Direct drop on container
+        targetContainerId = overId.replace('container-', '');
+        console.log('🎯 Drop on container:', targetContainerId);
+      } else if (overId.startsWith('item-')) {
+        // Drop on item - find which container the target item belongs to
+        overItem = findItem(overId);
+        console.log('🎯 Over Item:', overItem);
+        if (overItem) {
+          targetContainerId = overItem.containerId;
+        }
+      }
+
+      console.log('🎯 Target Container ID:', targetContainerId);
+      if (!targetContainerId) return;
+
+      // Check if this is a cross-container move
+      if (activeItem.containerId !== targetContainerId) {
+        console.log('🔄 Cross-container move detected');
+        console.log('📤 Source:', activeItem.containerId, '📥 Target:', targetContainerId);
+
+        // Cross-container move
         setContainers(prev => {
-          const newContainers = [...prev];
-          const container = newContainers.find(c => c.id === activeItem.containerId);
+          console.log('🔍 BEFORE UPDATE - Containers state:');
+          prev.forEach(c => {
+            console.log(`  ${c.id}: [${c.items.map(i => i.id).join(', ')}]`);
+          });
 
-          if (container) {
-            const activeIndex = container.items.findIndex(item => item.id === activeId);
-            const overIndex = container.items.findIndex(item => item.id === overId);
-            container.items = arrayMove(container.items, activeIndex, overIndex);
+          // Deep copy containers to avoid reference issues
+          const newContainers = prev.map(c => ({
+            ...c,
+            items: [...c.items]
+          }));
+
+          // Remove from source container
+          const sourceContainer = newContainers.find(c => c.id === activeItem.containerId);
+          console.log('📤 Source container found:', !!sourceContainer);
+          if (sourceContainer) {
+            const beforeRemove = sourceContainer.items.map(i => i.id);
+            sourceContainer.items = sourceContainer.items.filter(item => item.id !== activeId);
+            const afterRemove = sourceContainer.items.map(i => i.id);
+            console.log('📤 Remove from source:', beforeRemove, '→', afterRemove);
           }
+
+          // Add to target container
+          const targetContainer = newContainers.find(c => c.id === targetContainerId);
+          console.log('📥 Target container found:', !!targetContainer);
+          if (targetContainer) {
+            const beforeAdd = targetContainer.items.map(i => i.id);
+
+            // Create a copy of the item to avoid reference issues
+            const movedItem = { ...activeItem.item };
+            console.log('📋 Created item copy:', movedItem);
+
+            // If dropped on an item, insert at that position
+            if (overItem) {
+              const insertIndex = targetContainer.items.findIndex(item => item.id === overId);
+              console.log('📍 Insert index for', overId, ':', insertIndex);
+              if (insertIndex >= 0) {
+                targetContainer.items.splice(insertIndex, 0, movedItem);
+                console.log('📥 Inserted at position', insertIndex);
+              } else {
+                // Fallback: add to end if index not found
+                targetContainer.items.push(movedItem);
+                console.log('📥 Added to end (fallback)');
+              }
+            } else {
+              // If dropped on container, add to end
+              targetContainer.items.push(movedItem);
+              console.log('📥 Added to end (container drop)');
+            }
+
+            const afterAdd = targetContainer.items.map(i => i.id);
+            console.log('📥 Add to target:', beforeAdd, '→', afterAdd);
+          }
+
+          console.log('🔍 AFTER UPDATE - Containers state:');
+          newContainers.forEach(c => {
+            console.log(`  ${c.id}: [${c.items.map(i => i.id).join(', ')}]`);
+          });
 
           return newContainers;
         });
+        isDragProcessingRef.current = false;
+        console.log('🔓 Resetting drag processing flag (cross-container move)');
+      } else {
+        // Same container reordering (only if dropped on an item)
+        if (overId.startsWith('item-')) {
+          setContainers(prev => {
+            // Deep copy containers to avoid reference issues
+            const newContainers = prev.map(c => ({
+              ...c,
+              items: [...c.items]
+            }));
+            const container = newContainers.find(c => c.id === activeItem.containerId);
+
+            if (container) {
+              const activeIndex = container.items.findIndex(item => item.id === activeId);
+              const overIndex = container.items.findIndex(item => item.id === overId);
+
+              if (activeIndex !== overIndex && activeIndex >= 0 && overIndex >= 0) {
+                container.items = arrayMove(container.items, activeIndex, overIndex);
+              }
+            }
+
+            return newContainers;
+          });
+        }
+        isDragProcessingRef.current = false;
+        console.log('🔓 Resetting drag processing flag (same container reorder)');
       }
     }
+
+    // Ensure flag is reset even if no processing occurred
+    isDragProcessingRef.current = false;
+    console.log('🔓 Resetting drag processing flag (fallback)');
   };
 
   const findItem = (id: string) => {
