@@ -35,11 +35,9 @@ interface DemoContainer {
 
 // Sortable & Droppable Container Component
 const SortableDroppableContainer = ({
-  container,
-  onAddItem
+  container
 }: {
   container: DemoContainer;
-  onAddItem: (containerId: string, item: DemoItem) => void;
 }) => {
   const {
     attributes,
@@ -200,7 +198,6 @@ export default function DndKitDemo() {
 
   const handleDragOver = (event: DragOverEvent) => {
     // Only used for visual feedback - no state changes here
-    // All actual item movements are handled in handleDragEnd
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -208,24 +205,19 @@ export default function DndKitDemo() {
 
     // Prevent duplicate execution
     if (isDragProcessingRef.current) {
-      console.log('🚫 Drag already processing - skipping duplicate execution');
       return;
     }
 
     isDragProcessingRef.current = true;
-    console.log('🔒 Setting drag processing flag to true');
     setActiveId(null);
 
     if (!over) {
       isDragProcessingRef.current = false;
-      console.log('🔓 Resetting drag processing flag (no over)');
       return;
     }
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
-
-    console.log('🎯 DRAG END START:', { activeId, overId });
 
     // Handle container reordering
     if (activeId.startsWith('container-') && overId.startsWith('container-')) {
@@ -236,14 +228,12 @@ export default function DndKitDemo() {
         setContainers(prev => arrayMove(prev, activeIndex, overIndex));
       }
       isDragProcessingRef.current = false;
-      console.log('🔓 Resetting drag processing flag (container reorder)');
-      return; // Exit early to prevent further processing
+      return;
     }
 
     // Handle item operations
     if (activeId.startsWith('item-')) {
       const activeItem = findItem(activeId);
-      console.log('📦 Active Item:', activeItem);
       if (!activeItem) return;
 
       let targetContainerId: string | null = null;
@@ -253,31 +243,20 @@ export default function DndKitDemo() {
       if (overId.startsWith('container-')) {
         // Direct drop on container
         targetContainerId = overId.replace('container-', '');
-        console.log('🎯 Drop on container:', targetContainerId);
       } else if (overId.startsWith('item-')) {
         // Drop on item - find which container the target item belongs to
         overItem = findItem(overId);
-        console.log('🎯 Over Item:', overItem);
         if (overItem) {
           targetContainerId = overItem.containerId;
         }
       }
 
-      console.log('🎯 Target Container ID:', targetContainerId);
       if (!targetContainerId) return;
 
       // Check if this is a cross-container move
       if (activeItem.containerId !== targetContainerId) {
-        console.log('🔄 Cross-container move detected');
-        console.log('📤 Source:', activeItem.containerId, '📥 Target:', targetContainerId);
-
         // Cross-container move
         setContainers(prev => {
-          console.log('🔍 BEFORE UPDATE - Containers state:');
-          prev.forEach(c => {
-            console.log(`  ${c.id}: [${c.items.map(i => i.id).join(', ')}]`);
-          });
-
           // Deep copy containers to avoid reference issues
           const newContainers = prev.map(c => ({
             ...c,
@@ -286,55 +265,34 @@ export default function DndKitDemo() {
 
           // Remove from source container
           const sourceContainer = newContainers.find(c => c.id === activeItem.containerId);
-          console.log('📤 Source container found:', !!sourceContainer);
           if (sourceContainer) {
-            const beforeRemove = sourceContainer.items.map(i => i.id);
             sourceContainer.items = sourceContainer.items.filter(item => item.id !== activeId);
-            const afterRemove = sourceContainer.items.map(i => i.id);
-            console.log('📤 Remove from source:', beforeRemove, '→', afterRemove);
           }
 
           // Add to target container
           const targetContainer = newContainers.find(c => c.id === targetContainerId);
-          console.log('📥 Target container found:', !!targetContainer);
           if (targetContainer) {
-            const beforeAdd = targetContainer.items.map(i => i.id);
-
             // Create a copy of the item to avoid reference issues
             const movedItem = { ...activeItem.item };
-            console.log('📋 Created item copy:', movedItem);
 
             // If dropped on an item, insert at that position
             if (overItem) {
               const insertIndex = targetContainer.items.findIndex(item => item.id === overId);
-              console.log('📍 Insert index for', overId, ':', insertIndex);
               if (insertIndex >= 0) {
                 targetContainer.items.splice(insertIndex, 0, movedItem);
-                console.log('📥 Inserted at position', insertIndex);
               } else {
                 // Fallback: add to end if index not found
                 targetContainer.items.push(movedItem);
-                console.log('📥 Added to end (fallback)');
               }
             } else {
               // If dropped on container, add to end
               targetContainer.items.push(movedItem);
-              console.log('📥 Added to end (container drop)');
             }
-
-            const afterAdd = targetContainer.items.map(i => i.id);
-            console.log('📥 Add to target:', beforeAdd, '→', afterAdd);
           }
-
-          console.log('🔍 AFTER UPDATE - Containers state:');
-          newContainers.forEach(c => {
-            console.log(`  ${c.id}: [${c.items.map(i => i.id).join(', ')}]`);
-          });
 
           return newContainers;
         });
         isDragProcessingRef.current = false;
-        console.log('🔓 Resetting drag processing flag (cross-container move)');
       } else {
         // Same container reordering (only if dropped on an item)
         if (overId.startsWith('item-')) {
@@ -359,13 +317,11 @@ export default function DndKitDemo() {
           });
         }
         isDragProcessingRef.current = false;
-        console.log('🔓 Resetting drag processing flag (same container reorder)');
       }
     }
 
     // Ensure flag is reset even if no processing occurred
     isDragProcessingRef.current = false;
-    console.log('🔓 Resetting drag processing flag (fallback)');
   };
 
   const findItem = (id: string) => {
@@ -400,9 +356,6 @@ export default function DndKitDemo() {
               <SortableDroppableContainer
                 key={container.id}
                 container={container}
-                onAddItem={(containerId, item) => {
-                  // This would be used for programmatic item addition
-                }}
               />
             ))}
           </SortableContext>
