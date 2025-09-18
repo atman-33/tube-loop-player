@@ -3,6 +3,13 @@ import { drizzle } from "drizzle-orm/d1";
 import type { AppLoadContext } from "react-router";
 import { playlist, playlistItem, userSettings } from "~/database/schema";
 
+const D1_MAX_BOUND_PARAMETERS = 100;
+const PLAYLIST_ITEM_COLUMN_COUNT = 4;
+const PLAYLIST_ITEM_CHUNK_SIZE = Math.max(
+  1,
+  Math.floor(D1_MAX_BOUND_PARAMETERS / PLAYLIST_ITEM_COLUMN_COUNT),
+);
+
 export interface PlaylistItem {
   id: string;
   title?: string;
@@ -119,7 +126,10 @@ export class PlaylistService {
         );
 
         if (allItems.length > 0) {
-          await this.db.insert(playlistItem).values(allItems);
+          for (let i = 0; i < allItems.length; i += PLAYLIST_ITEM_CHUNK_SIZE) {
+            const chunk = allItems.slice(i, i + PLAYLIST_ITEM_CHUNK_SIZE);
+            await this.db.insert(playlistItem).values(chunk);
+          }
         }
       }
 
@@ -152,6 +162,16 @@ export class PlaylistService {
       return true;
     } catch (error) {
       console.error("Error saving user playlists:", error);
+      if (error && typeof error === "object" && "cause" in error) {
+        const cause = (error as { cause?: unknown }).cause;
+        console.error("Error cause:", cause);
+        if (cause && typeof cause === "object" && "cause" in cause) {
+          console.error(
+            "Nested error cause:",
+            (cause as { cause?: unknown }).cause,
+          );
+        }
+      }
       return false;
     }
   }
