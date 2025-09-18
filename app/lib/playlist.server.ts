@@ -4,10 +4,10 @@ import type { AppLoadContext } from "react-router";
 import { playlist, playlistItem, userSettings } from "~/database/schema";
 
 const D1_MAX_BOUND_PARAMETERS = 100;
-const PLAYLIST_ITEM_COLUMN_COUNT = 4;
+const PLAYLIST_ITEM_PARAMETER_COUNT = 5;
 const PLAYLIST_ITEM_CHUNK_SIZE = Math.max(
   1,
-  Math.floor(D1_MAX_BOUND_PARAMETERS / PLAYLIST_ITEM_COLUMN_COUNT),
+  Math.floor(D1_MAX_BOUND_PARAMETERS / PLAYLIST_ITEM_PARAMETER_COUNT),
 );
 
 export interface PlaylistItem {
