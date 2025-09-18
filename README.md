@@ -83,11 +83,9 @@ To get a local copy up and running, follow these simple steps.
    Configure the following variables in `.env`:
    ```env
    BETTER_AUTH_SECRET=your-secret-key
+   BETTER_AUTH_URL=http://localhost:5173
    OAUTH_GOOGLE_CLIENT_ID=your-google-client-id
    OAUTH_GOOGLE_CLIENT_SECRET=your-google-client-secret
-   OAUTH_GITHUB_CLIENT_ID=your-github-client-id (optional)
-   OAUTH_GITHUB_CLIENT_SECRET=your-github-client-secret (optional)
-   BETTER_AUTH_URL=http://localhost:5173
    ```
 
 4. Set up the database
