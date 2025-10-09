@@ -18,7 +18,7 @@ TubeLoopPlayer is designed with user convenience and flexibility at its core. He
     * **Loop All**: Keep your entire playlist on repeat for endless enjoyment.
     * **Loop Single**: Focus on a specific video, looping it continuously.
     * **Shuffle**: Introduce an element of surprise by randomizing your playlist order.
-4. **Persistent Storage**: Your carefully curated playlists are automatically saved in your browser's cookies. This means you can close your browser and return later, picking up right where you left off without any setup.
+4. **Persistent Storage**: Your carefully curated playlists are automatically saved in your browser's localStorage, so you can close your browser and return later, picking up right where you left off (any legacy cookies are migrated seamlessly).
 5. **Comfortable Viewing Experience**: Switch between light and dark modes to ensure optimal viewing comfort, whether you're working late into the night or enjoying the bright daylight.
 
 ## My Motivation Behind the Project

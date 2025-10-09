@@ -28,8 +28,8 @@ export default function PrivacyAndTerms() {
             <p className="leading-relaxed text-muted-foreground">
               TubeLoopPlayer is a client-side application and does not collect
               any personally identifiable information (PII) such as your name or
-              email address. We use cookies solely to enhance your user
-              experience by storing the following data in your browser:
+              email address. We use browser localStorage solely to enhance your
+              user experience by storing the following data on your device:
             </p>
             <ul className="my-4 ml-6 list-disc space-y-2 leading-relaxed text-muted-foreground">
               <li>
@@ -48,10 +48,10 @@ export default function PrivacyAndTerms() {
               How We Use Your Information
             </h3>
             <p className="leading-relaxed text-muted-foreground">
-              The information stored in cookies is used exclusively to provide
-              the core functionality of the application, such as persisting your
-              playlist and settings across sessions. We do not share this
-              information with any third parties.
+              The information stored in localStorage is used exclusively to
+              provide the core functionality of the application, such as
+              persisting your playlist and settings across sessions. We do not
+              share this information with any third parties.
             </p>
           </div>
 
