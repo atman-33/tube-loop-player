@@ -3,6 +3,102 @@ import { drizzle } from "drizzle-orm/d1";
 import type { AppLoadContext } from "react-router";
 import { playlist, playlistItem, userSettings } from "~/database/schema";
 
+const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
+
+const createUniqueSegment = () => {
+  if (
+    typeof globalThis.crypto !== "undefined" &&
+    typeof globalThis.crypto.randomUUID === "function"
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  const timePart = Date.now().toString(36);
+  const randomPart = Math.random().toString(36).slice(2, 10);
+  return `${timePart}-${randomPart}`;
+};
+
+const generatePlaylistId = (userId?: string) => {
+  const uniqueSegment = createUniqueSegment();
+  if (userId && userId.length > 0) {
+    return `playlist-${userId}-${uniqueSegment}`;
+  }
+  return `playlist-${uniqueSegment}`;
+};
+
+const sanitizeUserPlaylistData = (data: UserPlaylistData, userId: string) => {
+  const seen = new Set<string>();
+  const idMap = new Map<string, string>();
+  let didChange = false;
+
+  const updatedPlaylists = data.playlists.map((playlist) => {
+    const originalId = playlist.id;
+    let nextId = originalId;
+    const shouldRegenerate =
+      !nextId ||
+      LEGACY_PLAYLIST_ID_PATTERN.test(nextId) ||
+      seen.has(nextId) ||
+      (userId ? !nextId.startsWith(`playlist-${userId}-`) : false);
+
+    if (shouldRegenerate) {
+      let generatedId = "";
+      do {
+        generatedId = generatePlaylistId(userId);
+      } while (seen.has(generatedId));
+      if (originalId && !idMap.has(originalId)) {
+        idMap.set(originalId, generatedId);
+      }
+      nextId = generatedId;
+      didChange = true;
+    } else if (originalId && !idMap.has(originalId)) {
+      idMap.set(originalId, nextId);
+    }
+
+    seen.add(nextId);
+
+    return {
+      ...playlist,
+      id: nextId,
+    };
+  });
+
+  let nextActivePlaylistId = data.activePlaylistId;
+  if (idMap.has(data.activePlaylistId)) {
+    const mappedId = idMap.get(data.activePlaylistId) as string;
+    if (mappedId !== data.activePlaylistId) {
+      didChange = true;
+    }
+    nextActivePlaylistId = mappedId;
+  } else if (
+    nextActivePlaylistId &&
+    !updatedPlaylists.some((playlist) => playlist.id === nextActivePlaylistId)
+  ) {
+    if (updatedPlaylists[0]) {
+      nextActivePlaylistId = updatedPlaylists[0].id;
+    } else {
+      nextActivePlaylistId = "";
+    }
+    didChange = true;
+  }
+
+  if (!nextActivePlaylistId && updatedPlaylists[0]) {
+    nextActivePlaylistId = updatedPlaylists[0].id;
+    if (nextActivePlaylistId !== data.activePlaylistId) {
+      didChange = true;
+    }
+  }
+
+  return {
+    data: {
+      playlists: updatedPlaylists,
+      activePlaylistId: nextActivePlaylistId,
+      loopMode: data.loopMode,
+      isShuffle: data.isShuffle,
+    },
+    didChange,
+  };
+};
+
 const D1_MAX_BOUND_PARAMETERS = 100;
 const PLAYLIST_ITEM_PARAMETER_COUNT = 5;
 const PLAYLIST_ITEM_CHUNK_SIZE = Math.max(
@@ -88,7 +184,13 @@ export class PlaylistService {
         isShuffle: settings[0]?.isShuffle || false,
       };
 
-      return result;
+      const sanitized = sanitizeUserPlaylistData(result, userId);
+      if (sanitized.didChange) {
+        await this.saveUserPlaylists(userId, sanitized.data);
+        return sanitized.data;
+      }
+
+      return sanitized.data;
     } catch (error) {
       console.error("Error fetching user playlists:", error);
       return null;
@@ -100,14 +202,16 @@ export class PlaylistService {
     data: UserPlaylistData,
   ): Promise<boolean> {
     try {
+      const sanitized = sanitizeUserPlaylistData(data, userId);
+      const safeData = sanitized.data;
       // Start transaction-like operations
       // Delete existing playlists and items
       await this.db.delete(playlist).where(eq(playlist.userId, userId));
 
       // Insert playlists
-      if (data.playlists.length > 0) {
+      if (safeData.playlists.length > 0) {
         await this.db.insert(playlist).values(
-          data.playlists.map((p, index) => ({
+          safeData.playlists.map((p, index) => ({
             id: p.id,
             userId,
             name: p.name,
@@ -116,7 +220,7 @@ export class PlaylistService {
         );
 
         // Insert playlist items
-        const allItems = data.playlists.flatMap((p, _playlistIndex) =>
+        const allItems = safeData.playlists.flatMap((p, _playlistIndex) =>
           p.items.map((item, itemIndex) => ({
             playlistId: p.id,
             videoId: item.id,
@@ -144,18 +248,18 @@ export class PlaylistService {
         await this.db
           .update(userSettings)
           .set({
-            activePlaylistId: data.activePlaylistId,
-            loopMode: data.loopMode,
-            isShuffle: data.isShuffle,
+            activePlaylistId: safeData.activePlaylistId,
+            loopMode: safeData.loopMode,
+            isShuffle: safeData.isShuffle,
             updatedAt: new Date(),
           })
           .where(eq(userSettings.userId, userId));
       } else {
         await this.db.insert(userSettings).values({
           userId,
-          activePlaylistId: data.activePlaylistId,
-          loopMode: data.loopMode,
-          isShuffle: data.isShuffle,
+          activePlaylistId: safeData.activePlaylistId,
+          loopMode: safeData.loopMode,
+          isShuffle: safeData.isShuffle,
         });
       }
 
@@ -207,7 +311,7 @@ export class PlaylistService {
         existingPlaylist.items.push(...newItems);
       } else {
         // Add new playlist with unique ID
-        const newId = `playlist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const newId = generatePlaylistId(userId);
         mergedPlaylists.push({
           ...cookiePlaylist,
           id: newId,
