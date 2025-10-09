@@ -24,7 +24,7 @@ TubeLoopPlayer is a modern web application designed for looping YouTube videos a
 - **Smart Data Migration**: Local playlists automatically migrate to cloud on first sign-in
 
 ### Storage Options
-- **Guest Mode**: Local cookie-based storage for anonymous users
+- **Guest Mode**: Browser localStorage persistence for anonymous users
 - **Authenticated Mode**: Cloud database storage with real-time synchronization
 - **Hybrid Approach**: Seamless transition between local and cloud storage
 
@@ -185,9 +185,9 @@ This application is designed to be deployed on Cloudflare Workers with D1 databa
 - **Authentication**: Better Auth with OAuth providers
 - **Database**: Cloudflare D1 (SQLite) with Drizzle ORM
 - **Storage Strategy**: 
-  - Guest users: Browser cookies
-  - Authenticated users: Cloud database with cookie fallback
-  - Automatic migration from cookies to cloud on sign-in
+  - Guest users: Browser localStorage (legacy cookies migrated on load)
+  - Authenticated users: Cloud database with localStorage fallback
+  - Automatic migration from localStorage (and legacy cookies) to cloud on sign-in
 - **Deployment**: Cloudflare Workers for serverless execution
 
 ## License

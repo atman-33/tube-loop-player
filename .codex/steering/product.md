@@ -13,7 +13,7 @@ TubeLoopPlayer is a web application for seamless YouTube playlist looping. Users
 - Simple, intuitive interface with tabbed playlist management
 
 ## Authentication & Storage
-- **Guest Mode**: Local cookie-based storage for anonymous users
+- **Guest Mode**: Browser localStorage persistence for anonymous users
 - **Authenticated Mode**: Cloud database storage with automatic synchronization
 - **Hybrid Approach**: Cookie data automatically migrates to cloud when user signs in
 - **Real-time Sync**: Changes sync to cloud within 1 second for authenticated users

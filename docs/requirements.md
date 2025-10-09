@@ -2,7 +2,7 @@
 
 ## Overview
 
-TubeLoopPlayer is a client-side web application that allows users to register YouTube videos and play them in loop or shuffle modes. Designed for users who want to repeatedly enjoy their favorite music or videos, it saves playlists persistently using cookies. The app is intended to be deployed via GitHub Pages.
+TubeLoopPlayer is a client-side web application that allows users to register YouTube videos and play them in loop or shuffle modes. Designed for users who want to repeatedly enjoy their favorite music or videos, it saves playlists persistently using browser localStorage (with migration support for legacy cookies). The app is intended to be deployed via GitHub Pages.
 
 ---
 
@@ -19,7 +19,7 @@ TubeLoopPlayer is a client-side web application that allows users to register Yo
 ### Playlist Management
 
 - Users can **manually input YouTube video URLs** to add them to the playlist.
-- Only **one playlist** is supported, saved persistently in cookies.
+- Only **one playlist** is supported, saved persistently in browser localStorage.
 - Videos in the playlist are played **sequentially**.
 
 ### Playback Modes
@@ -43,7 +43,7 @@ TubeLoopPlayer is a client-side web application that allows users to register Yo
 - **Modern browser support** (latest versions of Chrome, Edge, Safari, Firefox).
 - **English UI**.
 - Fully client-side implementation with no server required.
-- Data persistence via **cookies**.
+- Data persistence via **browser localStorage** (legacy cookies imported on load).
 - Deployment via **GitHub Pages**.
 - Uses React Router v7 (no SSR).
 

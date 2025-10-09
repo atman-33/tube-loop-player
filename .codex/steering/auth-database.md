@@ -3,7 +3,7 @@
 ## Authentication System
 - **Better Auth** - Modern authentication library with OAuth support
 - **Providers**: Google OAuth (primary), GitHub OAuth (available but not exposed in UI)
-- **Session Management**: Server-side sessions with cookie-based storage
+- **Session Management**: Server-side sessions with HTTP-only cookies
 - **Client-Server Integration**: Seamless auth state synchronization
 
 ## Authentication Flow
@@ -33,9 +33,9 @@ const session = await auth.api.getSession({ headers: request.headers });
 ```
 
 ## Playlist Data Flow
-1. **Guest Users**: Data stored in browser cookies only
+1. **Guest Users**: Data stored in browser localStorage (legacy cookies still read for migration)
 2. **New Authenticated Users**: Cookie data migrated to database on first login
-3. **Returning Users**: Database data loaded, cookies updated
+3. **Returning Users**: Database data loaded, localStorage updated (merge in any legacy cookie payload)
 4. **Real-time Sync**: Changes automatically sync to database within 1 second
 
 ## Playlist Service Patterns
@@ -49,13 +49,13 @@ const userData = await playlistService.getUserPlaylists(userId);
 // Save user data
 const success = await playlistService.saveUserPlaylists(userId, data);
 
-// Sync cookie data to database (merge strategy)
+// Sync persisted playlist data to database (merge strategy, supports legacy cookies)
 const synced = await playlistService.syncCookieDataToDatabase(userId, cookieData);
 ```
 
 ## State Management Integration
 - **Zustand Store**: Enhanced with authentication and sync capabilities
-- **Cookie Persistence**: Automatic cookie storage for offline support
+- **Local Persistence**: Automatic localStorage storage for offline support (with legacy cookie fallback)
 - **Cloud Sync**: Automatic server synchronization for authenticated users
 - **Merge Strategy**: Smart merging of local and cloud data to prevent data loss
 
