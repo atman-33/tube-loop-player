@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { User } from "~/hooks/use-auth";
-import { deleteCookie, getCookie, setCookie } from "../lib/cookie";
 
 const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
 
@@ -651,18 +650,19 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: "tube-loop-player-storage", // name of the item in storage (must be unique)
-      storage: createJSONStorage(() => ({
-        getItem: (name) => {
-          const cookie = getCookie(name);
-          return cookie ? cookie : null;
-        },
-        setItem: (name, value) => {
-          setCookie(name, value, 365); // Save for 365 days
-        },
-        removeItem: (name) => {
-          deleteCookie(name);
-        },
-      })),
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined" || !window.localStorage) {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+            clear: () => {},
+            key: () => null,
+            length: 0,
+          } as Storage;
+        }
+        return window.localStorage;
+      }),
       partialize: (state) => ({
         playlists: state.playlists,
         activePlaylistId: state.activePlaylistId,
