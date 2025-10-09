@@ -174,35 +174,30 @@ const defaultInitialPlaylistItem: PlaylistItem = {
   title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
-const createDefaultPlaylists = (): Playlist[] => {
-  const firstId = generatePlaylistId();
-  let secondId = generatePlaylistId();
-  while (secondId === firstId) {
-    secondId = generatePlaylistId();
-  }
-  let thirdId = generatePlaylistId();
-  while (thirdId === firstId || thirdId === secondId) {
-    thirdId = generatePlaylistId();
-  }
+// Deterministic defaults avoid random generation during module evaluation.
+const DEFAULT_PLAYLIST_IDS = [
+  "playlist-default-1",
+  "playlist-default-2",
+  "playlist-default-3",
+] as const;
 
-  return [
-    {
-      id: firstId,
-      name: "Playlist 1",
-      items: [defaultInitialPlaylistItem],
-    },
-    {
-      id: secondId,
-      name: "Playlist 2",
-      items: [],
-    },
-    {
-      id: thirdId,
-      name: "Playlist 3",
-      items: [],
-    },
-  ];
-};
+const createDefaultPlaylists = (): Playlist[] => [
+  {
+    id: DEFAULT_PLAYLIST_IDS[0],
+    name: "Playlist 1",
+    items: [defaultInitialPlaylistItem],
+  },
+  {
+    id: DEFAULT_PLAYLIST_IDS[1],
+    name: "Playlist 2",
+    items: [],
+  },
+  {
+    id: DEFAULT_PLAYLIST_IDS[2],
+    name: "Playlist 3",
+    items: [],
+  },
+];
 
 const defaultPlaylists = createDefaultPlaylists();
 
