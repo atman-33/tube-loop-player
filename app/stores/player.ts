@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { User } from "~/hooks/use-auth";
-import { deleteCookie, getCookie, setCookie } from "../lib/cookie";
 
 const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
 
@@ -174,35 +173,30 @@ const defaultInitialPlaylistItem: PlaylistItem = {
   title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
-const createDefaultPlaylists = (): Playlist[] => {
-  const firstId = generatePlaylistId();
-  let secondId = generatePlaylistId();
-  while (secondId === firstId) {
-    secondId = generatePlaylistId();
-  }
-  let thirdId = generatePlaylistId();
-  while (thirdId === firstId || thirdId === secondId) {
-    thirdId = generatePlaylistId();
-  }
+// Deterministic defaults avoid random generation during module evaluation.
+const DEFAULT_PLAYLIST_IDS = [
+  "playlist-default-1",
+  "playlist-default-2",
+  "playlist-default-3",
+] as const;
 
-  return [
-    {
-      id: firstId,
-      name: "Playlist 1",
-      items: [defaultInitialPlaylistItem],
-    },
-    {
-      id: secondId,
-      name: "Playlist 2",
-      items: [],
-    },
-    {
-      id: thirdId,
-      name: "Playlist 3",
-      items: [],
-    },
-  ];
-};
+const createDefaultPlaylists = (): Playlist[] => [
+  {
+    id: DEFAULT_PLAYLIST_IDS[0],
+    name: "Playlist 1",
+    items: [defaultInitialPlaylistItem],
+  },
+  {
+    id: DEFAULT_PLAYLIST_IDS[1],
+    name: "Playlist 2",
+    items: [],
+  },
+  {
+    id: DEFAULT_PLAYLIST_IDS[2],
+    name: "Playlist 3",
+    items: [],
+  },
+];
 
 const defaultPlaylists = createDefaultPlaylists();
 
@@ -656,18 +650,19 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: "tube-loop-player-storage", // name of the item in storage (must be unique)
-      storage: createJSONStorage(() => ({
-        getItem: (name) => {
-          const cookie = getCookie(name);
-          return cookie ? cookie : null;
-        },
-        setItem: (name, value) => {
-          setCookie(name, value, 365); // Save for 365 days
-        },
-        removeItem: (name) => {
-          deleteCookie(name);
-        },
-      })),
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined" || !window.localStorage) {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+            clear: () => {},
+            key: () => null,
+            length: 0,
+          } as Storage;
+        }
+        return window.localStorage;
+      }),
       partialize: (state) => ({
         playlists: state.playlists,
         activePlaylistId: state.activePlaylistId,
