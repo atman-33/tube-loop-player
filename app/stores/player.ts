@@ -3,6 +3,104 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type { User } from "~/hooks/use-auth";
 import { deleteCookie, getCookie, setCookie } from "../lib/cookie";
 
+const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
+
+const createUniqueSegment = () => {
+  if (
+    typeof globalThis.crypto !== "undefined" &&
+    typeof globalThis.crypto.randomUUID === "function"
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  const timePart = Date.now().toString(36);
+  const randomPart = Math.random().toString(36).slice(2, 10);
+  return `${timePart}-${randomPart}`;
+};
+
+const generatePlaylistId = (userId?: string) => {
+  const uniqueSegment = createUniqueSegment();
+  if (userId && userId.length > 0) {
+    return `playlist-${userId}-${uniqueSegment}`;
+  }
+  return `playlist-${uniqueSegment}`;
+};
+
+const sanitizePlaylistIdentifiers = (
+  playlists: Playlist[],
+  activePlaylistId: string,
+  userId?: string,
+) => {
+  const seen = new Set<string>();
+  const idMap = new Map<string, string>();
+  let didChange = false;
+
+  const updatedPlaylists = playlists.map((playlist) => {
+    const originalId = playlist.id;
+    let nextId = originalId;
+    const shouldRegenerate =
+      !nextId ||
+      LEGACY_PLAYLIST_ID_PATTERN.test(nextId) ||
+      seen.has(nextId) ||
+      (userId ? !nextId.startsWith(`playlist-${userId}-`) : false);
+
+    if (shouldRegenerate) {
+      let generatedId = "";
+      do {
+        generatedId = generatePlaylistId(userId);
+      } while (seen.has(generatedId));
+      if (originalId && !idMap.has(originalId)) {
+        idMap.set(originalId, generatedId);
+      }
+      nextId = generatedId;
+      didChange = true;
+    } else {
+      if (originalId && !idMap.has(originalId)) {
+        idMap.set(originalId, nextId);
+      }
+    }
+
+    seen.add(nextId);
+
+    return {
+      ...playlist,
+      id: nextId,
+    };
+  });
+
+  let nextActivePlaylistId = activePlaylistId;
+  if (idMap.has(activePlaylistId)) {
+    const mappedId = idMap.get(activePlaylistId) as string;
+    if (mappedId !== activePlaylistId) {
+      didChange = true;
+    }
+    nextActivePlaylistId = mappedId;
+  } else if (
+    activePlaylistId &&
+    !updatedPlaylists.some((p) => p.id === activePlaylistId)
+  ) {
+    if (updatedPlaylists[0]) {
+      nextActivePlaylistId = updatedPlaylists[0].id;
+    } else {
+      nextActivePlaylistId = "";
+    }
+    didChange = true;
+  }
+
+  if (!nextActivePlaylistId && updatedPlaylists[0]) {
+    nextActivePlaylistId = updatedPlaylists[0].id;
+    if (nextActivePlaylistId !== activePlaylistId) {
+      didChange = true;
+    }
+  }
+
+  return {
+    playlists: updatedPlaylists,
+    activePlaylistId: nextActivePlaylistId,
+    didChange,
+  };
+};
+
 interface PlaylistItem {
   id: string;
   title?: string;
@@ -76,25 +174,39 @@ const defaultInitialPlaylistItem: PlaylistItem = {
   title: "Aerith's Theme | Pure | Final Fantasy VII Rebirth Soundtrack",
 };
 
-const defaultPlaylists: Playlist[] = [
-  {
-    id: "playlist-1",
-    name: "Playlist 1",
-    items: [defaultInitialPlaylistItem],
-  },
-  {
-    id: "playlist-2",
-    name: "Playlist 2",
-    items: [],
-  },
-  {
-    id: "playlist-3",
-    name: "Playlist 3",
-    items: [],
-  },
-];
+const createDefaultPlaylists = (): Playlist[] => {
+  const firstId = generatePlaylistId();
+  let secondId = generatePlaylistId();
+  while (secondId === firstId) {
+    secondId = generatePlaylistId();
+  }
+  let thirdId = generatePlaylistId();
+  while (thirdId === firstId || thirdId === secondId) {
+    thirdId = generatePlaylistId();
+  }
 
-const defaultActivePlaylistId = "playlist-1";
+  return [
+    {
+      id: firstId,
+      name: "Playlist 1",
+      items: [defaultInitialPlaylistItem],
+    },
+    {
+      id: secondId,
+      name: "Playlist 2",
+      items: [],
+    },
+    {
+      id: thirdId,
+      name: "Playlist 3",
+      items: [],
+    },
+  ];
+};
+
+const defaultPlaylists = createDefaultPlaylists();
+
+const defaultActivePlaylistId = defaultPlaylists[0]?.id ?? "";
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -451,17 +563,47 @@ export const usePlayerStore = create<PlayerState>()(
         return playlists;
       },
       setUser: (user) => {
-        set({ user, isDataSynced: false });
+        set((state) => {
+          if (!user) {
+            return { user: null, isDataSynced: false };
+          }
+
+          const sanitized = sanitizePlaylistIdentifiers(
+            state.playlists,
+            state.activePlaylistId,
+            user.id,
+          );
+
+          const nextState: Partial<PlayerState> = {
+            user,
+            isDataSynced: false,
+          };
+
+          if (sanitized.didChange) {
+            nextState.playlists = sanitized.playlists;
+            nextState.activePlaylistId = sanitized.activePlaylistId;
+          }
+
+          return nextState;
+        });
       },
       loadUserData: (userData) => {
+        const currentUserId = get().user?.id;
+        const sanitized = sanitizePlaylistIdentifiers(
+          userData.playlists,
+          userData.activePlaylistId,
+          currentUserId,
+        );
+
         const activePlaylist =
-          userData.playlists.find((p) => p.id === userData.activePlaylistId) ||
-          userData.playlists[0];
+          sanitized.playlists.find(
+            (playlist) => playlist.id === sanitized.activePlaylistId,
+          ) || sanitized.playlists[0];
         const firstVideo = activePlaylist?.items[0];
 
         set({
-          playlists: userData.playlists,
-          activePlaylistId: userData.activePlaylistId,
+          playlists: sanitized.playlists,
+          activePlaylistId: sanitized.activePlaylistId,
           loopMode: userData.loopMode,
           isShuffle: userData.isShuffle,
           currentVideoId: firstVideo ? firstVideo.id : null,
@@ -474,6 +616,19 @@ export const usePlayerStore = create<PlayerState>()(
           get();
         if (!user) return;
 
+        const sanitized = sanitizePlaylistIdentifiers(
+          playlists,
+          activePlaylistId,
+          user.id,
+        );
+
+        if (sanitized.didChange) {
+          set({
+            playlists: sanitized.playlists,
+            activePlaylistId: sanitized.activePlaylistId,
+          });
+        }
+
         try {
           const response = await fetch("/api/playlists/sync", {
             method: "POST",
@@ -481,8 +636,8 @@ export const usePlayerStore = create<PlayerState>()(
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              playlists,
-              activePlaylistId,
+              playlists: sanitized.playlists,
+              activePlaylistId: sanitized.activePlaylistId,
               loopMode,
               isShuffle,
             }),
@@ -522,27 +677,34 @@ export const usePlayerStore = create<PlayerState>()(
       merge: (persistedState, currentState) => {
         const state = persistedState as Partial<PlayerState>;
         if (state?.playlists && state.playlists.length > 0) {
-          // If the restored playlists exist and are not empty
+          const sanitized = sanitizePlaylistIdentifiers(
+            state.playlists,
+            state.activePlaylistId ?? "",
+          );
+
           const activePlaylist =
-            state.playlists.find((p) => p.id === state.activePlaylistId) ||
-            state.playlists[0];
-          const firstVideo = activePlaylist.items[0];
+            sanitized.playlists.find(
+              (playlist) => playlist.id === sanitized.activePlaylistId,
+            ) || sanitized.playlists[0];
+          const firstVideo = activePlaylist?.items[0];
+
           return {
             ...currentState,
             ...state,
+            playlists: sanitized.playlists,
+            activePlaylistId: sanitized.activePlaylistId,
             currentVideoId: firstVideo ? firstVideo.id : null,
             currentIndex: firstVideo ? 0 : null,
           };
-        } else {
-          // If the restored playlists do not exist or are empty, use the default initial values
-          return {
-            ...currentState,
-            playlists: defaultPlaylists,
-            activePlaylistId: defaultActivePlaylistId,
-            currentVideoId: defaultInitialVideoId,
-            currentIndex: 0,
-          };
         }
+
+        return {
+          ...currentState,
+          playlists: defaultPlaylists,
+          activePlaylistId: defaultActivePlaylistId,
+          currentVideoId: defaultInitialVideoId,
+          currentIndex: 0,
+        };
       },
     },
   ),
