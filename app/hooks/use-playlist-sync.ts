@@ -27,6 +27,35 @@ export function usePlaylistSync() {
     isShuffle,
   } = usePlayerStore();
 
+  const [hasHydrated, setHasHydrated] = useState(() => {
+    const hasHydratedFn = usePlayerStore.persist?.hasHydrated;
+    return typeof hasHydratedFn === "function" ? hasHydratedFn() : true;
+  });
+
+  useEffect(() => {
+    const persistApi = usePlayerStore.persist;
+    if (!persistApi) {
+      setHasHydrated(true);
+      return;
+    }
+
+    const finishUnsubscribe = persistApi.onFinishHydration?.(() => {
+      setHasHydrated(true);
+    });
+    const hydrateUnsubscribe = persistApi.onHydrate?.(() => {
+      setHasHydrated(false);
+    });
+
+    if (persistApi.hasHydrated?.()) {
+      setHasHydrated(true);
+    }
+
+    return () => {
+      finishUnsubscribe?.();
+      hydrateUnsubscribe?.();
+    };
+  }, []);
+
   // State for conflict resolution
   const [conflictData, setConflictData] = useState<{
     local: UserPlaylistData | null;
@@ -43,7 +72,7 @@ export function usePlaylistSync() {
   // Load user data from server when user logs in with intelligent conflict resolution
   useEffect(() => {
     const loadServerData = async () => {
-      if (!user || isDataSynced) return;
+      if (!user || isDataSynced || !hasHydrated) return;
 
       const conflictResolver = new ConflictResolver();
       let response: Response | null = null;
@@ -209,12 +238,13 @@ export function usePlaylistSync() {
     activePlaylistId,
     loopMode,
     isShuffle,
+    hasHydrated,
   ]);
 
   // Auto-sync changes to server for authenticated users
   // biome-ignore lint/correctness/useExhaustiveDependencies: <>
   useEffect(() => {
-    if (user && isDataSynced) {
+    if (user && isDataSynced && hasHydrated) {
       const timeoutId = setTimeout(() => {
         syncToServer();
       }, 1000); // Debounce sync by 1 second
@@ -229,6 +259,7 @@ export function usePlaylistSync() {
     loopMode,
     isShuffle,
     syncToServer,
+    hasHydrated,
   ]);
 
   // Enhanced conflict resolution functions with error handling
