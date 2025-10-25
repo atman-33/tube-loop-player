@@ -74,11 +74,16 @@ export const PlaylistTab = ({
   const conditionalSortableRef = isDraggingPlaylistItem ? () => { } : setSortableRef;
 
   const getTabWidth = () => {
-    if (totalTabs === 1) return 'flex-1 max-w-80';
-    if (totalTabs === 2) return 'flex-1 max-w-40';
-    if (totalTabs === 3) return 'flex-1 max-w-32';
-    if (totalTabs === 4) return 'flex-1 max-w-24';
-    return 'flex-1 max-w-20';
+    if (totalTabs >= 9) {
+      return 'basis-[clamp(110px,14vw,150px)] flex-none';
+    }
+    if (totalTabs >= 7) {
+      return 'basis-[clamp(120px,16vw,170px)] flex-none';
+    }
+    if (totalTabs >= 5) {
+      return 'basis-[clamp(135px,18vw,190px)] flex-none';
+    }
+    return 'basis-[clamp(150px,22vw,220px)] flex-none';
   };
 
   const width = getTabWidth();
@@ -86,6 +91,8 @@ export const PlaylistTab = ({
   return (
     <div
       ref={conditionalSortableRef}
+      data-playlist-tab
+      data-playlist-tab-id={playlist.id}
       className={`relative group ${width}`}
       style={style}
       {...attributes}
