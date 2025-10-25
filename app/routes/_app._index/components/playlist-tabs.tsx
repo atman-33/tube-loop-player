@@ -13,6 +13,10 @@ import {
 import { usePlayerStore } from '../../../stores/player';
 import { PlaylistTab } from './playlist-tab';
 
+interface PlaylistTabsProps {
+  onScrollAreaRef?: (node: HTMLDivElement | null) => void;
+}
+
 export const calculateTabScrollDelta = (
   containerRect: DOMRect | DOMRectReadOnly,
   tabRect: DOMRect | DOMRectReadOnly,
@@ -31,7 +35,7 @@ export const calculateTabScrollDelta = (
   return 0;
 };
 
-export const PlaylistTabs = () => {
+export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
   const {
     playlists,
     activePlaylistId,
@@ -49,6 +53,11 @@ export const PlaylistTabs = () => {
     canScrollLeft: false,
     canScrollRight: false,
   });
+
+  const handleScrollAreaRef = useCallback((node: HTMLDivElement | null) => {
+    scrollAreaRef.current = node;
+    onScrollAreaRef?.(node);
+  }, [onScrollAreaRef]);
 
   const updateScrollState = useCallback(() => {
     const container = scrollAreaRef.current;
@@ -189,7 +198,7 @@ export const PlaylistTabs = () => {
               strategy={horizontalListSortingStrategy}
             >
               <div
-                ref={scrollAreaRef}
+                ref={handleScrollAreaRef}
                 data-testid="playlist-tabs-scroll"
                 className="flex items-end gap-0.5 overflow-x-auto px-1 pb-1"
               >

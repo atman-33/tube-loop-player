@@ -173,6 +173,18 @@ describe('PlaylistTabs UI', () => {
     expect((args[0] as ScrollToOptions).left).toBeGreaterThan(0);
   });
 
+  it('notifies parent components when the scroll area ref changes', () => {
+    const refSpy = vi.fn();
+    mockUsePlayerStore.mockReturnValue(
+      buildStoreState({ playlists: createPlaylists(4) }),
+    );
+
+    render(<PlaylistTabs onScrollAreaRef={refSpy} />);
+
+    expect(refSpy).toHaveBeenCalledTimes(1);
+    expect(refSpy.mock.calls[0][0]).toBeInstanceOf(HTMLDivElement);
+  });
+
   it('exposes keyboard reordering guidance via aria-describedby', () => {
     mockUsePlayerStore.mockReturnValue(
       buildStoreState({ playlists: createPlaylists(4) }),
