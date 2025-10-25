@@ -6,17 +6,27 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-export default defineConfig(({ mode }) => ({
-  plugins: [
-    cloudflare({ viteEnvironment: { name: 'ssr' } }),
-    tailwindcss(),
-    ...(mode === 'test' ? [] : [reactRouter()]),
-    tsconfigPaths(),
-  ],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./test/setup.ts'],
-    css: true,
-  },
-}));
+export default defineConfig(({ mode }) => {
+  const isTest = mode === 'test';
+
+  return {
+    plugins: [
+      ...(isTest ? [] : [cloudflare({ viteEnvironment: { name: 'ssr' } })]),
+      tailwindcss(),
+      ...(isTest ? [] : [reactRouter()]),
+      tsconfigPaths(),
+    ],
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./test/setup.ts'],
+      css: true,
+      pool: 'threads',
+      poolOptions: {
+        threads: {
+          singleThread: true,
+        },
+      },
+    },
+  };
+});

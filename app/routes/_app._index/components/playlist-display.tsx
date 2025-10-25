@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from '../../../components/ui/tooltip';
 import { usePlayerStore } from '../../../stores/player';
+import { PLAYLIST_PANEL_ID } from './playlist-aria';
 
 const getThumbnailUrl = (videoId: string) =>
   `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
@@ -121,7 +122,10 @@ export const PlaylistDisplay = () => {
   const playlist = activePlaylist?.items || [];
 
   return (
-    <div className="bg-background border border-t-0 border-border/50 rounded-b-lg shadow-sm mt-0">
+    <div
+      id={PLAYLIST_PANEL_ID}
+      className="bg-background border border-t-0 border-border/50 rounded-b-lg shadow-sm mt-0"
+    >
       <div className="p-4 md:p-6 space-y-4">
         {playlist.length === 0 ? (
           <div className="text-center text-muted-foreground p-8 border border-dashed rounded-lg bg-muted/10">

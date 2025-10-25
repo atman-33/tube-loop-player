@@ -177,6 +177,7 @@ export const PlaylistTabs = () => {
               onClick={() => scrollByTab(-1)}
               disabled={!scrollState.canScrollLeft}
               aria-label="Scroll tabs left"
+              aria-disabled={!scrollState.canScrollLeft}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -234,6 +235,7 @@ export const PlaylistTabs = () => {
                 onClick={() => scrollByTab(1)}
                 disabled={!scrollState.canScrollRight}
                 aria-label="Scroll tabs right"
+                aria-disabled={!scrollState.canScrollRight}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>

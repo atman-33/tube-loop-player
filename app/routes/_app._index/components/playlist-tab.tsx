@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { Edit2, Check } from 'lucide-react';
 import { useDroppable, useDndContext } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
@@ -5,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { usePlayerStore } from '../../../stores/player';
+import { PLAYLIST_PANEL_ID } from './playlist-aria';
 
 interface PlaylistItem {
   id: string;
@@ -37,6 +39,7 @@ export const PlaylistTab = ({
   onSaveEdit,
   onCancelEdit,
   onEditingNameChange,
+  index,
   totalTabs,
 }: PlaylistTabProps) => {
   const {
@@ -52,7 +55,9 @@ export const PlaylistTab = ({
     id: `playlist-tab-${playlist.id}`,
   });
 
-  const style = {
+  const { role: _dragRole, tabIndex: _dragTabIndex, ...sortableAttributes } = attributes;
+
+  const sortableStyle = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
@@ -65,37 +70,84 @@ export const PlaylistTab = ({
   const { active } = useDndContext();
 
   // Get all playlists to determine if the active drag item is a tab or playlist item
-  const { playlists } = usePlayerStore();
+  const { playlists, reorderPlaylists } = usePlayerStore();
 
   // Determine if we're currently dragging a playlist item (not a tab)
   const isDraggingPlaylistItem = active && !playlists.some(p => p.id === active.id.toString());
 
   // Create conditional ref function
-  const conditionalSortableRef = isDraggingPlaylistItem ? () => { } : setSortableRef;
+  const conditionalSortableRef = isDraggingPlaylistItem ? () => {} : setSortableRef;
 
-  const getTabWidth = () => {
-    if (totalTabs >= 9) {
-      return 'basis-[clamp(110px,14vw,150px)] flex-none';
-    }
-    if (totalTabs >= 7) {
-      return 'basis-[clamp(120px,16vw,170px)] flex-none';
-    }
-    if (totalTabs >= 5) {
-      return 'basis-[clamp(135px,18vw,190px)] flex-none';
-    }
-    return 'basis-[clamp(150px,22vw,220px)] flex-none';
-  };
+  const tabWidth = useMemo(() => {
+    const viewportWidth = Math.max(12, 24 - totalTabs);
+    return `clamp(120px, ${viewportWidth}vw, 220px)`;
+  }, [totalTabs]);
 
-  const width = getTabWidth();
+  const [isKeyboardSorting, setIsKeyboardSorting] = useState(false);
+  const playlistOrderIndex = useMemo(
+    () => playlists.findIndex((entry) => entry.id === playlist.id),
+    [playlists, playlist.id],
+  );
+  const canMoveLeft = playlistOrderIndex > 0;
+  const canMoveRight = playlistOrderIndex > -1 && playlistOrderIndex < playlists.length - 1;
+  const ariaHintId = `playlist-tab-${playlist.id}-hint`;
+
+  useEffect(() => {
+    if (isDragging || isEditing) {
+      setIsKeyboardSorting(false);
+    }
+  }, [isDragging, isEditing]);
+
+  const handleKeyboardReorder = useCallback((event: KeyboardEvent<HTMLButtonElement>) => {
+    if (isEditing) {
+      return;
+    }
+
+    if (event.key === ' ' || event.key === 'Spacebar') {
+      event.preventDefault();
+      setIsKeyboardSorting((prev) => !prev);
+      return;
+    }
+
+    if (!isKeyboardSorting) {
+      return;
+    }
+
+    if (event.key === 'Escape' || event.key === 'Enter') {
+      event.preventDefault();
+      setIsKeyboardSorting(false);
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' && canMoveLeft && playlistOrderIndex > -1) {
+      event.preventDefault();
+      reorderPlaylists(playlistOrderIndex, playlistOrderIndex - 1);
+      return;
+    }
+
+    if (event.key === 'ArrowRight' && canMoveRight && playlistOrderIndex > -1) {
+      event.preventDefault();
+      reorderPlaylists(playlistOrderIndex, playlistOrderIndex + 1);
+    }
+  }, [canMoveLeft, canMoveRight, isEditing, isKeyboardSorting, playlistOrderIndex, reorderPlaylists]);
+
+  const instructionalMessage = isKeyboardSorting
+    ? 'Use the arrow keys to move this playlist. Press Enter to drop or Escape to cancel.'
+    : 'Press Space to start keyboard reordering for this playlist.';
 
   return (
     <div
       ref={conditionalSortableRef}
       data-playlist-tab
       data-playlist-tab-id={playlist.id}
-      className={`relative group ${width}`}
-      style={style}
-      {...attributes}
+      className="relative group flex-none"
+      style={{
+        ...sortableStyle,
+        flexBasis: tabWidth,
+        minWidth: '120px',
+        maxWidth: '220px',
+      }}
+      {...sortableAttributes}
       {...listeners}
     >
       <div ref={setDroppableRef} className="w-full h-full">
@@ -107,24 +159,23 @@ export const PlaylistTab = ({
             e.stopPropagation();
             onStartEdit(playlist);
           }}
+          onKeyDown={handleKeyboardReorder}
           className={`
-            relative px-1 py-3 font-medium text-xs transition-all duration-200 ease-out
-            w-full h-12 flex items-center justify-center overflow-hidden cursor-pointer
+            relative px-2 py-3 font-medium text-xs transition-all duration-200 ease-out
+            w-full h-12 flex flex-col items-center justify-center overflow-hidden cursor-pointer transform
+            border rounded-t-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60
             ${isActive
-              ? 'text-foreground bg-background border-l border-r border-t border-border/50 z-10'
+              ? 'text-foreground bg-background border-border/70 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] scale-[1.02]'
               : isOver
-                ? 'text-foreground bg-background/90 border border-primary/30 z-5'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 z-0 bg-muted/10 border border-transparent hover:border-border/30'}
-            ${isActive ? 'rounded-t-lg' : 'rounded-t-md'}
+                ? 'text-foreground bg-background/90 border-primary/30'
+                : 'text-muted-foreground bg-muted/20 border-transparent hover:text-foreground hover:bg-muted/30'}
+            ${isKeyboardSorting ? 'ring-2 ring-primary/50' : ''}
           `}
-          style={{
-            ...(isActive && {
-              borderBottomColor: 'transparent',
-              marginBottom: '-1px',
-              boxShadow:
-                '0 -2px 8px rgba(0,0,0,0.08), 0 -1px 4px rgba(0,0,0,0.04)',
-            }),
-          }}
+          aria-controls={PLAYLIST_PANEL_ID}
+          aria-describedby={ariaHintId}
+          aria-grabbed={isKeyboardSorting ? 'true' : 'false'}
+          aria-posinset={index + 1}
+          aria-setsize={totalTabs}
         >
           {isEditing ? (
             <div className="flex items-center gap-1 w-full overflow-hidden">
@@ -170,16 +221,25 @@ export const PlaylistTab = ({
                 {playlist.name}
               </div>
               <div
-                className={`text-xs opacity-70 font-normal mt-0.5 transition-colors duration-200 ${isActive ? 'text-primary' : 'text-muted-foreground'
+                className={`text-[11px] opacity-80 font-normal mt-0.5 transition-colors duration-200 ${isActive ? 'text-primary' : 'text-muted-foreground'
                   }`}
               >
-                {totalTabs >= 4
-                  ? playlist.items.length
+                {playlist.items.length === 1
+                  ? '1 item'
                   : `${playlist.items.length} items`}
               </div>
+              {isActive ? (
+                <span className="mt-0.5 text-[10px] uppercase tracking-wide text-primary/80">
+                  Active playlist
+                </span>
+              ) : null}
             </div>
           )}
         </button>
+
+        <span id={ariaHintId} className="sr-only" aria-live="polite">
+          {instructionalMessage}
+        </span>
 
         {/* Edit Button */}
         {!isEditing && (totalTabs <= 3 || isActive) && (

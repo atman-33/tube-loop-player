@@ -13,6 +13,7 @@ interface MockStoreState {
   createPlaylist: () => string | null;
   canCreatePlaylist: boolean;
   maxPlaylistCount: number;
+  reorderPlaylists: (fromIndex: number, toIndex: number) => void;
 }
 
 type MockStoreSelector = () => MockStoreState;
@@ -38,6 +39,7 @@ const buildStoreState = (overrides?: Partial<MockStoreState>): MockStoreState =>
   createPlaylist: vi.fn(),
   canCreatePlaylist: true,
   maxPlaylistCount: 10,
+  reorderPlaylists: vi.fn(),
   ...overrides,
 });
 
@@ -169,6 +171,42 @@ describe('PlaylistTabs UI', () => {
 
     const [args] = scrollSpy.mock.calls;
     expect((args[0] as ScrollToOptions).left).toBeGreaterThan(0);
+  });
+
+  it('exposes keyboard reordering guidance via aria-describedby', () => {
+    mockUsePlayerStore.mockReturnValue(
+      buildStoreState({ playlists: createPlaylists(4) }),
+    );
+
+    render(<PlaylistTabs />);
+
+    const tabButton = screen.getByRole('button', { name: /Playlist 2/i });
+    const hintId = tabButton.getAttribute('aria-describedby');
+    expect(hintId).toBeTruthy();
+    const hintNode = hintId ? document.getElementById(hintId) : null;
+    expect(hintNode?.textContent).toMatch(/Press Space/i);
+  });
+
+  it('supports keyboard-based playlist reordering with arrow keys', () => {
+    const reorderSpy = vi.fn();
+    mockUsePlayerStore.mockReturnValue(
+      buildStoreState({
+        playlists: createPlaylists(4),
+        reorderPlaylists: reorderSpy,
+      }),
+    );
+
+    render(<PlaylistTabs />);
+
+    const tabButton = screen.getByRole('button', { name: /Playlist 2/i });
+    fireEvent.keyDown(tabButton, { key: ' ' });
+    expect(tabButton).toHaveAttribute('aria-grabbed', 'true');
+
+    fireEvent.keyDown(tabButton, { key: 'ArrowRight' });
+    expect(reorderSpy).toHaveBeenCalledWith(1, 2);
+
+    fireEvent.keyDown(tabButton, { key: 'Enter' });
+    expect(tabButton).toHaveAttribute('aria-grabbed', 'false');
   });
 });
 
