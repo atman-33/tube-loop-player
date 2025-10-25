@@ -3,7 +3,7 @@
  * Tests complete sync flow from detection to resolution
  */
 
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UserPlaylistData } from "~/lib/data-normalizer";
 import { usePlayerStore } from "~/stores/player";
@@ -49,7 +49,7 @@ describe("usePlaylistSync Integration Tests", () => {
     isShuffle: false,
   };
 
-  const identicalCloudData: UserPlaylistData = {
+  const _identicalCloudData: UserPlaylistData = {
     playlists: [
       {
         id: "playlist1",
