@@ -4,6 +4,8 @@ import type { User } from "~/hooks/use-auth";
 
 const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
 
+export const MAX_PLAYLIST_COUNT = 10;
+
 const createUniqueSegment = () => {
   if (
     typeof globalThis.crypto !== "undefined" &&
@@ -25,7 +27,7 @@ const generatePlaylistId = (userId?: string) => {
   return `playlist-${uniqueSegment}`;
 };
 
-const sanitizePlaylistIdentifiers = (
+export const sanitizePlaylistIdentifiers = (
   playlists: Playlist[],
   activePlaylistId: string,
   userId?: string,
@@ -111,6 +113,79 @@ interface Playlist {
   items: PlaylistItem[];
 }
 
+const PLAYLIST_NAME_PATTERN = /^Playlist (\d+)$/i;
+
+const deriveNextPlaylistName = (playlists: Playlist[]) => {
+  const usedNumbers = new Set<number>();
+  let highest = 0;
+
+  for (const playlist of playlists) {
+    const match = PLAYLIST_NAME_PATTERN.exec(playlist.name);
+    if (match) {
+      const value = Number.parseInt(match[1], 10);
+      if (!Number.isNaN(value)) {
+        usedNumbers.add(value);
+        if (value > highest) {
+          highest = value;
+        }
+      }
+    }
+  }
+
+  for (let i = 1; i <= MAX_PLAYLIST_COUNT; i += 1) {
+    if (!usedNumbers.has(i)) {
+      return `Playlist ${i}`;
+    }
+  }
+
+  return `Playlist ${highest + 1}`;
+};
+
+const deriveDuplicatePlaylistName = (
+  baseName: string,
+  playlists: Playlist[],
+) => {
+  const baseCopyName = `${baseName} Copy`;
+  const existingNames = new Set(playlists.map((playlist) => playlist.name));
+  if (!existingNames.has(baseCopyName)) {
+    return baseCopyName;
+  }
+
+  let suffix = 2;
+  while (suffix < 100) {
+    const candidate = `${baseCopyName} ${suffix}`;
+    if (!existingNames.has(candidate)) {
+      return candidate;
+    }
+    suffix += 1;
+  }
+
+  return `${baseCopyName} ${Date.now()}`;
+};
+
+const enforcePlaylistBounds = (
+  playlists: Playlist[],
+  activePlaylistId: string,
+) => {
+  const trimmed = playlists.slice(0, MAX_PLAYLIST_COUNT);
+  let nextActiveId = activePlaylistId;
+
+  if (trimmed.length === 0) {
+    nextActiveId = "";
+  } else if (!trimmed.some((playlist) => playlist.id === nextActiveId)) {
+    nextActiveId = trimmed[0].id;
+  }
+
+  return {
+    playlists: trimmed,
+    activePlaylistId: nextActiveId,
+    canCreatePlaylist: trimmed.length < MAX_PLAYLIST_COUNT,
+  };
+};
+
+const clonePlaylistItems = (items: PlaylistItem[]) =>
+  items.map((item) => ({ ...item }));
+
 export type LoopMode = "all" | "one";
 
 interface PlayerState {
@@ -118,6 +193,8 @@ interface PlayerState {
   currentVideoId: string | null;
   currentIndex: number | null;
   playlists: Playlist[];
+  maxPlaylistCount: number;
+  canCreatePlaylist: boolean;
   activePlaylistId: string;
   loopMode: LoopMode;
   isShuffle: boolean;
@@ -158,6 +235,11 @@ interface PlayerState {
     toPlaylistId: string,
   ) => boolean;
   clearPlaylist: (playlistId?: string) => void;
+  nextPlaylistName: () => string;
+  createPlaylist: () => string | null;
+  duplicatePlaylist: (playlistId: string) => string | null;
+  removePlaylist: (playlistId: string) => boolean;
+  syncPlaylistBounds: () => void;
 
   renamePlaylist: (playlistId: string, newName: string) => void;
   setActivePlaylist: (playlistId: string) => void;
@@ -209,6 +291,8 @@ export const usePlayerStore = create<PlayerState>()(
       currentVideoId: null,
       currentIndex: null,
       playlists: defaultPlaylists,
+      maxPlaylistCount: MAX_PLAYLIST_COUNT,
+      canCreatePlaylist: defaultPlaylists.length < MAX_PLAYLIST_COUNT,
       activePlaylistId: defaultActivePlaylistId,
       loopMode: "all",
       isShuffle: false,
@@ -410,6 +494,165 @@ export const usePlayerStore = create<PlayerState>()(
           return { playlists: updatedPlaylists, ...resetState };
         }),
 
+      nextPlaylistName: () => {
+        const { playlists } = get();
+        return deriveNextPlaylistName(playlists);
+      },
+      createPlaylist: () => {
+        if (!get().canCreatePlaylist) {
+          return null;
+        }
+
+        const state = get();
+        const playlistId = generatePlaylistId(state.user?.id);
+        const playlistName = state.nextPlaylistName();
+        const newPlaylist: Playlist = {
+          id: playlistId,
+          name: playlistName,
+          items: [],
+        };
+
+        set((currentState) => {
+          const updatedPlaylists = [...currentState.playlists, newPlaylist];
+          const constrained = enforcePlaylistBounds(
+            updatedPlaylists,
+            playlistId,
+          );
+
+          return {
+            ...constrained,
+            activePlaylistId: playlistId,
+            currentVideoId: null,
+            currentIndex: null,
+            isPlaying: false,
+          };
+        });
+
+        return playlistId;
+      },
+      duplicatePlaylist: (playlistId) => {
+        const state = get();
+        if (!state.canCreatePlaylist) {
+          return null;
+        }
+
+        const sourcePlaylist = state.playlists.find(
+          (playlist) => playlist.id === playlistId,
+        );
+        if (!sourcePlaylist) {
+          return null;
+        }
+
+        const duplicateId = generatePlaylistId(state.user?.id);
+        const duplicateName = deriveDuplicatePlaylistName(
+          sourcePlaylist.name,
+          state.playlists,
+        );
+
+        const duplicatedPlaylist: Playlist = {
+          id: duplicateId,
+          name: duplicateName,
+          items: clonePlaylistItems(sourcePlaylist.items),
+        };
+
+        set((currentState) => {
+          const updatedPlaylists = [
+            ...currentState.playlists,
+            duplicatedPlaylist,
+          ];
+          const constrained = enforcePlaylistBounds(
+            updatedPlaylists,
+            duplicateId,
+          );
+
+          return {
+            ...constrained,
+            activePlaylistId: duplicateId,
+            currentVideoId: null,
+            currentIndex: null,
+            isPlaying: false,
+          };
+        });
+
+        return duplicateId;
+      },
+      removePlaylist: (playlistId) => {
+        const state = get();
+        const playlistIndex = state.playlists.findIndex(
+          (playlist) => playlist.id === playlistId,
+        );
+
+        if (playlistIndex === -1) {
+          return false;
+        }
+
+        set((currentState) => {
+          const updatedPlaylists = currentState.playlists.filter(
+            (playlist) => playlist.id !== playlistId,
+          );
+          const removedActive = currentState.activePlaylistId === playlistId;
+
+          let nextActivePlaylistId = currentState.activePlaylistId;
+          if (removedActive) {
+            if (updatedPlaylists.length === 0) {
+              nextActivePlaylistId = "";
+            } else if (playlistIndex < updatedPlaylists.length) {
+              nextActivePlaylistId = updatedPlaylists[playlistIndex].id;
+            } else {
+              nextActivePlaylistId =
+                updatedPlaylists[updatedPlaylists.length - 1].id;
+            }
+          }
+
+          const constrained = enforcePlaylistBounds(
+            updatedPlaylists,
+            nextActivePlaylistId,
+          );
+          const didChangeActive =
+            removedActive ||
+            constrained.activePlaylistId !== currentState.activePlaylistId;
+
+          return {
+            ...constrained,
+            currentVideoId: didChangeActive
+              ? null
+              : currentState.currentVideoId,
+            currentIndex: didChangeActive ? null : currentState.currentIndex,
+            isPlaying: didChangeActive ? false : currentState.isPlaying,
+          };
+        });
+
+        return true;
+      },
+      syncPlaylistBounds: () =>
+        set((state) => {
+          const constrained = enforcePlaylistBounds(
+            state.playlists,
+            state.activePlaylistId,
+          );
+          const didChangeActive =
+            constrained.activePlaylistId !== state.activePlaylistId;
+          const didChangePlaylists =
+            state.playlists.length !== constrained.playlists.length ||
+            state.playlists.some(
+              (playlist, index) =>
+                playlist.id !== constrained.playlists[index]?.id,
+            );
+          const didChangeCanCreate =
+            constrained.canCreatePlaylist !== state.canCreatePlaylist;
+
+          if (!didChangeActive && !didChangePlaylists && !didChangeCanCreate) {
+            return {};
+          }
+
+          return {
+            ...constrained,
+            currentVideoId: didChangeActive ? null : state.currentVideoId,
+            currentIndex: didChangeActive ? null : state.currentIndex,
+            isPlaying: didChangeActive ? false : state.isPlaying,
+          };
+        }),
+
       renamePlaylist: (playlistId, newName) =>
         set((state) => ({
           playlists: state.playlists.map((playlist) =>
@@ -567,15 +810,26 @@ export const usePlayerStore = create<PlayerState>()(
             state.activePlaylistId,
             user.id,
           );
+          const constrained = enforcePlaylistBounds(
+            sanitized.playlists,
+            sanitized.activePlaylistId,
+          );
 
           const nextState: Partial<PlayerState> = {
             user,
             isDataSynced: false,
           };
 
-          if (sanitized.didChange) {
-            nextState.playlists = sanitized.playlists;
-            nextState.activePlaylistId = sanitized.activePlaylistId;
+          const didChange =
+            sanitized.didChange ||
+            constrained.playlists.length !== state.playlists.length ||
+            constrained.activePlaylistId !== state.activePlaylistId ||
+            constrained.canCreatePlaylist !== state.canCreatePlaylist;
+
+          if (didChange) {
+            nextState.playlists = constrained.playlists;
+            nextState.activePlaylistId = constrained.activePlaylistId;
+            nextState.canCreatePlaylist = constrained.canCreatePlaylist;
           }
 
           return nextState;
@@ -589,25 +843,37 @@ export const usePlayerStore = create<PlayerState>()(
           currentUserId,
         );
 
+        const constrained = enforcePlaylistBounds(
+          sanitized.playlists,
+          sanitized.activePlaylistId,
+        );
+
         const activePlaylist =
-          sanitized.playlists.find(
-            (playlist) => playlist.id === sanitized.activePlaylistId,
-          ) || sanitized.playlists[0];
+          constrained.playlists.find(
+            (playlist) => playlist.id === constrained.activePlaylistId,
+          ) || constrained.playlists[0];
         const firstVideo = activePlaylist?.items[0];
 
         set({
-          playlists: sanitized.playlists,
-          activePlaylistId: sanitized.activePlaylistId,
+          playlists: constrained.playlists,
+          activePlaylistId: constrained.activePlaylistId,
           loopMode: userData.loopMode,
           isShuffle: userData.isShuffle,
           currentVideoId: firstVideo ? firstVideo.id : null,
           currentIndex: firstVideo ? 0 : null,
           isDataSynced: true,
+          canCreatePlaylist: constrained.canCreatePlaylist,
         });
       },
       syncToServer: async () => {
-        const { user, playlists, activePlaylistId, loopMode, isShuffle } =
-          get();
+        const {
+          user,
+          playlists,
+          activePlaylistId,
+          loopMode,
+          isShuffle,
+          canCreatePlaylist,
+        } = get();
         if (!user) return;
 
         const sanitized = sanitizePlaylistIdentifiers(
@@ -616,10 +882,28 @@ export const usePlayerStore = create<PlayerState>()(
           user.id,
         );
 
-        if (sanitized.didChange) {
-          set({
-            playlists: sanitized.playlists,
-            activePlaylistId: sanitized.activePlaylistId,
+        const constrained = enforcePlaylistBounds(
+          sanitized.playlists,
+          sanitized.activePlaylistId,
+        );
+
+        if (
+          sanitized.didChange ||
+          constrained.playlists.length !== playlists.length ||
+          constrained.activePlaylistId !== activePlaylistId ||
+          constrained.canCreatePlaylist !== canCreatePlaylist
+        ) {
+          set((state) => {
+            const didChangeActive =
+              state.activePlaylistId !== constrained.activePlaylistId;
+            return {
+              playlists: constrained.playlists,
+              activePlaylistId: constrained.activePlaylistId,
+              canCreatePlaylist: constrained.canCreatePlaylist,
+              currentVideoId: didChangeActive ? null : state.currentVideoId,
+              currentIndex: didChangeActive ? null : state.currentIndex,
+              isPlaying: didChangeActive ? false : state.isPlaying,
+            };
           });
         }
 
@@ -630,8 +914,8 @@ export const usePlayerStore = create<PlayerState>()(
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              playlists: sanitized.playlists,
-              activePlaylistId: sanitized.activePlaylistId,
+              playlists: constrained.playlists,
+              activePlaylistId: constrained.activePlaylistId,
               loopMode,
               isShuffle,
             }),
@@ -677,19 +961,26 @@ export const usePlayerStore = create<PlayerState>()(
             state.activePlaylistId ?? "",
           );
 
+          const constrained = enforcePlaylistBounds(
+            sanitized.playlists,
+            sanitized.activePlaylistId,
+          );
+
           const activePlaylist =
-            sanitized.playlists.find(
-              (playlist) => playlist.id === sanitized.activePlaylistId,
-            ) || sanitized.playlists[0];
+            constrained.playlists.find(
+              (playlist) => playlist.id === constrained.activePlaylistId,
+            ) || constrained.playlists[0];
           const firstVideo = activePlaylist?.items[0];
 
           return {
             ...currentState,
             ...state,
-            playlists: sanitized.playlists,
-            activePlaylistId: sanitized.activePlaylistId,
+            playlists: constrained.playlists,
+            activePlaylistId: constrained.activePlaylistId,
             currentVideoId: firstVideo ? firstVideo.id : null,
             currentIndex: firstVideo ? 0 : null,
+            canCreatePlaylist: constrained.canCreatePlaylist,
+            maxPlaylistCount: MAX_PLAYLIST_COUNT,
           };
         }
 
@@ -699,6 +990,8 @@ export const usePlayerStore = create<PlayerState>()(
           activePlaylistId: defaultActivePlaylistId,
           currentVideoId: defaultInitialVideoId,
           currentIndex: 0,
+          canCreatePlaylist: defaultPlaylists.length < MAX_PLAYLIST_COUNT,
+          maxPlaylistCount: MAX_PLAYLIST_COUNT,
         };
       },
     },
