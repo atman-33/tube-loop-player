@@ -17,10 +17,6 @@ interface PlaylistTabsProps {
   onScrollAreaRef?: (node: HTMLDivElement | null) => void;
 }
 
-const MAX_VISIBLE_PLAYLIST_TABS = 3;
-const TAB_MAX_WIDTH = 140;
-const TAB_GAP_PX = 2;
-
 export const calculateTabScrollDelta = (
   containerRect: DOMRect | DOMRectReadOnly,
   tabRect: DOMRect | DOMRectReadOnly,
@@ -157,9 +153,9 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
     const referenceTab = container.querySelector<HTMLElement>(
       '[data-playlist-tab]',
     );
-    const tabWidth = referenceTab?.getBoundingClientRect().width ?? TAB_MAX_WIDTH;
+    const tabWidth = referenceTab?.getBoundingClientRect().width ?? 120;
     container.scrollBy({
-      left: direction * (tabWidth + TAB_GAP_PX),
+      left: direction * (tabWidth + 2),
       behavior: 'smooth',
     });
   }, []);
@@ -172,9 +168,7 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
     // scroll into view handled by dedicated visibility hook
   };
 
-  const hasPotentialOverflow = playlists.length > MAX_VISIBLE_PLAYLIST_TABS;
-  const hasMeasuredOverflow = scrollState.canScrollLeft || scrollState.canScrollRight;
-  const shouldShowNavigation = hasPotentialOverflow || hasMeasuredOverflow;
+  const shouldShowNavigation = scrollState.canScrollLeft || scrollState.canScrollRight;
 
   return (
     <div className="relative mb-0 w-full">
@@ -203,7 +197,6 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
               <div
                 ref={handleScrollAreaRef}
                 data-testid="playlist-tabs-scroll"
-                data-max-visible-tabs={MAX_VISIBLE_PLAYLIST_TABS}
                 className="flex w-full items-end gap-0.5 overflow-x-auto px-1 pb-1 pt-2"
               >
                 {playlists.map((playlist, index) => (

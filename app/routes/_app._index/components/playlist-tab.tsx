@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { usePlayerStore } from '../../../stores/player';
-import { PLAYLIST_PANEL_ID } from './playlist-aria';
+import { PLAYLIST_PANEL_ID } from '../consts/playlist-aria';
 
 interface PlaylistItem {
   id: string;
