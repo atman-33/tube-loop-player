@@ -17,6 +17,10 @@ interface PlaylistTabsProps {
   onScrollAreaRef?: (node: HTMLDivElement | null) => void;
 }
 
+const MAX_VISIBLE_PLAYLIST_TABS = 3;
+const TAB_MAX_WIDTH = 140;
+const TAB_GAP_PX = 2;
+
 export const calculateTabScrollDelta = (
   containerRect: DOMRect | DOMRectReadOnly,
   tabRect: DOMRect | DOMRectReadOnly,
@@ -153,9 +157,9 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
     const referenceTab = container.querySelector<HTMLElement>(
       '[data-playlist-tab]',
     );
-    const tabWidth = referenceTab?.offsetWidth ?? 200;
+    const tabWidth = referenceTab?.getBoundingClientRect().width ?? TAB_MAX_WIDTH;
     container.scrollBy({
-      left: direction * (tabWidth + 12),
+      left: direction * (tabWidth + TAB_GAP_PX),
       behavior: 'smooth',
     });
   }, []);
@@ -168,13 +172,12 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
     // scroll into view handled by dedicated visibility hook
   };
 
-  const shouldShowNavigation = playlists.length > 3;
-  const showFadeIndicators = shouldShowNavigation;
-
-
+  const hasPotentialOverflow = playlists.length > MAX_VISIBLE_PLAYLIST_TABS;
+  const hasMeasuredOverflow = scrollState.canScrollLeft || scrollState.canScrollRight;
+  const shouldShowNavigation = hasPotentialOverflow || hasMeasuredOverflow;
 
   return (
-    <div className="relative mb-0">
+    <div className="relative mb-0 w-full">
       <div className="rounded-t-lg border border-border/50 border-b-0 bg-background shadow-sm">
         <div className="flex items-center gap-2 px-2 py-2">
           {shouldShowNavigation && (
@@ -192,7 +195,7 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
             </Button>
           )}
 
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <SortableContext
               items={playlists.map((p) => p.id)}
               strategy={horizontalListSortingStrategy}
@@ -200,7 +203,8 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
               <div
                 ref={handleScrollAreaRef}
                 data-testid="playlist-tabs-scroll"
-                className="flex items-end gap-0.5 overflow-x-auto px-1 pb-1"
+                data-max-visible-tabs={MAX_VISIBLE_PLAYLIST_TABS}
+                className="flex w-full items-end gap-0.5 overflow-x-auto px-1 pb-1 pt-2"
               >
                 {playlists.map((playlist, index) => (
                   <PlaylistTab
@@ -221,17 +225,6 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
                 ))}
               </div>
             </SortableContext>
-
-            {showFadeIndicators && (
-              <>
-                <div
-                  className={`pointer-events-none absolute inset-y-1 left-0 w-8 bg-gradient-to-r from-background via-background/90 to-transparent transition-opacity duration-200 ${scrollState.canScrollLeft ? 'opacity-100' : 'opacity-0'}`}
-                />
-                <div
-                  className={`pointer-events-none absolute inset-y-1 right-0 w-8 bg-gradient-to-l from-background via-background/90 to-transparent transition-opacity duration-200 ${scrollState.canScrollRight ? 'opacity-100' : 'opacity-0'}`}
-                />
-              </>
-            )}
           </div>
 
           <div className="flex items-center gap-1">
@@ -263,7 +256,6 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
                     aria-label="Create new playlist"
                   >
                     <Plus className="h-4 w-4" />
-                    <span className="hidden md:inline">New Playlist</span>
                   </Button>
                 </span>
               </TooltipTrigger>

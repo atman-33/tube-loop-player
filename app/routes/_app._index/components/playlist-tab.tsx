@@ -78,11 +78,6 @@ export const PlaylistTab = ({
   // Create conditional ref function
   const conditionalSortableRef = isDraggingPlaylistItem ? () => {} : setSortableRef;
 
-  const tabWidth = useMemo(() => {
-    const viewportWidth = Math.max(12, 24 - totalTabs);
-    return `clamp(120px, ${viewportWidth}vw, 220px)`;
-  }, [totalTabs]);
-
   const [isKeyboardSorting, setIsKeyboardSorting] = useState(false);
   const playlistOrderIndex = useMemo(
     () => playlists.findIndex((entry) => entry.id === playlist.id),
@@ -140,13 +135,8 @@ export const PlaylistTab = ({
       ref={conditionalSortableRef}
       data-playlist-tab
       data-playlist-tab-id={playlist.id}
-      className="relative group flex-none"
-      style={{
-        ...sortableStyle,
-        flexBasis: tabWidth,
-        minWidth: '120px',
-        maxWidth: '220px',
-      }}
+      className="relative group flex-none w-[80px] basis-[80px] min-w-[80px] max-w-[80px] md:w-[120px] md:basis-[120px] md:min-w-[120px] md:max-w-[120px]"
+      style={sortableStyle}
       {...sortableAttributes}
       {...listeners}
     >
@@ -161,7 +151,7 @@ export const PlaylistTab = ({
           }}
           onKeyDown={handleKeyboardReorder}
           className={`
-            relative px-2 py-3 font-medium text-xs transition-all duration-200 ease-out
+            relative px-0.5 py-0.5 font-medium text-xs transition-all duration-200 ease-out
             w-full h-12 flex flex-col items-center justify-center overflow-hidden cursor-pointer transform
             border rounded-t-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60
             ${isActive
@@ -228,11 +218,6 @@ export const PlaylistTab = ({
                   ? '1 item'
                   : `${playlist.items.length} items`}
               </div>
-              {isActive ? (
-                <span className="mt-0.5 text-[10px] uppercase tracking-wide text-primary/80">
-                  Active playlist
-                </span>
-              ) : null}
             </div>
           )}
         </button>
@@ -247,7 +232,7 @@ export const PlaylistTab = ({
             <Button
               size="icon"
               variant="ghost"
-              className="h-5 w-5 bg-background border shadow-sm hover:bg-muted hover:scale-105 transition-all duration-200"
+              className="h-5 w-5 bg-background shadow-sm hover:bg-muted hover:scale-105 transition-all duration-200"
               onClick={(e) => {
                 e.stopPropagation();
                 onStartEdit(playlist);
