@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -17,6 +17,7 @@ import { PlaylistDisplay } from './components/playlist-display';
 import { PlaylistInputForm } from './components/playlist-input-form';
 import { PlaylistTabs } from './components/playlist-tabs';
 import { YouTubePlayer } from './components/you-tube-player';
+import { getHorizontalScrollIntent } from './scroll-utils';
 
 // biome-ignore lint/correctness/noEmptyPattern: <>
 export function meta({ }: Route.MetaArgs) {
@@ -61,6 +62,132 @@ export default function Home() {
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dragType, setDragType] = useState<'item' | 'tab' | null>(null);
+  const playlistTabsScrollRef = useRef<HTMLDivElement | null>(null);
+  const pointerPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const autoScrollFrameRef = useRef<number | null>(null);
+  const pointerTrackingAttachedRef = useRef(false);
+  const dragTypeRef = useRef<'item' | 'tab' | null>(null);
+
+  const setDragTypeState = useCallback((next: 'item' | 'tab' | null) => {
+    dragTypeRef.current = next;
+    setDragType(next);
+  }, []);
+
+  const setPlaylistTabsScrollElement = useCallback((node: HTMLDivElement | null) => {
+    playlistTabsScrollRef.current = node;
+  }, []);
+
+  const stopAutoScroll = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (autoScrollFrameRef.current !== null) {
+      window.cancelAnimationFrame(autoScrollFrameRef.current);
+      autoScrollFrameRef.current = null;
+    }
+  }, []);
+
+  const runAutoScrollFrame = useCallback(() => {
+    const container = playlistTabsScrollRef.current;
+    const pointer = pointerPositionRef.current;
+
+    if (!container || !pointer) {
+      stopAutoScroll();
+      return;
+    }
+
+    const intent = getHorizontalScrollIntent({
+      pointerX: pointer.x,
+      containerRect: container.getBoundingClientRect(),
+      scrollLeft: container.scrollLeft,
+      scrollWidth: container.scrollWidth,
+    });
+
+    if (intent === 0 || typeof window === 'undefined') {
+      stopAutoScroll();
+      return;
+    }
+
+    const step = Math.max(12, Math.round(container.clientWidth * 0.05));
+    container.scrollLeft += intent * step;
+    autoScrollFrameRef.current = window.requestAnimationFrame(runAutoScrollFrame);
+  }, [stopAutoScroll]);
+
+  const ensureAutoScroll = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (autoScrollFrameRef.current === null) {
+      autoScrollFrameRef.current = window.requestAnimationFrame(runAutoScrollFrame);
+    }
+  }, [runAutoScrollFrame]);
+
+  const handlePointerMove = useCallback((event: PointerEvent) => {
+    if (!dragTypeRef.current) {
+      return;
+    }
+    pointerPositionRef.current = { x: event.clientX, y: event.clientY };
+
+    const container = playlistTabsScrollRef.current;
+    if (!container) {
+      stopAutoScroll();
+      return;
+    }
+
+    const intent = getHorizontalScrollIntent({
+      pointerX: event.clientX,
+      containerRect: container.getBoundingClientRect(),
+      scrollLeft: container.scrollLeft,
+      scrollWidth: container.scrollWidth,
+    });
+
+    if (intent === 0) {
+      stopAutoScroll();
+      return;
+    }
+
+    ensureAutoScroll();
+  }, [ensureAutoScroll, stopAutoScroll]);
+
+  const attachPointerTracking = useCallback(() => {
+    if (pointerTrackingAttachedRef.current || typeof window === 'undefined') {
+      return;
+    }
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    pointerTrackingAttachedRef.current = true;
+  }, [handlePointerMove]);
+
+  const detachPointerTracking = useCallback(() => {
+    if (!pointerTrackingAttachedRef.current || typeof window === 'undefined') {
+      return;
+    }
+    window.removeEventListener('pointermove', handlePointerMove);
+    pointerTrackingAttachedRef.current = false;
+  }, [handlePointerMove]);
+
+  const cleanupPointerTracking = useCallback(() => {
+    pointerPositionRef.current = null;
+    detachPointerTracking();
+    stopAutoScroll();
+  }, [detachPointerTracking, stopAutoScroll]);
+
+  const flashInvalidDrop = useCallback(() => {
+    const node = playlistTabsScrollRef.current;
+    if (!node || typeof window === 'undefined') {
+      return;
+    }
+    const classes = ['ring-2', 'ring-destructive/40', 'bg-destructive/5'];
+    node.classList.add(...classes);
+    window.setTimeout(() => {
+      node.classList.remove(...classes);
+    }, 280);
+  }, []);
+
+  const clearDragState = useCallback(() => {
+    setActiveId(null);
+    setDragTypeState(null);
+    cleanupPointerTracking();
+  }, [cleanupPointerTracking, setActiveId, setDragTypeState]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -80,15 +207,26 @@ export default function Home() {
 
     // Determine if we're dragging a playlist item or a tab
     const isPlaylistTab = playlists.some(p => p.id === activeIdStr);
-    setDragType(isPlaylistTab ? 'tab' : 'item');
+    setDragTypeState(isPlaylistTab ? 'tab' : 'item');
+
+    if (typeof PointerEvent !== 'undefined' && event.activatorEvent instanceof PointerEvent) {
+      pointerPositionRef.current = {
+        x: event.activatorEvent.clientX,
+        y: event.activatorEvent.clientY,
+      };
+    } else {
+      pointerPositionRef.current = null;
+    }
+
+    attachPointerTracking();
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) {
-      setActiveId(null);
-      setDragType(null);
+      flashInvalidDrop();
+      clearDragState();
       return;
     }
 
@@ -143,6 +281,7 @@ export default function Home() {
                 }, 1000);
               }
             }
+            flashInvalidDrop();
           }
         }
       } else if (activeIdStr !== overIdStr) {
@@ -156,9 +295,17 @@ export default function Home() {
       }
     }
 
-    setActiveId(null);
-    setDragType(null);
+    clearDragState();
   };
+
+  const handleDragCancel = () => {
+    flashInvalidDrop();
+    clearDragState();
+  };
+
+  useEffect(() => () => {
+    cleanupPointerTracking();
+  }, [cleanupPointerTracking]);
 
   const activePlaylist = getActivePlaylist();
   const playlist = activePlaylist?.items || [];
@@ -175,15 +322,16 @@ export default function Home() {
       collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
-      <div className="container mx-auto p-4">
+      <div className="mx-auto p-4">
         <div className="flex flex-col gap-6 md:flex-row">
-          <div className="flex-1 md:w-3/5">
+          <div className="flex-1 md:w-1/2">
             <YouTubePlayer />
           </div>
-          <div className="space-y-4 md:w-2/5">
+          <div className="space-y-4 md:w-1/2">
             <PlaylistInputForm />
-            <PlaylistTabs />
+            <PlaylistTabs onScrollAreaRef={setPlaylistTabsScrollElement} />
             <PlaylistDisplay />
           </div>
         </div>
