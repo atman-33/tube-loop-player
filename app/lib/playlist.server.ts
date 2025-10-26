@@ -2,6 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AppLoadContext } from "react-router";
 import { playlist, playlistItem, userSettings } from "~/database/schema";
+import { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
 
 const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
 
@@ -26,7 +27,10 @@ const generatePlaylistId = (userId?: string) => {
   return `playlist-${uniqueSegment}`;
 };
 
-const sanitizeUserPlaylistData = (data: UserPlaylistData, userId: string) => {
+export const sanitizeUserPlaylistData = (
+  data: UserPlaylistData,
+  userId: string,
+) => {
   const seen = new Set<string>();
   const idMap = new Map<string, string>();
   let didChange = false;
@@ -62,6 +66,15 @@ const sanitizeUserPlaylistData = (data: UserPlaylistData, userId: string) => {
     };
   });
 
+  let normalizedPlaylists = updatedPlaylists;
+  if (normalizedPlaylists.length > MAX_PLAYLIST_COUNT) {
+    console.warn(
+      `[Playlists] exceeded max playlist count (${MAX_PLAYLIST_COUNT}); trimming extra playlists before persistence.`,
+    );
+    normalizedPlaylists = normalizedPlaylists.slice(0, MAX_PLAYLIST_COUNT);
+    didChange = true;
+  }
+
   let nextActivePlaylistId = data.activePlaylistId;
   if (idMap.has(data.activePlaylistId)) {
     const mappedId = idMap.get(data.activePlaylistId) as string;
@@ -71,18 +84,20 @@ const sanitizeUserPlaylistData = (data: UserPlaylistData, userId: string) => {
     nextActivePlaylistId = mappedId;
   } else if (
     nextActivePlaylistId &&
-    !updatedPlaylists.some((playlist) => playlist.id === nextActivePlaylistId)
+    !normalizedPlaylists.some(
+      (playlist) => playlist.id === nextActivePlaylistId,
+    )
   ) {
-    if (updatedPlaylists[0]) {
-      nextActivePlaylistId = updatedPlaylists[0].id;
+    if (normalizedPlaylists[0]) {
+      nextActivePlaylistId = normalizedPlaylists[0].id;
     } else {
       nextActivePlaylistId = "";
     }
     didChange = true;
   }
 
-  if (!nextActivePlaylistId && updatedPlaylists[0]) {
-    nextActivePlaylistId = updatedPlaylists[0].id;
+  if (!nextActivePlaylistId && normalizedPlaylists[0]) {
+    nextActivePlaylistId = normalizedPlaylists[0].id;
     if (nextActivePlaylistId !== data.activePlaylistId) {
       didChange = true;
     }
@@ -90,12 +105,78 @@ const sanitizeUserPlaylistData = (data: UserPlaylistData, userId: string) => {
 
   return {
     data: {
-      playlists: updatedPlaylists,
+      playlists: normalizedPlaylists,
       activePlaylistId: nextActivePlaylistId,
       loopMode: data.loopMode,
       isShuffle: data.isShuffle,
     },
     didChange,
+  };
+};
+
+export const mergePlaylistsForSync = (
+  existingData: UserPlaylistData,
+  cookieData: UserPlaylistData,
+  userId: string,
+): UserPlaylistData => {
+  const mergedPlaylists = existingData.playlists.map((playlist) => ({
+    ...playlist,
+    items: [...playlist.items],
+  }));
+
+  for (const cookiePlaylist of cookieData.playlists) {
+    const existingPlaylist = mergedPlaylists.find(
+      (playlist) => playlist.name === cookiePlaylist.name,
+    );
+
+    if (existingPlaylist) {
+      const existingVideoIds = new Set(
+        existingPlaylist.items.map((item) => item.id),
+      );
+      for (const item of cookiePlaylist.items) {
+        if (!existingVideoIds.has(item.id)) {
+          existingPlaylist.items.push(item);
+          existingVideoIds.add(item.id);
+        }
+      }
+      continue;
+    }
+
+    if (mergedPlaylists.length >= MAX_PLAYLIST_COUNT) {
+      console.warn(
+        `[Playlists] reached max playlist count (${MAX_PLAYLIST_COUNT}). Skipping playlist "${cookiePlaylist.name}" from local data.`,
+      );
+      continue;
+    }
+
+    mergedPlaylists.push({
+      ...cookiePlaylist,
+      id: generatePlaylistId(userId),
+    });
+  }
+
+  if (mergedPlaylists.length > MAX_PLAYLIST_COUNT) {
+    console.warn(
+      `[Playlists] exceeded max playlist count (${MAX_PLAYLIST_COUNT}); dropping ${mergedPlaylists.length - MAX_PLAYLIST_COUNT} playlist(s) before persistence.`,
+    );
+  }
+
+  const limitedPlaylists = mergedPlaylists.slice(0, MAX_PLAYLIST_COUNT);
+
+  let nextActivePlaylistId =
+    existingData.activePlaylistId || cookieData.activePlaylistId;
+  if (
+    nextActivePlaylistId &&
+    !limitedPlaylists.some((playlist) => playlist.id === nextActivePlaylistId)
+  ) {
+    nextActivePlaylistId = limitedPlaylists[0]?.id || "";
+  }
+
+  return {
+    playlists: limitedPlaylists,
+    activePlaylistId: nextActivePlaylistId,
+    loopMode: existingData.loopMode,
+    isShuffle: existingData.isShuffle,
   };
 };
 
@@ -280,53 +361,19 @@ export class PlaylistService {
     }
   }
 
-  async syncCookieDataToDatabase(
+  async syncLocalStorageDataToDatabase(
     userId: string,
-    cookieData: UserPlaylistData,
+    localData: UserPlaylistData,
   ): Promise<boolean> {
     // Get existing database data
     const existingData = await this.getUserPlaylists(userId);
 
     if (!existingData || existingData.playlists.length === 0) {
       // No existing data, save cookie data as-is
-      return await this.saveUserPlaylists(userId, cookieData);
+      return await this.saveUserPlaylists(userId, localData);
     }
 
-    // Merge logic: combine playlists, avoiding duplicates
-    const mergedPlaylists = [...existingData.playlists];
-
-    for (const cookiePlaylist of cookieData.playlists) {
-      const existingPlaylist = mergedPlaylists.find(
-        (p) => p.name === cookiePlaylist.name,
-      );
-
-      if (existingPlaylist) {
-        // Merge items, avoiding duplicates
-        const existingVideoIds = new Set(
-          existingPlaylist.items.map((item) => item.id),
-        );
-        const newItems = cookiePlaylist.items.filter(
-          (item) => !existingVideoIds.has(item.id),
-        );
-        existingPlaylist.items.push(...newItems);
-      } else {
-        // Add new playlist with unique ID
-        const newId = generatePlaylistId(userId);
-        mergedPlaylists.push({
-          ...cookiePlaylist,
-          id: newId,
-        });
-      }
-    }
-
-    const mergedData: UserPlaylistData = {
-      playlists: mergedPlaylists,
-      activePlaylistId:
-        existingData.activePlaylistId || cookieData.activePlaylistId,
-      loopMode: existingData.loopMode,
-      isShuffle: existingData.isShuffle,
-    };
-
+    const mergedData = mergePlaylistsForSync(existingData, localData, userId);
     return await this.saveUserPlaylists(userId, mergedData);
   }
 }

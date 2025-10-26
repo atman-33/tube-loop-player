@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictResolver } from "./conflict-resolver";
 import { DataComparator } from "./data-comparator";
 import type { UserPlaylistData } from "./data-normalizer";
+import { MAX_PLAYLIST_COUNT } from "./playlist-limits";
 
 describe("ConflictResolver", () => {
   let conflictResolver: ConflictResolver;
@@ -90,6 +91,17 @@ describe("ConflictResolver", () => {
     isShuffle: true,
   };
 
+  const buildDefaultDataset = (count: number): UserPlaylistData => ({
+    playlists: Array.from({ length: count }, (_, index) => ({
+      id: `default-${index + 1}`,
+      name: `Playlist ${index + 1}`,
+      items: [],
+    })),
+    activePlaylistId: "default-1",
+    loopMode: "all",
+    isShuffle: false,
+  });
+
   beforeEach(() => {
     mockDataComparator = new DataComparator();
     conflictResolver = new ConflictResolver(mockDataComparator);
@@ -163,6 +175,20 @@ describe("ConflictResolver", () => {
           defaultData,
           meaningfulCloudData,
         );
+        expect(result).toEqual({
+          type: "auto-sync",
+          data: meaningfulCloudData,
+        });
+      });
+
+      it("treats sequential default playlists up to the max as empty state", () => {
+        const localDefaultWithMax = buildDefaultDataset(MAX_PLAYLIST_COUNT);
+
+        const result = conflictResolver.analyzeConflict(
+          localDefaultWithMax,
+          meaningfulCloudData,
+        );
+
         expect(result).toEqual({
           type: "auto-sync",
           data: meaningfulCloudData,

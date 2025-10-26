@@ -8,6 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DataComparator, dataComparator } from "./data-comparator";
 import type { UserPlaylistData } from "./data-normalizer";
+import { MAX_PLAYLIST_COUNT } from "./playlist-limits";
 
 describe("DataComparator", () => {
   let comparator: DataComparator;
@@ -334,6 +335,28 @@ describe("DataComparator", () => {
 
       const result = comparator.areDataSetsIdentical(local, cloud);
       expect(result).toBe(false);
+    });
+
+    it("should compare datasets containing the maximum playlist count", () => {
+      const buildData = (): UserPlaylistData => ({
+        playlists: Array.from({ length: MAX_PLAYLIST_COUNT }, (_, index) => ({
+          id: `playlist-${index + 1}`,
+          name: `Playlist ${index + 1}`,
+          items:
+            index % 2 === 0
+              ? [{ id: `video-${index}`, title: `Track ${index}` }]
+              : [],
+        })),
+        activePlaylistId: "playlist-1",
+        loopMode: "all",
+        isShuffle: false,
+      });
+
+      const local = buildData();
+      const cloud = buildData();
+
+      const result = comparator.areDataSetsIdentical(local, cloud);
+      expect(result).toBe(true);
     });
   });
 

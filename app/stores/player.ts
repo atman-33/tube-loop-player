@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { User } from "~/hooks/use-auth";
+import { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
+
+export { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
 
 const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
-
-export const MAX_PLAYLIST_COUNT = 10;
 
 const createUniqueSegment = () => {
   if (

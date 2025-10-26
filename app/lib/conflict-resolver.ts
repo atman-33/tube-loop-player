@@ -5,6 +5,10 @@
 
 import { DataComparator } from "./data-comparator";
 import type { UserPlaylistData } from "./data-normalizer";
+import {
+  isSequentialDefaultPlaylistName,
+  MAX_PLAYLIST_COUNT,
+} from "./playlist-limits";
 
 export type ConflictResolution =
   | { type: "auto-sync"; data: UserPlaylistData }
@@ -320,22 +324,29 @@ export class ConflictResolver {
       return true;
     }
 
-    // Check for default playlist structure (3 empty playlists with default names)
-    if (
-      data.playlists.length === 3 &&
-      data.playlists[0]?.name === "Playlist 1" &&
-      data.playlists[1]?.name === "Playlist 2" &&
-      data.playlists[2]?.name === "Playlist 3" &&
-      data.playlists[0]?.items?.length <= 1 &&
-      data.playlists[1]?.items?.length === 0 &&
-      data.playlists[2]?.items?.length === 0
-    ) {
+    const totalItems = this.countTotalItems(data);
+    if (totalItems === 0) {
       return true;
     }
 
-    // Check if all playlists are empty
-    const totalItems = this.countTotalItems(data);
-    return totalItems === 0;
+    if (
+      data.playlists.length <= MAX_PLAYLIST_COUNT &&
+      data.playlists.every((playlist, index) =>
+        isSequentialDefaultPlaylistName(playlist.name, index + 1),
+      )
+    ) {
+      const [firstPlaylist, ...remaining] = data.playlists;
+      const firstItemCount = firstPlaylist?.items?.length ?? 0;
+      const remainingAreEmpty = remaining.every(
+        (playlist) => (playlist.items?.length ?? 0) === 0,
+      );
+
+      if (firstItemCount <= 1 && remainingAreEmpty) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
