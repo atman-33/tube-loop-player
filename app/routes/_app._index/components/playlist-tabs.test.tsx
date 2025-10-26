@@ -69,15 +69,37 @@ describe('PlaylistTabs UI', () => {
     expect(screen.queryByLabelText(/Scroll tabs right/i)).toBeNull();
   });
 
-  it('renders navigation controls when playlist count exceeds three', () => {
+  it('renders navigation controls when the tab list becomes scrollable', async () => {
     mockUsePlayerStore.mockReturnValue(
       buildStoreState({ playlists: createPlaylists(5) }),
     );
 
     render(<PlaylistTabs />);
 
-    expect(screen.getByLabelText(/Scroll tabs left/i)).toBeDisabled();
-    expect(screen.getByLabelText(/Scroll tabs right/i)).toBeDisabled();
+    const scrollArea = screen.getByTestId('playlist-tabs-scroll');
+    Object.defineProperty(scrollArea, 'scrollWidth', {
+      configurable: true,
+      value: 500,
+    });
+    Object.defineProperty(scrollArea, 'clientWidth', {
+      configurable: true,
+      value: 200,
+    });
+    Object.defineProperty(scrollArea, 'scrollLeft', {
+      configurable: true,
+      value: 0,
+    });
+
+    fireEvent.scroll(scrollArea);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Scroll tabs left/i)).toBeDisabled();
+      expect(screen.getByLabelText(/Scroll tabs right/i)).not.toBeDisabled();
+    });
+
+    delete (scrollArea as HTMLElement).scrollWidth;
+    delete (scrollArea as HTMLElement).clientWidth;
+    delete (scrollArea as HTMLElement).scrollLeft;
   });
 
   it('disables playlist creation when the limit is reached', () => {
