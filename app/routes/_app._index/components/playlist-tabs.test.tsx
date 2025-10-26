@@ -43,6 +43,26 @@ const buildStoreState = (overrides?: Partial<MockStoreState>): MockStoreState =>
   ...overrides,
 });
 
+const overrideScrollMetric = (
+  element: HTMLElement,
+  property: 'scrollWidth' | 'clientWidth' | 'scrollLeft',
+  value: number,
+) => {
+  const descriptor = Object.getOwnPropertyDescriptor(element, property);
+  Object.defineProperty(element, property, {
+    configurable: true,
+    get: () => value,
+  });
+
+  return () => {
+    if (descriptor) {
+      Object.defineProperty(element, property, descriptor);
+      return;
+    }
+    Reflect.deleteProperty(element, property);
+  };
+};
+
 beforeAll(() => {
   class ResizeObserverMock {
     observe() {}
@@ -77,18 +97,11 @@ describe('PlaylistTabs UI', () => {
     render(<PlaylistTabs />);
 
     const scrollArea = screen.getByTestId('playlist-tabs-scroll');
-    Object.defineProperty(scrollArea, 'scrollWidth', {
-      configurable: true,
-      value: 500,
-    });
-    Object.defineProperty(scrollArea, 'clientWidth', {
-      configurable: true,
-      value: 200,
-    });
-    Object.defineProperty(scrollArea, 'scrollLeft', {
-      configurable: true,
-      value: 0,
-    });
+    const cleanups = [
+      overrideScrollMetric(scrollArea, 'scrollWidth', 500),
+      overrideScrollMetric(scrollArea, 'clientWidth', 200),
+      overrideScrollMetric(scrollArea, 'scrollLeft', 0),
+    ];
 
     fireEvent.scroll(scrollArea);
 
@@ -97,9 +110,7 @@ describe('PlaylistTabs UI', () => {
       expect(screen.getByLabelText(/Scroll tabs right/i)).not.toBeDisabled();
     });
 
-    delete (scrollArea as HTMLElement).scrollWidth;
-    delete (scrollArea as HTMLElement).clientWidth;
-    delete (scrollArea as HTMLElement).scrollLeft;
+    cleanups.forEach((cleanup) => cleanup());
   });
 
   it('disables playlist creation when the limit is reached', () => {
