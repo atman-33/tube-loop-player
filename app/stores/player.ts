@@ -1,301 +1,32 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { User } from "~/hooks/use-auth";
+import {
+  clonePlaylistItems,
+  deriveDuplicatePlaylistName,
+  deriveNextPlaylistName,
+  enforcePlaylistBounds,
+} from "~/lib/player/playlist-helpers";
+import {
+  generatePlaylistId,
+  sanitizePlaylistIdentifiers,
+} from "~/lib/player/playlist-ids";
+import {
+  drawFromShuffleQueue,
+  parsePersistedShuffleQueue,
+  rebuildShuffleQueues,
+  removeQueueForPlaylist,
+  resetQueueForPlaylist,
+  type ShuffleQueueMap,
+  sanitizeShuffleQueue,
+  withQueueForPlaylist,
+} from "~/lib/player/shuffle-queue";
+import type { LoopMode, Playlist, PlaylistItem } from "~/lib/player/types";
 import { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
 
+export { sanitizePlaylistIdentifiers } from "~/lib/player/playlist-ids";
+export type { LoopMode } from "~/lib/player/types";
 export { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
-
-const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
-
-const createUniqueSegment = () => {
-  if (
-    typeof globalThis.crypto !== "undefined" &&
-    typeof globalThis.crypto.randomUUID === "function"
-  ) {
-    return globalThis.crypto.randomUUID();
-  }
-
-  const timePart = Date.now().toString(36);
-  const randomPart = Math.random().toString(36).slice(2, 10);
-  return `${timePart}-${randomPart}`;
-};
-
-const generatePlaylistId = (userId?: string) => {
-  const uniqueSegment = createUniqueSegment();
-  if (userId && userId.length > 0) {
-    return `playlist-${userId}-${uniqueSegment}`;
-  }
-  return `playlist-${uniqueSegment}`;
-};
-
-export const sanitizePlaylistIdentifiers = (
-  playlists: Playlist[],
-  activePlaylistId: string,
-  userId?: string,
-) => {
-  const seen = new Set<string>();
-  const idMap = new Map<string, string>();
-  let didChange = false;
-
-  const updatedPlaylists = playlists.map((playlist) => {
-    const originalId = playlist.id;
-    let nextId = originalId;
-    const shouldRegenerate =
-      !nextId ||
-      LEGACY_PLAYLIST_ID_PATTERN.test(nextId) ||
-      seen.has(nextId) ||
-      (userId ? !nextId.startsWith(`playlist-${userId}-`) : false);
-
-    if (shouldRegenerate) {
-      let generatedId = "";
-      do {
-        generatedId = generatePlaylistId(userId);
-      } while (seen.has(generatedId));
-      if (originalId && !idMap.has(originalId)) {
-        idMap.set(originalId, generatedId);
-      }
-      nextId = generatedId;
-      didChange = true;
-    } else {
-      if (originalId && !idMap.has(originalId)) {
-        idMap.set(originalId, nextId);
-      }
-    }
-
-    seen.add(nextId);
-
-    return {
-      ...playlist,
-      id: nextId,
-    };
-  });
-
-  let nextActivePlaylistId = activePlaylistId;
-  if (idMap.has(activePlaylistId)) {
-    const mappedId = idMap.get(activePlaylistId) as string;
-    if (mappedId !== activePlaylistId) {
-      didChange = true;
-    }
-    nextActivePlaylistId = mappedId;
-  } else if (
-    activePlaylistId &&
-    !updatedPlaylists.some((p) => p.id === activePlaylistId)
-  ) {
-    if (updatedPlaylists[0]) {
-      nextActivePlaylistId = updatedPlaylists[0].id;
-    } else {
-      nextActivePlaylistId = "";
-    }
-    didChange = true;
-  }
-
-  if (!nextActivePlaylistId && updatedPlaylists[0]) {
-    nextActivePlaylistId = updatedPlaylists[0].id;
-    if (nextActivePlaylistId !== activePlaylistId) {
-      didChange = true;
-    }
-  }
-
-  return {
-    playlists: updatedPlaylists,
-    activePlaylistId: nextActivePlaylistId,
-    didChange,
-  };
-};
-
-interface PlaylistItem {
-  id: string;
-  title?: string;
-}
-
-interface Playlist {
-  id: string;
-  name: string;
-  items: PlaylistItem[];
-}
-
-const PLAYLIST_NAME_PATTERN = /^Playlist (\d+)$/i;
-
-const deriveNextPlaylistName = (playlists: Playlist[]) => {
-  const usedNumbers = new Set<number>();
-  let highest = 0;
-
-  for (const playlist of playlists) {
-    const match = PLAYLIST_NAME_PATTERN.exec(playlist.name);
-    if (match) {
-      const value = Number.parseInt(match[1], 10);
-      if (!Number.isNaN(value)) {
-        usedNumbers.add(value);
-        if (value > highest) {
-          highest = value;
-        }
-      }
-    }
-  }
-
-  for (let i = 1; i <= MAX_PLAYLIST_COUNT; i += 1) {
-    if (!usedNumbers.has(i)) {
-      return `Playlist ${i}`;
-    }
-  }
-
-  return `Playlist ${highest + 1}`;
-};
-
-const deriveDuplicatePlaylistName = (
-  baseName: string,
-  playlists: Playlist[],
-) => {
-  const baseCopyName = `${baseName} Copy`;
-  const existingNames = new Set(playlists.map((playlist) => playlist.name));
-  if (!existingNames.has(baseCopyName)) {
-    return baseCopyName;
-  }
-
-  let suffix = 2;
-  while (suffix < 100) {
-    const candidate = `${baseCopyName} ${suffix}`;
-    if (!existingNames.has(candidate)) {
-      return candidate;
-    }
-    suffix += 1;
-  }
-
-  return `${baseCopyName} ${Date.now()}`;
-};
-
-const enforcePlaylistBounds = (
-  playlists: Playlist[],
-  activePlaylistId: string,
-) => {
-  const trimmed = playlists.slice(0, MAX_PLAYLIST_COUNT);
-  let nextActiveId = activePlaylistId;
-
-  if (trimmed.length === 0) {
-    nextActiveId = "";
-  } else if (!trimmed.some((playlist) => playlist.id === nextActiveId)) {
-    nextActiveId = trimmed[0].id;
-  }
-
-  return {
-    playlists: trimmed,
-    activePlaylistId: nextActiveId,
-    canCreatePlaylist: trimmed.length < MAX_PLAYLIST_COUNT,
-  };
-};
-
-const clonePlaylistItems = (items: PlaylistItem[]) =>
-  items.map((item) => ({ ...item }));
-
-type ShuffleQueueMap = Record<string, string[]>;
-
-const getPlaylistItemIds = (playlist?: Playlist) =>
-  playlist ? playlist.items.map((item) => item.id) : [];
-
-const buildShuffleQueue = (playlist?: Playlist, excludeId?: string | null) => {
-  const ids = getPlaylistItemIds(playlist);
-  if (ids.length <= 1) {
-    return ids;
-  }
-  const filtered = ids.filter((id) => id !== excludeId);
-  return filtered.length > 0 ? filtered : ids;
-};
-
-const sanitizeShuffleQueue = (
-  queue: string[] | undefined,
-  playlist: Playlist | undefined,
-  excludeId: string | null,
-) => {
-  const ids = getPlaylistItemIds(playlist);
-  if (ids.length === 0) {
-    return [];
-  }
-  const allowed = new Set(ids);
-  const filtered = (queue ?? []).filter(
-    (id) => allowed.has(id) && id !== excludeId,
-  );
-  if (filtered.length > 0) {
-    return filtered;
-  }
-  return buildShuffleQueue(playlist, excludeId);
-};
-
-const drawFromShuffleQueue = (
-  queue: string[] | undefined,
-  playlist: Playlist | undefined,
-  excludeId: string | null,
-) => {
-  const candidates = sanitizeShuffleQueue(queue, playlist, excludeId);
-  if (candidates.length === 0) {
-    return { nextId: undefined as string | undefined, queue: [] as string[] };
-  }
-  const randomIndex = Math.floor(Math.random() * candidates.length);
-  const nextId = candidates[randomIndex];
-  const remaining = candidates.filter((_, index) => index !== randomIndex);
-  const nextQueue =
-    remaining.length > 0 ? remaining : buildShuffleQueue(playlist, nextId);
-  return { nextId, queue: nextQueue };
-};
-
-const parsePersistedShuffleQueue = (value: unknown): ShuffleQueueMap => {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-  const result: ShuffleQueueMap = {};
-  for (const [playlistId, ids] of Object.entries(
-    value as Record<string, unknown>,
-  )) {
-    if (Array.isArray(ids)) {
-      result[playlistId] = ids.filter(
-        (id): id is string => typeof id === "string",
-      );
-    }
-  }
-  return result;
-};
-
-const rebuildShuffleQueues = (
-  queueMap: ShuffleQueueMap,
-  playlists: Playlist[],
-  activePlaylistId: string,
-  currentVideoId: string | null,
-) => {
-  const next: ShuffleQueueMap = {};
-  for (const playlist of playlists) {
-    const excludeId = playlist.id === activePlaylistId ? currentVideoId : null;
-    next[playlist.id] = sanitizeShuffleQueue(
-      queueMap[playlist.id],
-      playlist,
-      excludeId,
-    );
-  }
-  return next;
-};
-
-const withQueueForPlaylist = (
-  queueMap: ShuffleQueueMap,
-  playlistId: string,
-  queue: string[],
-) => ({
-  ...queueMap,
-  [playlistId]: queue,
-});
-
-const resetQueueForPlaylist = (queueMap: ShuffleQueueMap, playlistId: string) =>
-  withQueueForPlaylist(queueMap, playlistId, []);
-
-const removeQueueForPlaylist = (
-  queueMap: ShuffleQueueMap,
-  playlistId: string,
-) => {
-  if (!(playlistId in queueMap)) {
-    return queueMap;
-  }
-  const { [playlistId]: _removed, ...rest } = queueMap;
-  return rest;
-};
-
-export type LoopMode = "all" | "one";
 
 interface PlayerState {
   isPlaying: boolean;
