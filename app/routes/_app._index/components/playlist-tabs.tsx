@@ -216,51 +216,49 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
                     totalTabs={playlists.length}
                   />
                 ))}
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex flex-none items-center pb-1 pt-1 pl-1">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="gap-1"
+                        onClick={handleCreatePlaylist}
+                        disabled={!canCreatePlaylist}
+                        aria-label="Create new playlist"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {canCreatePlaylist
+                        ? `Create a playlist (${playlists.length}/${maxPlaylistCount})`
+                        : `You can create up to ${maxPlaylistCount} playlists.`}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </SortableContext>
           </div>
 
-          <div className="flex items-center gap-1">
-            {shouldShowNavigation && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => scrollByTab(1)}
-                disabled={!scrollState.canScrollRight}
-                aria-label="Scroll tabs right"
-                aria-disabled={!scrollState.canScrollRight}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="gap-1"
-                    onClick={handleCreatePlaylist}
-                    disabled={!canCreatePlaylist}
-                    aria-label="Create new playlist"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {canCreatePlaylist
-                    ? `Create a playlist (${playlists.length}/${maxPlaylistCount})`
-                    : `You can create up to ${maxPlaylistCount} playlists.`}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
+          {shouldShowNavigation && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => scrollByTab(1)}
+              disabled={!scrollState.canScrollRight}
+              aria-label="Scroll tabs right"
+              aria-disabled={!scrollState.canScrollRight}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
