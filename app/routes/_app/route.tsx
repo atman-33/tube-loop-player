@@ -29,7 +29,7 @@ const AppLayout = ({ loaderData }: Route.ComponentProps) => {
 
   return (
     <>
-      <div className="mx-auto p-2 md:p-4">
+      <div className="mx-auto p-2 md:px-8 md:py-4">
         <Header />
         <Outlet />
       </div>

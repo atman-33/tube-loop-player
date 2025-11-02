@@ -324,7 +324,7 @@ export default function Home() {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="mx-auto p-4">
+      <div className="mx-auto">
         <div className="flex flex-col gap-6 md:flex-row">
           <div className="flex-1 md:w-1/2">
             <YouTubePlayer />
