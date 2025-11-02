@@ -12,6 +12,12 @@ const createMockPlaylist = (index: number) => ({
   items: [],
 });
 
+const createPlaylistWithItems = (playlistId: string, ids: string[]) => ({
+  id: playlistId,
+  name: "Playlist",
+  items: ids.map((id, index) => ({ id, title: `Track ${index + 1}` })),
+});
+
 const initialState = usePlayerStore.getState();
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
@@ -147,6 +153,112 @@ describe("usePlayerStore playlist limits", () => {
     expect(state.playlists).toHaveLength(MAX_PLAYLIST_COUNT);
     expect(state.canCreatePlaylist).toBe(false);
     expect(state.activePlaylistId).toBe(state.playlists[0].id);
+  });
+});
+
+describe("usePlayerStore shuffle behavior", () => {
+  it("plays each track once before repeating when shuffle is enabled", () => {
+    const playlistId = "playlist-shuffle";
+    const playlist = createPlaylistWithItems(playlistId, [
+      "track-1",
+      "track-2",
+      "track-3",
+    ]);
+
+    usePlayerStore.setState((state) => ({
+      ...state,
+      playlists: [playlist],
+      activePlaylistId: playlistId,
+      currentVideoId: playlist.items[0]?.id ?? null,
+      currentIndex: 0,
+    }));
+
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+
+    try {
+      usePlayerStore.getState().toggleShuffle();
+
+      const played: string[] = [];
+      for (let index = 0; index < playlist.items.length; index += 1) {
+        usePlayerStore.getState().playNext();
+        played.push(usePlayerStore.getState().currentVideoId as string);
+      }
+
+      expect(new Set(played).size).toBe(playlist.items.length);
+
+      usePlayerStore.getState().playNext();
+      const repeated = usePlayerStore.getState().currentVideoId as string;
+      expect(repeated).not.toBe(played.at(-1));
+      expect(playlist.items.map((item) => item.id)).toContain(repeated);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("resets the shuffle queue when the active playlist changes", () => {
+    const playlistA = createPlaylistWithItems("playlist-a", ["a-1", "a-2"]);
+    const playlistB = createPlaylistWithItems("playlist-b", ["b-1", "b-2"]);
+
+    usePlayerStore.setState((state) => ({
+      ...state,
+      playlists: [playlistA, playlistB],
+      activePlaylistId: playlistA.id,
+      currentVideoId: playlistA.items[0]?.id ?? null,
+      currentIndex: 0,
+    }));
+
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+
+    try {
+      usePlayerStore.getState().toggleShuffle();
+      usePlayerStore.getState().playNext();
+
+      usePlayerStore.getState().setActivePlaylist(playlistB.id);
+
+      const initialVideoId = usePlayerStore.getState().currentVideoId;
+      expect(initialVideoId).toBe(playlistB.items[0]?.id);
+
+      usePlayerStore.getState().playNext();
+      const nextVideoId = usePlayerStore.getState().currentVideoId;
+      expect(nextVideoId).toBe(playlistB.items[1]?.id);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("prioritizes newly added tracks before repeating previously played items", () => {
+    const playlistId = "playlist-edit";
+    const playlist = createPlaylistWithItems(playlistId, ["base-1", "base-2"]);
+
+    usePlayerStore.setState((state) => ({
+      ...state,
+      playlists: [playlist],
+      activePlaylistId: playlistId,
+      currentVideoId: playlist.items[0]?.id ?? null,
+      currentIndex: 0,
+    }));
+
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+
+    try {
+      usePlayerStore.getState().toggleShuffle();
+      usePlayerStore.getState().playNext();
+
+      usePlayerStore
+        .getState()
+        .addToPlaylist({ id: "base-3", title: "Track 3" }, playlistId);
+
+      const upcoming: string[] = [];
+      usePlayerStore.getState().playNext();
+      upcoming.push(usePlayerStore.getState().currentVideoId as string);
+      usePlayerStore.getState().playNext();
+      upcoming.push(usePlayerStore.getState().currentVideoId as string);
+
+      expect(new Set(upcoming).size).toBe(2);
+      expect(upcoming).toContain("base-3");
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 });
 

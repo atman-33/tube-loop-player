@@ -187,6 +187,114 @@ const enforcePlaylistBounds = (
 const clonePlaylistItems = (items: PlaylistItem[]) =>
   items.map((item) => ({ ...item }));
 
+type ShuffleQueueMap = Record<string, string[]>;
+
+const getPlaylistItemIds = (playlist?: Playlist) =>
+  playlist ? playlist.items.map((item) => item.id) : [];
+
+const buildShuffleQueue = (playlist?: Playlist, excludeId?: string | null) => {
+  const ids = getPlaylistItemIds(playlist);
+  if (ids.length <= 1) {
+    return ids;
+  }
+  const filtered = ids.filter((id) => id !== excludeId);
+  return filtered.length > 0 ? filtered : ids;
+};
+
+const sanitizeShuffleQueue = (
+  queue: string[] | undefined,
+  playlist: Playlist | undefined,
+  excludeId: string | null,
+) => {
+  const ids = getPlaylistItemIds(playlist);
+  if (ids.length === 0) {
+    return [];
+  }
+  const allowed = new Set(ids);
+  const filtered = (queue ?? []).filter(
+    (id) => allowed.has(id) && id !== excludeId,
+  );
+  if (filtered.length > 0) {
+    return filtered;
+  }
+  return buildShuffleQueue(playlist, excludeId);
+};
+
+const drawFromShuffleQueue = (
+  queue: string[] | undefined,
+  playlist: Playlist | undefined,
+  excludeId: string | null,
+) => {
+  const candidates = sanitizeShuffleQueue(queue, playlist, excludeId);
+  if (candidates.length === 0) {
+    return { nextId: undefined as string | undefined, queue: [] as string[] };
+  }
+  const randomIndex = Math.floor(Math.random() * candidates.length);
+  const nextId = candidates[randomIndex];
+  const remaining = candidates.filter((_, index) => index !== randomIndex);
+  const nextQueue =
+    remaining.length > 0 ? remaining : buildShuffleQueue(playlist, nextId);
+  return { nextId, queue: nextQueue };
+};
+
+const parsePersistedShuffleQueue = (value: unknown): ShuffleQueueMap => {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const result: ShuffleQueueMap = {};
+  for (const [playlistId, ids] of Object.entries(
+    value as Record<string, unknown>,
+  )) {
+    if (Array.isArray(ids)) {
+      result[playlistId] = ids.filter(
+        (id): id is string => typeof id === "string",
+      );
+    }
+  }
+  return result;
+};
+
+const rebuildShuffleQueues = (
+  queueMap: ShuffleQueueMap,
+  playlists: Playlist[],
+  activePlaylistId: string,
+  currentVideoId: string | null,
+) => {
+  const next: ShuffleQueueMap = {};
+  for (const playlist of playlists) {
+    const excludeId = playlist.id === activePlaylistId ? currentVideoId : null;
+    next[playlist.id] = sanitizeShuffleQueue(
+      queueMap[playlist.id],
+      playlist,
+      excludeId,
+    );
+  }
+  return next;
+};
+
+const withQueueForPlaylist = (
+  queueMap: ShuffleQueueMap,
+  playlistId: string,
+  queue: string[],
+) => ({
+  ...queueMap,
+  [playlistId]: queue,
+});
+
+const resetQueueForPlaylist = (queueMap: ShuffleQueueMap, playlistId: string) =>
+  withQueueForPlaylist(queueMap, playlistId, []);
+
+const removeQueueForPlaylist = (
+  queueMap: ShuffleQueueMap,
+  playlistId: string,
+) => {
+  if (!(playlistId in queueMap)) {
+    return queueMap;
+  }
+  const { [playlistId]: _removed, ...rest } = queueMap;
+  return rest;
+};
+
 export type LoopMode = "all" | "one";
 
 interface PlayerState {
@@ -199,6 +307,7 @@ interface PlayerState {
   activePlaylistId: string;
   loopMode: LoopMode;
   isShuffle: boolean;
+  shuffleQueue: ShuffleQueueMap;
   // biome-ignore lint/suspicious/noExplicitAny: <>
   playerInstance: any | null;
   // Auth-related state
@@ -297,6 +406,7 @@ export const usePlayerStore = create<PlayerState>()(
       activePlaylistId: defaultActivePlaylistId,
       loopMode: "all",
       isShuffle: false,
+      shuffleQueue: {},
       playerInstance: null,
       user: null,
       isDataSynced: false,
@@ -315,10 +425,31 @@ export const usePlayerStore = create<PlayerState>()(
         // Update currentIndex based on the active playlist
         const newIndex =
           activePlaylist?.items.findIndex((item) => item.id === videoId) ?? -1;
-        set({
-          isPlaying: true,
-          currentVideoId: videoId,
-          currentIndex: newIndex >= 0 ? newIndex : null,
+        set((state) => {
+          if (!state.isShuffle || !activePlaylist) {
+            return {
+              isPlaying: true,
+              currentVideoId: videoId,
+              currentIndex: newIndex >= 0 ? newIndex : null,
+            };
+          }
+
+          const queue = sanitizeShuffleQueue(
+            state.shuffleQueue[activePlaylist.id],
+            activePlaylist,
+            videoId,
+          );
+
+          return {
+            isPlaying: true,
+            currentVideoId: videoId,
+            currentIndex: newIndex >= 0 ? newIndex : null,
+            shuffleQueue: withQueueForPlaylist(
+              state.shuffleQueue,
+              activePlaylist.id,
+              queue,
+            ),
+          };
         });
       },
       pause: () => {
@@ -342,7 +473,35 @@ export const usePlayerStore = create<PlayerState>()(
         set((state) => ({
           loopMode: state.loopMode === "all" ? "one" : "all",
         })),
-      toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
+      toggleShuffle: () =>
+        set((state) => {
+          const isShuffleEnabled = !state.isShuffle;
+          if (!isShuffleEnabled) {
+            return { isShuffle: isShuffleEnabled, shuffleQueue: {} };
+          }
+
+          const activePlaylist = state.playlists.find(
+            (playlist) => playlist.id === state.activePlaylistId,
+          );
+          if (!activePlaylist) {
+            return { isShuffle: isShuffleEnabled, shuffleQueue: {} };
+          }
+
+          const queue = sanitizeShuffleQueue(
+            state.shuffleQueue[activePlaylist.id],
+            activePlaylist,
+            state.currentVideoId,
+          );
+
+          return {
+            isShuffle: isShuffleEnabled,
+            shuffleQueue: withQueueForPlaylist(
+              state.shuffleQueue,
+              activePlaylist.id,
+              queue,
+            ),
+          };
+        }),
       addToPlaylist: (item, playlistId) => {
         const state = get();
         const targetPlaylistId = playlistId || state.activePlaylistId;
@@ -365,9 +524,15 @@ export const usePlayerStore = create<PlayerState>()(
               ? { ...playlist, items: [...playlist.items, item] }
               : playlist,
           );
+          const shouldResetShuffle =
+            state.isShuffle && targetPlaylistId === state.activePlaylistId;
+          const nextShuffleQueue = shouldResetShuffle
+            ? resetQueueForPlaylist(state.shuffleQueue, targetPlaylistId)
+            : state.shuffleQueue;
           return {
             playlists: updatedPlaylists,
             currentIndex: state.currentIndex === null ? 0 : state.currentIndex,
+            shuffleQueue: nextShuffleQueue,
           };
         });
 
@@ -384,7 +549,15 @@ export const usePlayerStore = create<PlayerState>()(
             }
             return playlist;
           });
-          return { playlists: updatedPlaylists };
+          const shouldResetShuffle =
+            state.isShuffle && targetPlaylistId === state.activePlaylistId;
+          const nextShuffleQueue = shouldResetShuffle
+            ? resetQueueForPlaylist(state.shuffleQueue, targetPlaylistId)
+            : state.shuffleQueue;
+          return {
+            playlists: updatedPlaylists,
+            shuffleQueue: nextShuffleQueue,
+          };
         }),
       reorderPlaylist: (fromIndex, toIndex, playlistId) =>
         set((state) => {
@@ -419,7 +592,16 @@ export const usePlayerStore = create<PlayerState>()(
               }
             }
           }
-          return { playlists: updatedPlaylists, currentIndex: newCurrentIndex };
+          const shouldResetShuffle =
+            state.isShuffle && targetPlaylistId === state.activePlaylistId;
+          const nextShuffleQueue = shouldResetShuffle
+            ? resetQueueForPlaylist(state.shuffleQueue, targetPlaylistId)
+            : state.shuffleQueue;
+          return {
+            playlists: updatedPlaylists,
+            currentIndex: newCurrentIndex,
+            shuffleQueue: nextShuffleQueue,
+          };
         }),
       reorderPlaylists: (fromIndex: number, toIndex: number) =>
         set((state) => {
@@ -471,8 +653,26 @@ export const usePlayerStore = create<PlayerState>()(
             }
             return playlist;
           });
+          let nextShuffleQueue = state.shuffleQueue;
+          if (state.isShuffle) {
+            if (fromPlaylistId === state.activePlaylistId) {
+              nextShuffleQueue = resetQueueForPlaylist(
+                nextShuffleQueue,
+                fromPlaylistId,
+              );
+            }
+            if (toPlaylistId === state.activePlaylistId) {
+              nextShuffleQueue = resetQueueForPlaylist(
+                nextShuffleQueue,
+                toPlaylistId,
+              );
+            }
+          }
 
-          return { playlists: updatedPlaylists };
+          return {
+            playlists: updatedPlaylists,
+            shuffleQueue: nextShuffleQueue,
+          };
         });
 
         return true; // Successfully moved
@@ -491,8 +691,17 @@ export const usePlayerStore = create<PlayerState>()(
             targetPlaylistId === state.activePlaylistId
               ? { currentIndex: null, currentVideoId: null }
               : {};
+          const shouldResetShuffle =
+            state.isShuffle && targetPlaylistId === state.activePlaylistId;
+          const nextShuffleQueue = shouldResetShuffle
+            ? resetQueueForPlaylist(state.shuffleQueue, targetPlaylistId)
+            : state.shuffleQueue;
 
-          return { playlists: updatedPlaylists, ...resetState };
+          return {
+            playlists: updatedPlaylists,
+            shuffleQueue: nextShuffleQueue,
+            ...resetState,
+          };
         }),
 
       nextPlaylistName: () => {
@@ -519,6 +728,9 @@ export const usePlayerStore = create<PlayerState>()(
             updatedPlaylists,
             playlistId,
           );
+          const nextShuffleQueue = currentState.isShuffle
+            ? resetQueueForPlaylist(currentState.shuffleQueue, playlistId)
+            : currentState.shuffleQueue;
 
           return {
             ...constrained,
@@ -526,6 +738,7 @@ export const usePlayerStore = create<PlayerState>()(
             currentVideoId: null,
             currentIndex: null,
             isPlaying: false,
+            shuffleQueue: nextShuffleQueue,
           };
         });
 
@@ -565,6 +778,9 @@ export const usePlayerStore = create<PlayerState>()(
             updatedPlaylists,
             duplicateId,
           );
+          const nextShuffleQueue = currentState.isShuffle
+            ? resetQueueForPlaylist(currentState.shuffleQueue, duplicateId)
+            : currentState.shuffleQueue;
 
           return {
             ...constrained,
@@ -572,6 +788,7 @@ export const usePlayerStore = create<PlayerState>()(
             currentVideoId: null,
             currentIndex: null,
             isPlaying: false,
+            shuffleQueue: nextShuffleQueue,
           };
         });
 
@@ -613,6 +830,21 @@ export const usePlayerStore = create<PlayerState>()(
             removedActive ||
             constrained.activePlaylistId !== currentState.activePlaylistId;
 
+          let nextShuffleQueue = removeQueueForPlaylist(
+            currentState.shuffleQueue,
+            playlistId,
+          );
+          if (
+            currentState.isShuffle &&
+            didChangeActive &&
+            constrained.activePlaylistId
+          ) {
+            nextShuffleQueue = resetQueueForPlaylist(
+              nextShuffleQueue,
+              constrained.activePlaylistId,
+            );
+          }
+
           return {
             ...constrained,
             currentVideoId: didChangeActive
@@ -620,6 +852,7 @@ export const usePlayerStore = create<PlayerState>()(
               : currentState.currentVideoId,
             currentIndex: didChangeActive ? null : currentState.currentIndex,
             isPlaying: didChangeActive ? false : currentState.isPlaying,
+            shuffleQueue: nextShuffleQueue,
           };
         });
 
@@ -646,11 +879,21 @@ export const usePlayerStore = create<PlayerState>()(
             return {};
           }
 
+          const nextShuffleQueue = state.isShuffle
+            ? rebuildShuffleQueues(
+                state.shuffleQueue,
+                constrained.playlists,
+                constrained.activePlaylistId,
+                didChangeActive ? null : state.currentVideoId,
+              )
+            : state.shuffleQueue;
+
           return {
             ...constrained,
             currentVideoId: didChangeActive ? null : state.currentVideoId,
             currentIndex: didChangeActive ? null : state.currentIndex,
             isPlaying: didChangeActive ? false : state.isPlaying,
+            shuffleQueue: nextShuffleQueue,
           };
         }),
 
@@ -667,12 +910,19 @@ export const usePlayerStore = create<PlayerState>()(
         if (!targetPlaylist) return;
 
         // Update state first
-        set({
-          activePlaylistId: playlistId,
-          currentIndex: targetPlaylist.items.length > 0 ? 0 : null,
-          currentVideoId:
-            targetPlaylist.items.length > 0 ? targetPlaylist.items[0].id : null,
-          isPlaying: targetPlaylist.items.length > 0,
+        set((state) => {
+          const hasItems = targetPlaylist.items.length > 0;
+          const nextShuffleQueue = state.isShuffle
+            ? resetQueueForPlaylist(state.shuffleQueue, playlistId)
+            : state.shuffleQueue;
+
+          return {
+            activePlaylistId: playlistId,
+            currentIndex: hasItems ? 0 : null,
+            currentVideoId: hasItems ? targetPlaylist.items[0].id : null,
+            isPlaying: hasItems,
+            shuffleQueue: nextShuffleQueue,
+          };
         });
 
         // Then trigger playback if the playlist has items
@@ -682,7 +932,14 @@ export const usePlayerStore = create<PlayerState>()(
       },
       playNext: () => {
         const activePlaylist = get().getActivePlaylist();
-        const { currentIndex, loopMode, isShuffle, playerInstance } = get();
+        const {
+          currentIndex,
+          loopMode,
+          isShuffle,
+          playerInstance,
+          shuffleQueue,
+          currentVideoId,
+        } = get();
 
         if (!activePlaylist || activePlaylist.items.length === 0) {
           set({ isPlaying: false });
@@ -690,24 +947,33 @@ export const usePlayerStore = create<PlayerState>()(
         }
 
         if (isShuffle) {
-          let randomIndex: number;
-          do {
-            randomIndex = Math.floor(
-              Math.random() * activePlaylist.items.length,
-            );
-          } while (
-            activePlaylist.items.length > 1 &&
-            randomIndex === currentIndex
+          const { nextId, queue } = drawFromShuffleQueue(
+            shuffleQueue[activePlaylist.id],
+            activePlaylist,
+            currentVideoId,
           );
-          const videoId = activePlaylist.items[randomIndex].id;
+          const videoId = nextId ?? activePlaylist.items[0]?.id;
+          if (!videoId) {
+            set({ isPlaying: false });
+            return;
+          }
           if (playerInstance) {
             playerInstance.loadVideoById(videoId);
             playerInstance.playVideo();
           }
+          const nextShuffleQueue = withQueueForPlaylist(
+            shuffleQueue,
+            activePlaylist.id,
+            queue,
+          );
+          const nextShuffleIndex = activePlaylist.items.findIndex(
+            (item) => item.id === videoId,
+          );
           set({
-            currentIndex: randomIndex,
+            currentIndex: nextShuffleIndex >= 0 ? nextShuffleIndex : null,
             currentVideoId: videoId,
             isPlaying: true,
+            shuffleQueue: nextShuffleQueue,
           });
           return;
         }
@@ -739,29 +1005,46 @@ export const usePlayerStore = create<PlayerState>()(
       },
       playPrevious: () => {
         const activePlaylist = get().getActivePlaylist();
-        const { currentIndex, loopMode, isShuffle, playerInstance } = get();
+        const {
+          currentIndex,
+          loopMode,
+          isShuffle,
+          playerInstance,
+          shuffleQueue,
+          currentVideoId,
+        } = get();
 
         if (!activePlaylist || activePlaylist.items.length === 0) return;
 
         if (isShuffle) {
-          let randomIndex: number;
-          do {
-            randomIndex = Math.floor(
-              Math.random() * activePlaylist.items.length,
-            );
-          } while (
-            activePlaylist.items.length > 1 &&
-            randomIndex === currentIndex
+          const { nextId, queue } = drawFromShuffleQueue(
+            shuffleQueue[activePlaylist.id],
+            activePlaylist,
+            currentVideoId,
           );
-          const videoId = activePlaylist.items[randomIndex].id;
+          const videoId = nextId ?? activePlaylist.items[0]?.id;
+          if (!videoId) {
+            set({ isPlaying: false });
+            return;
+          }
           if (playerInstance) {
             playerInstance.loadVideoById(videoId);
             playerInstance.playVideo();
           }
+          const nextShuffleQueue = withQueueForPlaylist(
+            shuffleQueue,
+            activePlaylist.id,
+            queue,
+          );
+          const previousShuffleIndex = activePlaylist.items.findIndex(
+            (item) => item.id === videoId,
+          );
           set({
-            currentIndex: randomIndex,
+            currentIndex:
+              previousShuffleIndex >= 0 ? previousShuffleIndex : null,
             currentVideoId: videoId,
             isPlaying: true,
+            shuffleQueue: nextShuffleQueue,
           });
           return;
         }
@@ -831,6 +1114,14 @@ export const usePlayerStore = create<PlayerState>()(
             nextState.playlists = constrained.playlists;
             nextState.activePlaylistId = constrained.activePlaylistId;
             nextState.canCreatePlaylist = constrained.canCreatePlaylist;
+            if (state.isShuffle) {
+              nextState.shuffleQueue = rebuildShuffleQueues(
+                state.shuffleQueue,
+                constrained.playlists,
+                constrained.activePlaylistId,
+                state.currentVideoId,
+              );
+            }
           }
 
           return nextState;
@@ -854,6 +1145,14 @@ export const usePlayerStore = create<PlayerState>()(
             (playlist) => playlist.id === constrained.activePlaylistId,
           ) || constrained.playlists[0];
         const firstVideo = activePlaylist?.items[0];
+        const initialShuffleQueue = userData.isShuffle
+          ? rebuildShuffleQueues(
+              {},
+              constrained.playlists,
+              constrained.activePlaylistId,
+              firstVideo ? firstVideo.id : null,
+            )
+          : {};
 
         set({
           playlists: constrained.playlists,
@@ -864,6 +1163,7 @@ export const usePlayerStore = create<PlayerState>()(
           currentIndex: firstVideo ? 0 : null,
           isDataSynced: true,
           canCreatePlaylist: constrained.canCreatePlaylist,
+          shuffleQueue: initialShuffleQueue,
         });
       },
       syncToServer: async () => {
@@ -953,9 +1253,11 @@ export const usePlayerStore = create<PlayerState>()(
         activePlaylistId: state.activePlaylistId,
         loopMode: state.loopMode,
         isShuffle: state.isShuffle,
+        shuffleQueue: state.shuffleQueue,
       }),
       merge: (persistedState, currentState) => {
-        const state = persistedState as Partial<PlayerState>;
+        const state = (persistedState ?? {}) as Partial<PlayerState>;
+        const { shuffleQueue: rawQueue, ...restState } = state;
         if (state?.playlists && state.playlists.length > 0) {
           const sanitized = sanitizePlaylistIdentifiers(
             state.playlists,
@@ -972,16 +1274,24 @@ export const usePlayerStore = create<PlayerState>()(
               (playlist) => playlist.id === constrained.activePlaylistId,
             ) || constrained.playlists[0];
           const firstVideo = activePlaylist?.items[0];
+          const persistedQueue = parsePersistedShuffleQueue(rawQueue);
+          const mergedShuffleQueue = rebuildShuffleQueues(
+            persistedQueue,
+            constrained.playlists,
+            constrained.activePlaylistId,
+            firstVideo ? firstVideo.id : null,
+          );
 
           return {
             ...currentState,
-            ...state,
+            ...restState,
             playlists: constrained.playlists,
             activePlaylistId: constrained.activePlaylistId,
             currentVideoId: firstVideo ? firstVideo.id : null,
             currentIndex: firstVideo ? 0 : null,
             canCreatePlaylist: constrained.canCreatePlaylist,
             maxPlaylistCount: MAX_PLAYLIST_COUNT,
+            shuffleQueue: mergedShuffleQueue,
           };
         }
 
@@ -993,6 +1303,7 @@ export const usePlayerStore = create<PlayerState>()(
           currentIndex: 0,
           canCreatePlaylist: defaultPlaylists.length < MAX_PLAYLIST_COUNT,
           maxPlaylistCount: MAX_PLAYLIST_COUNT,
+          shuffleQueue: {},
         };
       },
     },
