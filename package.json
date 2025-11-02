@@ -15,7 +15,7 @@
 		"typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
 		"check": "npm run typecheck && npm run biome:check",
 		"biome:check": "biome check --fix && biome format --write",
-		"test": "vitest",
+		"test": "vitest run",
 		"prepare": "husky",
 		"auth:db:generate": "LOCAL_DB_PATH=$(find .wrangler/state/v3/d1/miniflare-D1DatabaseObject -type f -name '*.sqlite' -print -quit) npx env-cmd -f .dev.vars -- npx @better-auth/cli generate --output=\"database/auth-schema.ts\" --y && biome format database/auth-schema.ts --write"
 	},
