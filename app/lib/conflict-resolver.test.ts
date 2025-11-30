@@ -140,7 +140,7 @@ describe("ConflictResolver", () => {
     describe("identical data scenarios", () => {
       it("should auto-sync when data is identical", () => {
         // Mock the comparator to return true for identical data
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+        vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
           true,
         );
 
@@ -151,12 +151,53 @@ describe("ConflictResolver", () => {
 
         expect(result).toEqual({
           type: "auto-sync",
-          data: identicalCloudData,
+          data: expect.objectContaining({
+            playlists: identicalCloudData.playlists,
+            activePlaylistId: meaningfulLocalData.activePlaylistId,
+          }),
         });
-        expect(mockDataComparator.areDataSetsIdentical).toHaveBeenCalledWith(
+        expect(mockDataComparator.arePlaylistsIdentical).toHaveBeenCalledWith(
           meaningfulLocalData,
           identicalCloudData,
         );
+      });
+
+      it("should auto-sync and preserve local playback state when playlists are identical but state differs", () => {
+        const localWithDifferentState = {
+          ...meaningfulLocalData,
+          activePlaylistId: "2",
+          loopMode: "all" as const,
+          isShuffle: false,
+        };
+
+        // Cloud has different state
+        const cloudWithDifferentState = {
+          ...identicalCloudData,
+          activePlaylistId: "1",
+          loopMode: "one" as const,
+          isShuffle: true,
+        };
+
+        vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
+          true,
+        );
+
+        const result = conflictResolver.analyzeConflict(
+          localWithDifferentState,
+          cloudWithDifferentState,
+        );
+
+        expect(result.type).toBe("auto-sync");
+        if (result.type === "auto-sync") {
+          // Should have cloud playlists
+          expect(result.data.playlists).toEqual(
+            cloudWithDifferentState.playlists,
+          );
+          // But local state
+          expect(result.data.activePlaylistId).toBe("2");
+          expect(result.data.loopMode).toBe("all");
+          expect(result.data.isShuffle).toBe(false);
+        }
       });
 
       it("should auto-sync when local data is empty and cloud has data", () => {
@@ -199,7 +240,7 @@ describe("ConflictResolver", () => {
     describe("different data scenarios", () => {
       it("should show modal when data has meaningful differences", () => {
         // Mock the comparator to return false for different data
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+        vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
           false,
         );
 
@@ -224,7 +265,7 @@ describe("ConflictResolver", () => {
           ],
         };
 
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+        vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
           false,
         );
 
@@ -237,22 +278,9 @@ describe("ConflictResolver", () => {
       });
 
       it("should show modal when settings differ", () => {
-        const localWithDifferentSettings = {
-          ...meaningfulLocalData,
-          loopMode: "all" as const,
-          isShuffle: false,
-        };
-
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
-          false,
-        );
-
-        const result = conflictResolver.analyzeConflict(
-          localWithDifferentSettings,
-          meaningfulCloudData,
-        );
-
-        expect(result.type).toBe("show-modal");
+        // This test is no longer valid as settings differences are ignored
+        // We can remove it or update it to expect auto-sync if we want to test that specific scenario
+        // But we already added "should auto-sync and preserve local playback state..."
       });
     });
 
@@ -276,11 +304,12 @@ describe("ConflictResolver", () => {
 
     describe("error handling", () => {
       it("should fallback to show-modal when comparison throws error", () => {
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockImplementation(
-          () => {
-            throw new Error("Comparison failed");
-          },
-        );
+        vi.spyOn(
+          mockDataComparator,
+          "arePlaylistsIdentical",
+        ).mockImplementation(() => {
+          throw new Error("Comparison failed");
+        });
 
         const consoleSpy = vi
           .spyOn(console, "error")
@@ -318,11 +347,12 @@ describe("ConflictResolver", () => {
       });
 
       it("should handle timeout errors from data comparison", () => {
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockImplementation(
-          () => {
-            throw new Error("Comparison timeout after 100ms");
-          },
-        );
+        vi.spyOn(
+          mockDataComparator,
+          "arePlaylistsIdentical",
+        ).mockImplementation(() => {
+          throw new Error("Comparison timeout after 100ms");
+        });
 
         const consoleSpy = vi
           .spyOn(console, "error")
@@ -386,7 +416,7 @@ describe("ConflictResolver", () => {
             throw new Error("Count failed");
           });
 
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+        vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
           false,
         );
 
@@ -421,7 +451,7 @@ describe("ConflictResolver", () => {
             throw new Error("Empty check failed");
           });
 
-        vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+        vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
           false,
         );
 
@@ -566,7 +596,7 @@ describe("ConflictResolver", () => {
 
   describe("conflict analysis metadata", () => {
     it("should calculate correct metadata for meaningful data", () => {
-      vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+      vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
         false,
       );
 
@@ -763,7 +793,7 @@ describe("ConflictResolver", () => {
 
   describe("integration scenarios", () => {
     it("should handle complete conflict resolution flow for identical data", () => {
-      vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+      vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
         true,
       );
 
@@ -774,12 +804,17 @@ describe("ConflictResolver", () => {
 
       expect(result.type).toBe("auto-sync");
       if (result.type === "auto-sync") {
-        expect(result.data).toBe(identicalCloudData);
+        expect(result.data).toEqual(
+          expect.objectContaining({
+            playlists: identicalCloudData.playlists,
+            activePlaylistId: meaningfulLocalData.activePlaylistId,
+          }),
+        );
       }
     });
 
     it("should handle complete conflict resolution flow for different data", () => {
-      vi.spyOn(mockDataComparator, "areDataSetsIdentical").mockReturnValue(
+      vi.spyOn(mockDataComparator, "arePlaylistsIdentical").mockReturnValue(
         false,
       );
 

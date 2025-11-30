@@ -108,9 +108,29 @@ export class ConflictResolver {
 
       // Handle analysis results with fallback logic
       switch (analysis.conflictType) {
-        case "identical":
-          // Data is functionally identical - auto-sync cloud data
-          return { type: "auto-sync", data: cloud };
+        case "identical": {
+          if (!local || !cloud) {
+            return { type: "show-modal", local, cloud };
+          }
+          // while using cloud playlist content // Preserve local playback state (activePlaylistId, loopMode, isShuffle) // Playlists are identical - auto-sync with merged data
+          const mergedData: UserPlaylistData = {
+            ...cloud,
+            activePlaylistId: local.activePlaylistId,
+            loopMode: local.loopMode,
+            isShuffle: local.isShuffle,
+          };
+
+          // Safety check: ensure local activePlaylistId exists in cloud playlists
+          // (Should be true since playlists are identical, but defensive coding)
+          const isValidId = mergedData.playlists.some(
+            (p) => p.id === mergedData.activePlaylistId,
+          );
+          if (!isValidId) {
+            mergedData.activePlaylistId = cloud.activePlaylistId;
+          }
+
+          return { type: "auto-sync", data: mergedData };
+        }
 
         case "empty-local":
           // Local data is empty/default - auto-sync cloud data
@@ -267,9 +287,13 @@ export class ConflictResolver {
       }
 
       // Perform deep comparison for identical data with timeout handling
-      let areIdentical: boolean;
+      let arePlaylistsIdentical: boolean;
       try {
-        areIdentical = this.dataComparator.areDataSetsIdentical(local, cloud);
+        // Use playlist-only comparison to ignore local playback state differences
+        arePlaylistsIdentical = this.dataComparator.arePlaylistsIdentical(
+          local,
+          cloud,
+        );
       } catch (comparisonError) {
         const duration = performance.now() - startTime;
         console.error(
@@ -286,7 +310,7 @@ export class ConflictResolver {
         };
       }
 
-      if (areIdentical) {
+      if (arePlaylistsIdentical) {
         return {
           hasConflict: false,
           conflictType: "identical",

@@ -76,6 +76,64 @@ export class DataComparator {
   }
 
   /**
+   * Performs deep comparison of playlist content only
+   * Ignores activePlaylistId, loopMode, and isShuffle
+   *
+   * @param local - Local playlist data (can be null)
+   * @param cloud - Cloud playlist data (can be null)
+   * @returns boolean indicating if playlist content is identical
+   */
+  public arePlaylistsIdentical(
+    local: UserPlaylistData | null,
+    cloud: UserPlaylistData | null,
+  ): boolean {
+    const _startTime = performance.now();
+
+    try {
+      // Early null/undefined checks
+      if (!local && !cloud) return true;
+      if (!local || !cloud) return false;
+
+      // Validate input data structures
+      if (
+        !this.isValidDataStructure(local) ||
+        !this.isValidDataStructure(cloud)
+      ) {
+        console.warn("Invalid data structure detected during comparison");
+        return false;
+      }
+
+      // Normalize both datasets
+      const normalizedLocal = normalizeUserPlaylistData(local);
+      const normalizedCloud = normalizeUserPlaylistData(cloud);
+
+      // Compare playlist arrays
+      if (
+        normalizedLocal.playlists.length !== normalizedCloud.playlists.length
+      ) {
+        return false;
+      }
+
+      // Compare each playlist
+      for (let i = 0; i < normalizedLocal.playlists.length; i++) {
+        if (
+          !this.compareNormalizedPlaylists(
+            normalizedLocal.playlists[i],
+            normalizedCloud.playlists[i],
+          )
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Playlist comparison failed:", error);
+      return false;
+    }
+  }
+
+  /**
    * Compares two normalized UserPlaylistData objects
    * Optimized for performance with early exit conditions
    */
@@ -200,6 +258,18 @@ export class DataComparator {
   ): boolean {
     const comparator = new DataComparator();
     return comparator.areDataSetsIdentical(local, cloud);
+  }
+
+  /**
+   * Static convenience method for playlist-only comparisons
+   */
+  // biome-ignore lint/suspicious/useAdjacentOverloadSignatures: Static and instance methods with same name
+  public static arePlaylistsIdentical(
+    local: UserPlaylistData | null,
+    cloud: UserPlaylistData | null,
+  ): boolean {
+    const comparator = new DataComparator();
+    return comparator.arePlaylistsIdentical(local, cloud);
   }
 }
 

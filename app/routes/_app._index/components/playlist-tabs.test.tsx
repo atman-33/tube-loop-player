@@ -24,6 +24,15 @@ vi.mock('../../../stores/player', () => ({
   usePlayerStore: () => mockUsePlayerStore(),
 }));
 
+vi.mock('@dnd-kit/sortable', async () => {
+  // biome-ignore lint/suspicious/noExplicitAny: test mock
+  const actual = await vi.importActual<any>('@dnd-kit/sortable');
+  return {
+    ...actual,
+    SortableContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
+});
+
 const createPlaylists = (count: number): MockPlaylist[] =>
   Array.from({ length: count }, (_, index) => ({
     id: `playlist-${index + 1}`,
