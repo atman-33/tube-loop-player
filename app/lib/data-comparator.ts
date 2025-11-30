@@ -87,7 +87,7 @@ export class DataComparator {
     local: UserPlaylistData | null,
     cloud: UserPlaylistData | null,
   ): boolean {
-    const startTime = performance.now();
+    const _startTime = performance.now();
 
     try {
       // Early null/undefined checks
@@ -263,6 +263,7 @@ export class DataComparator {
   /**
    * Static convenience method for playlist-only comparisons
    */
+  // biome-ignore lint/suspicious/useAdjacentOverloadSignatures: Static and instance methods with same name
   public static arePlaylistsIdentical(
     local: UserPlaylistData | null,
     cloud: UserPlaylistData | null,

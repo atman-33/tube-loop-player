@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <> */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { DataComparator } from "./data-comparator";
 import type { UserPlaylistData } from "./data-normalizer";
 

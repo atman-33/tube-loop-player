@@ -108,15 +108,16 @@ export class ConflictResolver {
 
       // Handle analysis results with fallback logic
       switch (analysis.conflictType) {
-        case "identical": // Playlists are identical - auto-sync with merged data
-        // Preserve local playback state (activePlaylistId, loopMode, isShuffle)
-        // while using cloud playlist content
-        {
+        case "identical": {
+          if (!local || !cloud) {
+            return { type: "show-modal", local, cloud };
+          }
+          // while using cloud playlist content // Preserve local playback state (activePlaylistId, loopMode, isShuffle) // Playlists are identical - auto-sync with merged data
           const mergedData: UserPlaylistData = {
-            ...cloud!,
-            activePlaylistId: local!.activePlaylistId,
-            loopMode: local!.loopMode,
-            isShuffle: local!.isShuffle,
+            ...cloud,
+            activePlaylistId: local.activePlaylistId,
+            loopMode: local.loopMode,
+            isShuffle: local.isShuffle,
           };
 
           // Safety check: ensure local activePlaylistId exists in cloud playlists
@@ -125,7 +126,7 @@ export class ConflictResolver {
             (p) => p.id === mergedData.activePlaylistId,
           );
           if (!isValidId) {
-            mergedData.activePlaylistId = cloud!.activePlaylistId;
+            mergedData.activePlaylistId = cloud.activePlaylistId;
           }
 
           return { type: "auto-sync", data: mergedData };
