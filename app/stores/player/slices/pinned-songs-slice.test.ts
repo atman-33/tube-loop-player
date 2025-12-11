@@ -14,8 +14,7 @@ beforeEach(() => {
 describe("Pinned Songs Slice", () => {
   describe("togglePinnedSong", () => {
     it("pins an unpinned song", () => {
-      const { togglePinnedSong, isPinned, pinnedOrder } =
-        usePlayerStore.getState();
+      const { togglePinnedSong, isPinned } = usePlayerStore.getState();
 
       expect(isPinned("video-1")).toBe(false);
 
@@ -26,7 +25,7 @@ describe("Pinned Songs Slice", () => {
     });
 
     it("unpins a pinned song", () => {
-      const { togglePinnedSong, isPinned } = usePlayerStore.getState();
+      const { togglePinnedSong } = usePlayerStore.getState();
 
       togglePinnedSong("video-1");
       expect(usePlayerStore.getState().isPinned("video-1")).toBe(true);
@@ -37,7 +36,7 @@ describe("Pinned Songs Slice", () => {
     });
 
     it("maintains insertion order for multiple pins", () => {
-      const { togglePinnedSong, pinnedOrder } = usePlayerStore.getState();
+      const { togglePinnedSong } = usePlayerStore.getState();
 
       togglePinnedSong("video-a");
       togglePinnedSong("video-b");
@@ -68,7 +67,7 @@ describe("Pinned Songs Slice", () => {
     });
 
     it("returns true for pinned songs", () => {
-      const { togglePinnedSong, isPinned } = usePlayerStore.getState();
+      const { togglePinnedSong } = usePlayerStore.getState();
 
       togglePinnedSong("video-1");
       expect(usePlayerStore.getState().isPinned("video-1")).toBe(true);
@@ -77,8 +76,7 @@ describe("Pinned Songs Slice", () => {
 
   describe("removePinnedSong", () => {
     it("removes a pinned song", () => {
-      const { togglePinnedSong, removePinnedSong, isPinned } =
-        usePlayerStore.getState();
+      const { togglePinnedSong, removePinnedSong } = usePlayerStore.getState();
 
       togglePinnedSong("video-1");
       expect(usePlayerStore.getState().isPinned("video-1")).toBe(true);
@@ -89,7 +87,7 @@ describe("Pinned Songs Slice", () => {
     });
 
     it("does nothing if song is not pinned", () => {
-      const { removePinnedSong, pinnedOrder } = usePlayerStore.getState();
+      const { removePinnedSong } = usePlayerStore.getState();
 
       const orderBefore = [...usePlayerStore.getState().pinnedOrder];
       removePinnedSong("nonexistent");
