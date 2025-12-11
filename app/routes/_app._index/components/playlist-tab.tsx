@@ -102,7 +102,10 @@ export const PlaylistTab = ({
 
     if (event.key === ' ' || event.key === 'Spacebar') {
       event.preventDefault();
-      setIsKeyboardSorting((prev) => !prev);
+      // Disable keyboard reordering for Favorites playlist
+      if (!isFavorites) {
+        setIsKeyboardSorting((prev) => !prev);
+      }
       return;
     }
 

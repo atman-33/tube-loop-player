@@ -61,6 +61,17 @@ export const createPinnedSongsSlice: PlayerStoreSlice<PinnedSongsSlice> = (
   reorderPinnedSongs: (fromIndex, toIndex) =>
     set((state) => {
       const newPinnedOrder = [...state.pinnedOrder];
+
+      // Validate indices are within bounds
+      if (
+        fromIndex < 0 ||
+        fromIndex >= newPinnedOrder.length ||
+        toIndex < 0 ||
+        toIndex >= newPinnedOrder.length
+      ) {
+        return state;
+      }
+
       const [removed] = newPinnedOrder.splice(fromIndex, 1);
       newPinnedOrder.splice(toIndex, 0, removed);
 
