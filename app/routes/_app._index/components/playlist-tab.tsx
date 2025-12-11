@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { usePlayerStore } from '../../../stores/player';
+import { FAVORITES_PLAYLIST_ID } from '../../../stores/player/constants';
 import { PLAYLIST_PANEL_ID } from '../consts/playlist-aria';
 
 interface PlaylistItem {
@@ -65,6 +66,7 @@ export const PlaylistTab = ({
 
   const isActive = activePlaylistId === playlist.id;
   const isEditing = editingId === playlist.id;
+  const isFavorites = playlist.id === FAVORITES_PLAYLIST_ID;
 
   // Get current drag context to determine what's being dragged
   const { active } = useDndContext();
@@ -147,7 +149,9 @@ export const PlaylistTab = ({
           onClick={() => onSetActive(playlist.id)}
           onDoubleClick={(e) => {
             e.stopPropagation();
-            onStartEdit(playlist);
+            if (!isFavorites) {
+              onStartEdit(playlist);
+            }
           }}
           onKeyDown={handleKeyboardReorder}
           className={`
@@ -227,7 +231,7 @@ export const PlaylistTab = ({
         </span>
 
         {/* Edit Button */}
-        {!isEditing && (totalTabs <= 3 || isActive) && (
+        {!isEditing && !isFavorites && (totalTabs <= 3 || isActive) && (
           <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-20">
             <Button
               size="icon"

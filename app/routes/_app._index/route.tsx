@@ -57,8 +57,10 @@ export default function Home() {
     reorderPlaylist,
     reorderPlaylists,
     getActivePlaylist,
-    playlists,
+    getPlaylistsWithFavorites,
   } = usePlayerStore();
+
+  const playlists = getPlaylistsWithFavorites();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dragType, setDragType] = useState<'item' | 'tab' | null>(null);

@@ -14,6 +14,7 @@ import {
 } from '../../../components/ui/tooltip';
 import { usePlayerStore } from '../../../stores/player';
 import { PLAYLIST_PANEL_ID } from '../consts/playlist-aria';
+import { PinnedStarIcon } from './pinned-star-icon';
 
 const getThumbnailUrl = (videoId: string) =>
   `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
@@ -88,6 +89,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
               <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground hover:text-primary transition-colors truncate text-ellipsis whitespace-nowrap lg:block">
                 {item.title || `Video ${index + 1}`}
               </div>
+              <PinnedStarIcon videoId={item.id} className="mr-2" />
               <Button
                 asChild
                 variant="ghost"

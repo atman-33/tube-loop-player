@@ -37,14 +37,16 @@ export const calculateTabScrollDelta = (
 
 export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
   const {
-    playlists,
     activePlaylistId,
     setActivePlaylist,
     renamePlaylist,
     createPlaylist,
     canCreatePlaylist,
     maxPlaylistCount,
+    getPlaylistsWithFavorites,
   } = usePlayerStore();
+
+  const playlists = getPlaylistsWithFavorites();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');

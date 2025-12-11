@@ -14,6 +14,7 @@ interface MockStoreState {
   canCreatePlaylist: boolean;
   maxPlaylistCount: number;
   reorderPlaylists: (fromIndex: number, toIndex: number) => void;
+  getPlaylistsWithFavorites: () => MockPlaylist[];
 }
 
 type MockStoreSelector = () => MockStoreState;
@@ -49,6 +50,7 @@ const buildStoreState = (overrides?: Partial<MockStoreState>): MockStoreState =>
   canCreatePlaylist: true,
   maxPlaylistCount: 10,
   reorderPlaylists: vi.fn(),
+  getPlaylistsWithFavorites: () => overrides?.playlists || createPlaylists(3),
   ...overrides,
 });
 
