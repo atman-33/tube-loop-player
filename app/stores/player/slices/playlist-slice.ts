@@ -1,4 +1,8 @@
 import {
+  deriveFavoritesPlaylist,
+  injectFavoritesPlaylist,
+} from "~/lib/player/favorites-playlist";
+import {
   clonePlaylistItems,
   deriveDuplicatePlaylistName,
   deriveNextPlaylistName,
@@ -436,5 +440,14 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
   getOrderedPlaylists: () => {
     const { playlists } = get();
     return playlists;
+  },
+  getFavoritesPlaylist: () => {
+    const { pinnedOrder, playlists } = get();
+    return deriveFavoritesPlaylist(pinnedOrder, playlists);
+  },
+  getPlaylistsWithFavorites: () => {
+    const { playlists, pinnedOrder } = get();
+    const favoritesPlaylist = deriveFavoritesPlaylist(pinnedOrder, playlists);
+    return injectFavoritesPlaylist(playlists, favoritesPlaylist);
   },
 });

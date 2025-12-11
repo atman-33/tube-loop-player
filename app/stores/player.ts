@@ -13,6 +13,7 @@ import {
   defaultInitialVideoId,
   defaultPlaylists,
 } from "~/stores/player/constants";
+import { createPinnedSongsSlice } from "~/stores/player/slices/pinned-songs-slice";
 import { createPlaybackSlice } from "~/stores/player/slices/playback-slice";
 import { createPlaylistSlice } from "~/stores/player/slices/playlist-slice";
 import { createSyncSlice } from "~/stores/player/slices/sync-slice";
@@ -26,6 +27,7 @@ const createPlayerStore: StateCreator<PlayerState> = (set, get, store) => ({
   ...createPlaylistSlice(set, get, store),
   ...createPlaybackSlice(set, get, store),
   ...createSyncSlice(set, get, store),
+  ...createPinnedSongsSlice(set, get, store),
 });
 
 export const usePlayerStore = create<PlayerState>()(
@@ -50,10 +52,21 @@ export const usePlayerStore = create<PlayerState>()(
       loopMode: state.loopMode,
       isShuffle: state.isShuffle,
       shuffleQueue: state.shuffleQueue,
+      pinnedVideoIds: Array.from(state.pinnedVideoIds),
+      pinnedOrder: state.pinnedOrder,
     }),
     merge: (persistedState, currentState) => {
       const state = (persistedState ?? {}) as Partial<PlayerState>;
       const { shuffleQueue: rawQueue, ...restState } = state;
+
+      // Parse pinned state from persistence
+      const pinnedVideoIds = Array.isArray(state.pinnedVideoIds)
+        ? new Set(state.pinnedVideoIds)
+        : new Set<string>();
+      const pinnedOrder = Array.isArray(state.pinnedOrder)
+        ? state.pinnedOrder
+        : [];
+
       if (state?.playlists && state.playlists.length > 0) {
         const sanitized = sanitizePlaylistIdentifiers(
           state.playlists,
@@ -88,6 +101,8 @@ export const usePlayerStore = create<PlayerState>()(
           canCreatePlaylist: constrained.canCreatePlaylist,
           maxPlaylistCount: MAX_PLAYLIST_COUNT,
           shuffleQueue: mergedShuffleQueue,
+          pinnedVideoIds,
+          pinnedOrder,
         } satisfies PlayerState;
       }
 
@@ -100,6 +115,8 @@ export const usePlayerStore = create<PlayerState>()(
         canCreatePlaylist: defaultPlaylists.length < MAX_PLAYLIST_COUNT,
         maxPlaylistCount: MAX_PLAYLIST_COUNT,
         shuffleQueue: {},
+        pinnedVideoIds,
+        pinnedOrder,
       } satisfies PlayerState;
     },
   }),
