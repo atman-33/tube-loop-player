@@ -53,6 +53,15 @@ const userSettings = sqliteTable("user_settings", {
     .notNull(),
 });
 
+const pinnedSongs = sqliteTable("pinned_songs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  videoId: text("video_id").notNull(),
+  pinnedAt: integer("pinned_at").notNull(),
+});
+
 export const schema = {
   user,
   session,
@@ -62,11 +71,13 @@ export const schema = {
   playlist,
   playlistItem,
   userSettings,
+  pinnedSongs,
 };
 
 export {
   account,
   guestBook,
+  pinnedSongs,
   playlist,
   playlistItem,
   session,

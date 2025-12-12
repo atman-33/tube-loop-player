@@ -94,6 +94,8 @@ describe("usePlaylistSync Integration Tests", () => {
     activePlaylistId: identicalLocalData.activePlaylistId,
     loopMode: identicalLocalData.loopMode,
     isShuffle: identicalLocalData.isShuffle,
+    pinnedVideoIds: new Set<string>(),
+    pinnedOrder: [],
   };
 
   beforeEach(() => {
@@ -126,10 +128,17 @@ describe("usePlaylistSync Integration Tests", () => {
 
       const { result } = renderHook(() => usePlaylistSync());
 
-      // Simulate conflict state
+      // Simulate conflict state with diff
+      const { DiffCalculator } = await import("~/lib/data-diff-calculator");
+      const diffCalculator = new DiffCalculator();
+      const diff = diffCalculator.calculateDiff(
+        identicalLocalData,
+        differentCloudData,
+      );
       result.current.conflictData = {
         local: identicalLocalData,
         cloud: differentCloudData,
+        diff,
       };
 
       // Resolve with cloud data

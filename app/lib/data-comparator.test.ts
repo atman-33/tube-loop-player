@@ -124,7 +124,7 @@ describe("DataComparator", () => {
       expect(result).toBe(true);
     });
 
-    it("should return false for different activePlaylistId", () => {
+    it("should return true for different activePlaylistId (playback state ignored)", () => {
       const local: UserPlaylistData = {
         playlists: [],
         activePlaylistId: "1",
@@ -140,10 +140,10 @@ describe("DataComparator", () => {
       };
 
       const result = comparator.areDataSetsIdentical(local, cloud);
-      expect(result).toBe(false);
+      expect(result).toBe(true); // activePlaylistId is playback state, should be ignored
     });
 
-    it("should return false for different loopMode", () => {
+    it("should return true for different loopMode (playback state ignored)", () => {
       const local: UserPlaylistData = {
         playlists: [],
         activePlaylistId: "1",
@@ -159,10 +159,10 @@ describe("DataComparator", () => {
       };
 
       const result = comparator.areDataSetsIdentical(local, cloud);
-      expect(result).toBe(false);
+      expect(result).toBe(true); // loopMode is playback state, should be ignored
     });
 
-    it("should return false for different isShuffle", () => {
+    it("should return true for different isShuffle (playback state ignored)", () => {
       const local: UserPlaylistData = {
         playlists: [],
         activePlaylistId: "1",
@@ -178,7 +178,7 @@ describe("DataComparator", () => {
       };
 
       const result = comparator.areDataSetsIdentical(local, cloud);
-      expect(result).toBe(false);
+      expect(result).toBe(true); // isShuffle is playback state, should be ignored
     });
 
     it("should return false for different number of playlists", () => {

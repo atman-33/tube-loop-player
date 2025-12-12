@@ -1,4 +1,8 @@
 import {
+  deriveFavoritesPlaylist,
+  injectFavoritesPlaylist,
+} from "~/lib/player/favorites-playlist";
+import {
   clonePlaylistItems,
   deriveDuplicatePlaylistName,
   deriveNextPlaylistName,
@@ -12,7 +16,11 @@ import {
 } from "~/lib/player/shuffle-queue";
 import type { Playlist } from "~/lib/player/types";
 import { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
-import { defaultActivePlaylistId, defaultPlaylists } from "../constants";
+import {
+  defaultActivePlaylistId,
+  defaultPlaylists,
+  FAVORITES_PLAYLIST_ID,
+} from "../constants";
 import type { PlayerStoreSlice, PlaylistSlice } from "../types";
 
 export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
@@ -58,10 +66,22 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
 
     return true;
   },
-  removeFromPlaylist: (index, playlistId) =>
-    set((state) => {
-      const targetPlaylistId = playlistId || state.activePlaylistId;
-      const updatedPlaylists = state.playlists.map((playlist) => {
+  removeFromPlaylist: (index, playlistId) => {
+    const state = get();
+    const targetPlaylistId = playlistId || state.activePlaylistId;
+
+    // Special handling for Favorites playlist: unpin the song instead
+    if (targetPlaylistId === FAVORITES_PLAYLIST_ID) {
+      const favoritesPlaylist = state.getFavoritesPlaylist();
+      const videoIdToUnpin = favoritesPlaylist.items[index]?.id;
+      if (videoIdToUnpin) {
+        state.removePinnedSong(videoIdToUnpin);
+      }
+      return;
+    }
+
+    set((currentState) => {
+      const updatedPlaylists = currentState.playlists.map((playlist) => {
         if (playlist.id === targetPlaylistId) {
           const newItems = [...playlist.items];
           newItems.splice(index, 1);
@@ -70,19 +90,29 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         return playlist;
       });
       const shouldResetShuffle =
-        state.isShuffle && targetPlaylistId === state.activePlaylistId;
+        currentState.isShuffle &&
+        targetPlaylistId === currentState.activePlaylistId;
       const nextShuffleQueue = shouldResetShuffle
-        ? resetQueueForPlaylist(state.shuffleQueue, targetPlaylistId)
-        : state.shuffleQueue;
+        ? resetQueueForPlaylist(currentState.shuffleQueue, targetPlaylistId)
+        : currentState.shuffleQueue;
       return {
         playlists: updatedPlaylists,
         shuffleQueue: nextShuffleQueue,
       };
-    }),
-  reorderPlaylist: (fromIndex, toIndex, playlistId) =>
-    set((state) => {
-      const targetPlaylistId = playlistId || state.activePlaylistId;
-      const updatedPlaylists = state.playlists.map((playlist) => {
+    });
+  },
+  reorderPlaylist: (fromIndex, toIndex, playlistId) => {
+    const state = get();
+    const targetPlaylistId = playlistId || state.activePlaylistId;
+
+    // Special handling for Favorites playlist: update pinnedOrder instead
+    if (targetPlaylistId === FAVORITES_PLAYLIST_ID) {
+      state.reorderPinnedSongs(fromIndex, toIndex);
+      return;
+    }
+
+    set((currentState) => {
+      const updatedPlaylists = currentState.playlists.map((playlist) => {
         if (playlist.id === targetPlaylistId) {
           const newItems = [...playlist.items];
           const [removed] = newItems.splice(fromIndex, 1);
@@ -92,9 +122,9 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         return playlist;
       });
 
-      let newCurrentIndex: number | null = state.currentIndex;
+      let newCurrentIndex: number | null = currentState.currentIndex;
       if (
-        targetPlaylistId === state.activePlaylistId &&
+        targetPlaylistId === currentState.activePlaylistId &&
         newCurrentIndex !== null
       ) {
         if (newCurrentIndex === fromIndex) {
@@ -107,17 +137,19 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       }
 
       const shouldResetShuffle =
-        state.isShuffle && targetPlaylistId === state.activePlaylistId;
+        currentState.isShuffle &&
+        targetPlaylistId === currentState.activePlaylistId;
       const nextShuffleQueue = shouldResetShuffle
-        ? resetQueueForPlaylist(state.shuffleQueue, targetPlaylistId)
-        : state.shuffleQueue;
+        ? resetQueueForPlaylist(currentState.shuffleQueue, targetPlaylistId)
+        : currentState.shuffleQueue;
 
       return {
         playlists: updatedPlaylists,
         currentIndex: newCurrentIndex,
         shuffleQueue: nextShuffleQueue,
       };
-    }),
+    });
+  },
   reorderPlaylists: (fromIndex, toIndex) =>
     set((state) => {
       const newPlaylists = [...state.playlists];
@@ -298,6 +330,11 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     return duplicateId;
   },
   removePlaylist: (playlistId) => {
+    // Guard: Prevent removing the Favorites playlist
+    if (playlistId === FAVORITES_PLAYLIST_ID) {
+      return false;
+    }
+
     const state = get();
     const playlistIndex = state.playlists.findIndex(
       (playlist) => playlist.id === playlistId,
@@ -396,16 +433,30 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         shuffleQueue: nextShuffleQueue,
       };
     }),
-  renamePlaylist: (playlistId, newName) =>
+  renamePlaylist: (playlistId, newName) => {
+    // Guard: Prevent renaming the Favorites playlist
+    if (playlistId === FAVORITES_PLAYLIST_ID) {
+      return;
+    }
+
     set((state) => ({
       playlists: state.playlists.map((playlist) =>
         playlist.id === playlistId ? { ...playlist, name: newName } : playlist,
       ),
-    })),
+    }));
+  },
   setActivePlaylist: (playlistId) => {
-    const targetPlaylist = get().playlists.find(
-      (playlist) => playlist.id === playlistId,
-    );
+    // Handle Favorites playlist specially
+    let targetPlaylist: Playlist | undefined;
+    if (playlistId === FAVORITES_PLAYLIST_ID) {
+      const { pinnedOrder, playlists } = get();
+      targetPlaylist = deriveFavoritesPlaylist(pinnedOrder, playlists);
+    } else {
+      targetPlaylist = get().playlists.find(
+        (playlist) => playlist.id === playlistId,
+      );
+    }
+
     if (!targetPlaylist) {
       return;
     }
@@ -430,11 +481,26 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
   },
   getActivePlaylist: () => {
-    const { playlists, activePlaylistId } = get();
+    const { playlists, activePlaylistId, pinnedOrder } = get();
+
+    // Check if the active playlist is Favorites
+    if (activePlaylistId === FAVORITES_PLAYLIST_ID) {
+      return deriveFavoritesPlaylist(pinnedOrder, playlists);
+    }
+
     return playlists.find((playlist) => playlist.id === activePlaylistId);
   },
   getOrderedPlaylists: () => {
     const { playlists } = get();
     return playlists;
+  },
+  getFavoritesPlaylist: () => {
+    const { pinnedOrder, playlists } = get();
+    return deriveFavoritesPlaylist(pinnedOrder, playlists);
+  },
+  getPlaylistsWithFavorites: () => {
+    const { playlists, pinnedOrder } = get();
+    const favoritesPlaylist = deriveFavoritesPlaylist(pinnedOrder, playlists);
+    return injectFavoritesPlaylist(playlists, favoritesPlaylist);
   },
 });

@@ -3,7 +3,10 @@
  * Determines when to auto-sync vs show modal based on data comparison
  */
 
+import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import { DataComparator } from "./data-comparator";
+import type { DataDiff } from "./data-diff-calculator";
+import { DiffCalculator } from "./data-diff-calculator";
 import type { UserPlaylistData } from "./data-normalizer";
 import {
   isSequentialDefaultPlaylistName,
@@ -16,6 +19,7 @@ export type ConflictResolution =
       type: "show-modal";
       local: UserPlaylistData | null;
       cloud: UserPlaylistData | null;
+      diff: DataDiff;
     }
   | { type: "no-action" };
 
@@ -37,9 +41,14 @@ export interface ConflictAnalysis {
  */
 export class ConflictResolver {
   private dataComparator: DataComparator;
+  private diffCalculator: DiffCalculator;
 
-  constructor(dataComparator?: DataComparator) {
+  constructor(
+    dataComparator?: DataComparator,
+    diffCalculator?: DiffCalculator,
+  ) {
     this.dataComparator = dataComparator || new DataComparator();
+    this.diffCalculator = diffCalculator || new DiffCalculator();
   }
 
   /**
@@ -66,11 +75,42 @@ export class ConflictResolver {
           console.warn(
             "Invalid cloud data structure detected, falling back to modal",
           );
-          return {
-            type: "show-modal",
-            local: local || this.getEmptyUserData(),
-            cloud,
-          };
+          try {
+            const diff = this.diffCalculator.calculateDiff(
+              local || this.getEmptyUserData(),
+              cloud,
+            );
+            return {
+              type: "show-modal",
+              local: local || this.getEmptyUserData(),
+              cloud,
+              diff,
+            };
+          } catch (diffError) {
+            console.error(
+              "Failed to calculate diff for invalid cloud data:",
+              diffError,
+            );
+            // Return show-modal without diff if calculation fails
+            const emptyDiff = {
+              hasChanges: false,
+              playlistDiffs: [],
+              summary: {
+                playlistsAdded: 0,
+                playlistsRemoved: 0,
+                playlistsModified: 0,
+                songsAdded: 0,
+                songsRemoved: 0,
+                songsReordered: 0,
+              },
+            };
+            return {
+              type: "show-modal",
+              local: local || this.getEmptyUserData(),
+              cloud,
+              diff: emptyDiff,
+            };
+          }
         }
         // Only cloud data exists - auto-sync cloud data
         return { type: "auto-sync", data: cloud };
@@ -91,7 +131,8 @@ export class ConflictResolver {
           "Invalid data structure detected during conflict analysis",
         );
         // Malformed data - fallback to showing modal
-        return { type: "show-modal", local, cloud };
+        const diff = this.diffCalculator.calculateDiff(local, cloud);
+        return { type: "show-modal", local, cloud, diff };
       }
 
       // Both datasets exist - perform intelligent comparison with error handling
@@ -103,16 +144,19 @@ export class ConflictResolver {
           "Conflict analysis failed, falling back to modal:",
           analysisError,
         );
-        return { type: "show-modal", local, cloud };
+        const diff = this.diffCalculator.calculateDiff(local, cloud);
+        return { type: "show-modal", local, cloud, diff };
       }
 
       // Handle analysis results with fallback logic
       switch (analysis.conflictType) {
         case "identical": {
           if (!local || !cloud) {
-            return { type: "show-modal", local, cloud };
+            const diff = this.diffCalculator.calculateDiff(local, cloud);
+            return { type: "show-modal", local, cloud, diff };
           }
-          // while using cloud playlist content // Preserve local playback state (activePlaylistId, loopMode, isShuffle) // Playlists are identical - auto-sync with merged data
+          // Playlists are identical - use cloud playlist content
+          // but preserve local playback state (device-specific settings)
           const mergedData: UserPlaylistData = {
             ...cloud,
             activePlaylistId: local.activePlaylistId,
@@ -120,14 +164,9 @@ export class ConflictResolver {
             isShuffle: local.isShuffle,
           };
 
-          // Safety check: ensure local activePlaylistId exists in cloud playlists
-          // (Should be true since playlists are identical, but defensive coding)
-          const isValidId = mergedData.playlists.some(
-            (p) => p.id === mergedData.activePlaylistId,
-          );
-          if (!isValidId) {
-            mergedData.activePlaylistId = cloud.activePlaylistId;
-          }
+          // Note: We don't validate activePlaylistId against playlists array
+          // because activePlaylistId can be a virtual playlist like "playlist-favorites"
+          // that doesn't exist in the playlists array
 
           return { type: "auto-sync", data: mergedData };
         }
@@ -140,16 +179,21 @@ export class ConflictResolver {
           // Cloud data is empty - sync local to cloud (no action needed here)
           return { type: "no-action" };
 
-        case "different":
+        case "different": {
           // Meaningful differences exist - show conflict modal
-          return { type: "show-modal", local, cloud };
+          const diff = this.diffCalculator.calculateDiff(local, cloud);
+          return { type: "show-modal", local, cloud, diff };
+        }
 
         default:
           console.warn(
             `Unknown conflict type: ${analysis.conflictType}, falling back to modal`,
           );
           // Fallback to showing modal for unknown cases
-          return { type: "show-modal", local, cloud };
+          {
+            const diff = this.diffCalculator.calculateDiff(local, cloud);
+            return { type: "show-modal", local, cloud, diff };
+          }
       }
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -161,8 +205,17 @@ export class ConflictResolver {
       // Comprehensive fallback to showing modal when analysis fails
       const fallbackLocal = local || this.getEmptyUserData();
       const fallbackCloud = cloud || this.getEmptyUserData();
+      const diff = this.diffCalculator.calculateDiff(
+        fallbackLocal,
+        fallbackCloud,
+      );
 
-      return { type: "show-modal", local: fallbackLocal, cloud: fallbackCloud };
+      return {
+        type: "show-modal",
+        local: fallbackLocal,
+        cloud: fallbackCloud,
+        diff,
+      };
     }
   }
 
@@ -319,7 +372,7 @@ export class ConflictResolver {
         };
       }
 
-      // Data has meaningful differences
+      // Data sets are meaningfully different
       return {
         hasConflict: true,
         conflictType: "different",
@@ -437,8 +490,11 @@ export class ConflictResolver {
       }
 
       // Validate active playlist ID exists
+      // Skip validation for virtual playlists (e.g., FAVORITES_PLAYLIST_ID)
+      // Virtual playlists don't exist in the playlists array
       if (
         data.activePlaylistId &&
+        data.activePlaylistId !== FAVORITES_PLAYLIST_ID &&
         !playlistIds.includes(data.activePlaylistId)
       ) {
         console.warn("Active playlist ID does not exist in playlists");

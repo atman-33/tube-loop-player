@@ -3,7 +3,7 @@ import {
   SortableContext,
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import {
   Tooltip,
@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from '../../../components/ui/tooltip';
 import { usePlayerStore } from '../../../stores/player';
+import { FAVORITES_PLAYLIST_ID } from '../../../stores/player/constants';
 import { PlaylistTab } from './playlist-tab';
 
 interface PlaylistTabsProps {
@@ -37,14 +38,20 @@ export const calculateTabScrollDelta = (
 
 export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
   const {
-    playlists,
     activePlaylistId,
     setActivePlaylist,
     renamePlaylist,
     createPlaylist,
     canCreatePlaylist,
     maxPlaylistCount,
+    getPlaylistsWithFavorites,
   } = usePlayerStore();
+
+  const playlists = getPlaylistsWithFavorites();
+
+  // Separate favorites and regular playlists
+  const favoritesPlaylist = playlists.find(p => p.id === FAVORITES_PLAYLIST_ID);
+  const regularPlaylists = playlists.filter(p => p.id !== FAVORITES_PLAYLIST_ID);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -174,6 +181,38 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
     <div className="relative mb-0 w-full">
       <div className="rounded-t-lg border border-border/50 border-b-0 bg-background shadow-sm">
         <div className="flex items-center gap-2 px-2 py-2">
+          {/* Favorites Button - Fixed on the left */}
+          {favoritesPlaylist && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={activePlaylistId === FAVORITES_PLAYLIST_ID ? "default" : "ghost"}
+                    size="icon"
+                    className={`h-10 w-10 rounded-full flex-shrink-0 transition-all duration-200 ${
+                      activePlaylistId === FAVORITES_PLAYLIST_ID
+                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                        : 'hover:bg-yellow-50 text-muted-foreground hover:text-yellow-600'
+                    }`}
+                    onClick={() => setActivePlaylist(FAVORITES_PLAYLIST_ID)}
+                    aria-label="Favorites"
+                  >
+                    <Star className={`h-5 w-5 ${
+                      activePlaylistId === FAVORITES_PLAYLIST_ID
+                        ? 'fill-white'
+                        : 'fill-yellow-500'
+                    }`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Favorites ({favoritesPlaylist.items.length} items)</p>
+                </TooltipContent>
+              </Tooltip>
+              <div className="h-8 w-px bg-border/50" />
+            </>
+          )}
+
           {shouldShowNavigation && (
             <Button
               type="button"
@@ -191,7 +230,7 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
 
           <div className="relative flex-1 min-w-0">
             <SortableContext
-              items={playlists.map((p) => p.id)}
+              items={regularPlaylists.map((p) => p.id)}
               strategy={horizontalListSortingStrategy}
             >
               <div
@@ -199,7 +238,7 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
                 data-testid="playlist-tabs-scroll"
                 className="flex w-full items-end gap-0.5 overflow-x-auto px-1 pb-1 pt-2"
               >
-                {playlists.map((playlist, index) => (
+                {regularPlaylists.map((playlist, index) => (
                   <PlaylistTab
                     key={playlist.id}
                     id={playlist.id}
@@ -213,7 +252,7 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
                     onCancelEdit={handleCancelEdit}
                     onEditingNameChange={setEditingName}
                     index={index}
-                    totalTabs={playlists.length}
+                    totalTabs={regularPlaylists.length}
                   />
                 ))}
 
@@ -236,7 +275,7 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
                   <TooltipContent>
                     <p>
                       {canCreatePlaylist
-                        ? `Create a playlist (${playlists.length}/${maxPlaylistCount})`
+                        ? `Create a playlist (${regularPlaylists.length}/${maxPlaylistCount})`
                         : `You can create up to ${maxPlaylistCount} playlists.`}
                     </p>
                   </TooltipContent>

@@ -1,0 +1,135 @@
+# Implementation Tasks: Add Pinned Songs Playlist
+
+## Phase 1: Core State Management
+
+- [x] Add `FAVORITES_PLAYLIST_ID` constant to `app/stores/player/constants.ts`
+- [x] Create `app/stores/player/slices/pinned-songs-slice.ts` with state and actions:
+  - [x] `pinnedVideoIds: Set<string>` state
+  - [x] `pinnedOrder: string[]` state  
+  - [x] `togglePinnedSong(videoId: string)` action
+  - [x] `isPinned(videoId: string)` selector
+  - [x] `reorderPinnedSongs(fromIndex: number, toIndex: number)` action
+  - [x] `removePinnedSong(videoId: string)` action
+- [x] Integrate pinned songs slice into `app/stores/player.ts`
+- [x] Update persistence configuration to include `pinnedVideoIds` and `pinnedOrder`
+- [x] Write unit tests for pinned songs slice: `app/stores/player/slices/pinned-songs-slice.test.ts`
+
+## Phase 2: Favorites Playlist Derivation
+
+- [x] Create `app/lib/player/favorites-playlist.ts` with:
+  - [x] `deriveFavoritesPlaylist(pinnedOrder, allPlaylists)` function
+  - [x] `injectFavoritesPlaylist(playlists, favoritesPlaylist)` helper
+- [x] Add selector `getFavoritesPlaylist()` to player store that derives Favorites from state
+- [x] Update `playlists` getter in store to inject Favorites at position 0
+- [x] Write unit tests for Favorites derivation: `app/lib/player/favorites-playlist.test.ts`
+
+## Phase 3: Playlist Operation Guards
+
+- [x] Update `renamePlaylist()` in `playlist-slice.ts` to guard against `FAVORITES_PLAYLIST_ID`
+- [x] Update `removePlaylist()` in `playlist-slice.ts` to guard against `FAVORITES_PLAYLIST_ID`
+- [x] Update `canCreatePlaylist` logic to exclude Favorites from playlist count
+- [x] Handle `removeFromPlaylist()` for Favorites: unpin the song instead of just removing
+- [x] Handle `reorderPlaylist()` for Favorites: update `pinnedOrder` array
+- [x] Add unit tests for operation guards: `app/lib/player/playlist-guards.test.ts`
+
+## Phase 4: Star Icon UI Component
+
+- [x] Create `app/routes/_app._index/components/pinned-star-icon.tsx`:
+  - [x] Render star icon (☆ or ★) based on pinned state
+  - [x] Handle click to toggle pinned state
+  - [x] Add ARIA labels for accessibility
+  - [x] Support keyboard interaction (Enter/Space to toggle)
+- [x] Add styling for star icon (hover states, active states)
+- [x] Integrate star icon into playlist item row component
+- [x] Ensure consistent spacing and alignment across playlist items
+
+## Phase 5: Favorites Playlist UI Integration
+
+- [x] Update `app/routes/_app._index/route.tsx` to inject Favorites at position 0
+- [x] Modify playlist tab rendering to disable rename for Favorites
+- [x] Modify playlist tab rendering to hide delete action for Favorites
+- [x] Update playlist context menu to conditionally show/hide options for Favorites
+- [x] Add visual distinction for Favorites tab (optional: special icon or color)
+- [x] Test drag-and-drop behavior with Favorites playlist in the tab list
+- [x] Verify playlist creation limit messaging excludes Favorites
+
+## Phase 6: Database Schema and Migration
+
+- [x] Create migration file: `drizzle/000X_add_pinned_songs.sql`:
+  ```sql
+  CREATE TABLE pinned_songs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+    video_id TEXT NOT NULL,
+    pinned_at INTEGER NOT NULL,
+    UNIQUE(user_id, video_id)
+  );
+  CREATE INDEX idx_pinned_songs_user ON pinned_songs(user_id);
+  ```
+- [x] Update `database/schema.ts` to define `pinnedSongs` table with Drizzle
+- [x] Export `pinnedSongs` table from schema
+
+## Phase 7: Cloud Sync Implementation
+
+- [x] Create `app/lib/pinned-songs.server.ts` with:
+  - [x] `loadPinnedSongs(userId)` function
+  - [x] `syncPinnedSongs(userId, pinnedData)` function
+- [x] Create API route `app/routes/api.pinned-songs.load.ts`:
+  - [x] Fetch pinned songs from database for authenticated user
+  - [x] Return JSON response with video IDs and order
+- [x] Create API route `app/routes/api.pinned-songs.sync.ts`:
+  - [x] Accept pinned state payload from client
+  - [x] Merge with existing cloud state (union of sets, prefer latest timestamps)
+  - [x] Return merged state to client
+- [x] Create hook `app/hooks/use-pinned-songs-sync.ts`:
+  - [x] Load pinned state on mount for authenticated users
+  - [x] Debounce sync on local pinned state changes
+  - [x] Handle sync conflicts and errors
+- [x] Integrate hook into `app/routes/_app/route.tsx` (parent layout component)
+- [x] Write integration tests: `app/hooks/use-pinned-songs-sync.integration.test.ts`
+
+## Phase 8: Testing and Validation
+
+- [x] Manual test: Mark song as favorite, verify star icon updates
+- [x] Manual test: Unmark favorite, verify star icon reverts
+- [x] Manual test: Mark same video ID in different playlists, verify consistency
+- [x] Manual test: Delete song from source playlist, verify remains in Favorites
+- [x] Manual test: Reorder songs in Favorites, verify order persists
+- [x] Manual test: Remove song from Favorites, verify unpinned state across playlists
+- [x] Manual test: Attempt to rename Favorites, verify disabled
+- [x] Manual test: Attempt to delete Favorites, verify disabled
+- [x] Manual test: Create playlists until limit, verify Favorites doesn't count
+- [x] Manual test: Guest user flow with localStorage persistence
+- [x] Manual test: Authenticated user flow with cloud sync
+- [x] Manual test: Shuffle mode in Favorites playlist
+- [x] Run all unit tests: `npm run test`
+- [x] Run all integration tests
+- [x] Verify no TypeScript errors: `npm run typecheck`
+- [x] Run linter: `npm run biome:check`
+
+## Phase 9: Documentation and Cleanup
+
+- [x] Update `docs/coding-rule.md` if new patterns introduced (optional)
+- [x] Add comments to complex functions (favorites derivation, sync logic)
+- [x] Verify all TODOs and FIXMEs are resolved
+- [x] Confirm all checklist items in `tasks.md` are marked complete
+
+## Dependencies and Parallelization
+
+**Phase 1-3 can proceed sequentially** (state → derivation → guards).
+
+**Phase 4-5 can be developed in parallel** with Phase 6-7 (UI work is independent of backend).
+
+**Phase 6-7 must complete before Phase 8** (testing requires full stack).
+
+**Phase 9 follows all implementation phases**.
+
+## Validation Criteria
+
+All tasks are complete when:
+- All checkboxes in this file are marked `[x]`
+- `npm run test` passes with no failures
+- `npm run typecheck` passes with no errors
+- `npm run biome:check` passes with no warnings
+- Manual test checklist in Phase 8 is fully verified
+- User can mark favorites, see Favorites playlist, and sync across devices
