@@ -84,12 +84,6 @@ export function usePinnedSongsSync() {
 
         setPinnedSongs(mergedVideoIds, mergedOrder);
 
-        // Save merged data reference
-        lastSyncedDataRef.current = JSON.stringify({
-          pinnedVideoIds: Array.from(mergedVideoIds),
-          pinnedOrder: mergedOrder,
-        });
-
         setHasLoadedFromServer(true);
       } catch (error) {
         console.error("Failed to load pinned songs:", error);
