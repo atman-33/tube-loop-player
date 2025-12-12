@@ -1,12 +1,9 @@
 # pinned-songs Specification
 
 ## Purpose
-Enable users to mark favorite songs across playlists and aggregate them into a dedicated Favorites playlist for quick access and continuous playback. The system maintains star icon state consistently across all playlist instances and ensures the Favorites playlist behaves like a standard playlist for playback while being protected from deletion or renaming.
+Enable users to mark favorite songs across playlists and aggregate them into a dedicated Favorites playlist for quick access and continuous playback. The system maintains star icon state consistently across all playlist instances and ensures the Favorites playlist behaves like a standard playlist for playback while being protected from deletion, renaming, and tab reordering.
 
 ## Requirements
-
-### ADDED Requirements
-
 ### Requirement: Cross-playlist favorite marking
 The system SHALL allow users to mark any song as a favorite by clicking a star icon, and the favorite state SHALL be reflected across all instances of that song in different playlists.
 
@@ -63,7 +60,7 @@ The system SHALL allow users to reorder songs within the Favorites playlist usin
 - **THEN** the playlist SHALL display B, C, A, D (new songs append to the end of the current order)
 
 ### Requirement: Favorites playlist immutability
-The system SHALL prevent users from renaming or deleting the Favorites playlist, and it SHALL NOT count toward the maximum playlist limit.
+The system SHALL prevent users from renaming, deleting, or reordering the Favorites playlist tab, and it SHALL NOT count toward the maximum playlist limit.
 
 #### Scenario: Rename protection
 - **GIVEN** the user selects the Favorites playlist
@@ -75,13 +72,18 @@ The system SHALL prevent users from renaming or deleting the Favorites playlist,
 - **WHEN** the user attempts to delete the Favorites playlist
 - **THEN** the delete action SHALL be disabled or hidden, and the Favorites playlist SHALL remain in the playlist tabs
 
+#### Scenario: Tab reordering protection
+- **GIVEN** the user is reordering playlist tabs using drag-and-drop or keyboard shortcuts
+- **WHEN** the user attempts to reorder the Favorites playlist tab
+- **THEN** the Favorites tab SHALL remain locked at the leftmost position and SHALL NOT be movable
+
 #### Scenario: Exclusion from playlist count
 - **GIVEN** the user has reached the maximum playlist limit of 10
 - **WHEN** the system checks whether the user can create a new playlist
 - **THEN** the Favorites playlist SHALL NOT be counted toward the limit, allowing creation of up to 10 additional user playlists
 
 ### Requirement: Remove song from Favorites
-The system SHALL allow users to remove a song from the Favorites playlist by deleting it within the Favorites context, which SHALL unpin the song and update star icons across all playlists.
+The system SHALL allow users to remove a song from the Favorites playlist by deleting it within the Favorites context, which SHALL unpin the song and update star icons across all playlists. The delete action in Favorites SHALL trigger the unpin operation rather than removing the song from the underlying playlist structure.
 
 #### Scenario: Remove song from Favorites playlist
 - **GIVEN** a song with video ID `V111` is in the Favorites playlist
@@ -92,6 +94,11 @@ The system SHALL allow users to remove a song from the Favorites playlist by del
 - **GIVEN** video ID `V222` exists in both Playlist A and Favorites
 - **WHEN** the user removes `V222` from Favorites
 - **THEN** the song SHALL remain in Playlist A with an empty star (☆) icon
+
+#### Scenario: Delete action triggers unpin operation
+- **GIVEN** the user is viewing the Favorites playlist
+- **WHEN** the user clicks the delete button on a song
+- **THEN** the system SHALL call the removePinnedSong operation instead of the standard removeFromPlaylist operation
 
 ### Requirement: Persistence across source playlist changes
 The system SHALL retain a song in the Favorites playlist even if the song is deleted from its original source playlist, allowing independent management of the Favorites collection.
@@ -107,7 +114,7 @@ The system SHALL retain a song in the Favorites playlist even if the song is del
 - **THEN** the song SHALL play normally if the YouTube video still exists
 
 ### Requirement: Pinned state persistence and sync
-The system SHALL persist the pinned state to local storage for guest users and sync to cloud storage for authenticated users, ensuring favorite marks are available across sessions and devices.
+The system SHALL persist the pinned state to local storage for guest users and sync to cloud storage for authenticated users using a database table with timestamp tracking, ensuring favorite marks are available across sessions and devices.
 
 #### Scenario: Guest user persistence
 - **GIVEN** a guest user (not authenticated) marks several songs as favorites
@@ -124,6 +131,11 @@ The system SHALL persist the pinned state to local storage for guest users and s
 - **WHEN** both devices sync to the cloud
 - **THEN** the system SHALL merge the pinned sets (union) and preserve the most recent order based on server timestamps
 
+#### Scenario: Database schema for cloud storage
+- **GIVEN** the system needs to store pinned songs for authenticated users
+- **WHEN** a song is pinned
+- **THEN** the system SHALL store a record in the `pinned_songs` table with columns: `id` (auto-increment), `userId` (foreign key to user), `videoId` (video identifier), and `pinnedAt` (timestamp for conflict resolution and ordering)
+
 ### Requirement: Standard playback support
 The system SHALL support all standard playback features (play, pause, loop, shuffle, next, previous) within the Favorites playlist, treating it as a fully functional playlist for playback operations.
 
@@ -136,3 +148,4 @@ The system SHALL support all standard playback features (play, pause, loop, shuf
 - **GIVEN** the user enables shuffle mode and selects the Favorites playlist
 - **WHEN** playback starts
 - **THEN** the system SHALL shuffle songs within Favorites according to the existing shuffle algorithm and reset shuffle history as it does for other playlists
+
