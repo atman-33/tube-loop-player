@@ -12,9 +12,14 @@ interface PinnedSongsData {
  */
 export function usePinnedSongsSync() {
   const { user, isLoading: authLoading } = useAuth();
-  const { pinnedVideoIds, pinnedOrder, setPinnedSongs } = usePlayerStore();
+  const {
+    pinnedVideoIds,
+    pinnedOrder,
+    setPinnedSongs,
+    isPinnedSongsSynced,
+    markPinnedSongsAsSynced,
+  } = usePlayerStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [hasLoadedFromServer, setHasLoadedFromServer] = useState(false);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedDataRef = useRef<string>("");
 
@@ -50,7 +55,7 @@ export function usePinnedSongsSync() {
   // Load pinned songs from server when user logs in (only once)
   useEffect(() => {
     const loadServerData = async () => {
-      if (!user || !hasHydrated || authLoading || hasLoadedFromServer) return;
+      if (!user || !hasHydrated || authLoading || isPinnedSongsSynced) return;
 
       setIsLoading(true);
 
@@ -59,46 +64,43 @@ export function usePinnedSongsSync() {
 
         if (!response.ok) {
           console.error("Failed to load pinned songs:", response.statusText);
-          setHasLoadedFromServer(true);
+          markPinnedSongsAsSynced();
           return;
         }
 
         const data = (await response.json()) as PinnedSongsData;
 
-        // Get current local state at the time of loading
-        const currentPinnedIds = usePlayerStore.getState().pinnedVideoIds;
+        // Use cloud data directly (overwrite local data on reload)
+        setPinnedSongs(new Set(data.pinnedVideoIds), data.pinnedOrder);
 
-        // Merge cloud data with local data (union of both)
-        const mergedVideoIds = new Set([
-          ...Array.from(currentPinnedIds),
-          ...data.pinnedVideoIds,
-        ]);
+        // Prevent immediate sync after loading by setting lastSyncedDataRef
+        lastSyncedDataRef.current = JSON.stringify({
+          pinnedVideoIds: data.pinnedVideoIds,
+          pinnedOrder: data.pinnedOrder,
+        });
 
-        // Use cloud order as base, then append any local-only pins
-        const mergedOrder = [
-          ...data.pinnedOrder.filter((id) => mergedVideoIds.has(id)),
-          ...Array.from(currentPinnedIds).filter(
-            (id) => !data.pinnedOrder.includes(id),
-          ),
-        ];
-
-        setPinnedSongs(mergedVideoIds, mergedOrder);
-
-        setHasLoadedFromServer(true);
+        markPinnedSongsAsSynced();
       } catch (error) {
         console.error("Failed to load pinned songs:", error);
-        setHasLoadedFromServer(true);
+        markPinnedSongsAsSynced();
       } finally {
         setIsLoading(false);
       }
     };
 
     loadServerData();
-  }, [user, hasHydrated, authLoading, hasLoadedFromServer, setPinnedSongs]);
+  }, [
+    user,
+    hasHydrated,
+    authLoading,
+    isPinnedSongsSynced,
+    setPinnedSongs,
+    markPinnedSongsAsSynced,
+  ]);
 
   // Debounced sync to server when local state changes
   useEffect(() => {
-    if (!user || !hasHydrated || isLoading) return;
+    if (!user || !hasHydrated || isLoading || !isPinnedSongsSynced) return;
 
     const currentData = JSON.stringify({
       pinnedVideoIds: Array.from(pinnedVideoIds),

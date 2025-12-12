@@ -9,7 +9,7 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
   setUser: (user) => {
     set((state) => {
       if (!user) {
-        return { user: null, isDataSynced: false };
+        return { user: null, isDataSynced: false, isPinnedSongsSynced: false };
       }
 
       const sanitized = sanitizePlaylistIdentifiers(
@@ -25,6 +25,7 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
       const nextState: Partial<SyncSlice> & Partial<typeof state> = {
         user,
         isDataSynced: false,
+        isPinnedSongsSynced: false,
       };
 
       const didChange =

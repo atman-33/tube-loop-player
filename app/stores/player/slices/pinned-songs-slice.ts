@@ -3,11 +3,13 @@ import type { PlayerStoreSlice } from "../types";
 export interface PinnedSongsSlice {
   pinnedVideoIds: Set<string>;
   pinnedOrder: string[];
+  isPinnedSongsSynced: boolean;
   togglePinnedSong: (videoId: string) => void;
   isPinned: (videoId: string) => boolean;
   removePinnedSong: (videoId: string) => void;
   reorderPinnedSongs: (fromIndex: number, toIndex: number) => void;
   setPinnedSongs: (videoIds: Set<string>, order: string[]) => void;
+  markPinnedSongsAsSynced: () => void;
 }
 
 export const createPinnedSongsSlice: PlayerStoreSlice<PinnedSongsSlice> = (
@@ -16,6 +18,7 @@ export const createPinnedSongsSlice: PlayerStoreSlice<PinnedSongsSlice> = (
 ) => ({
   pinnedVideoIds: new Set<string>(),
   pinnedOrder: [],
+  isPinnedSongsSynced: false,
   togglePinnedSong: (videoId) =>
     set((state) => {
       const newPinnedVideoIds = new Set(state.pinnedVideoIds);
@@ -84,5 +87,9 @@ export const createPinnedSongsSlice: PlayerStoreSlice<PinnedSongsSlice> = (
     set({
       pinnedVideoIds: videoIds,
       pinnedOrder: order,
+    }),
+  markPinnedSongsAsSynced: () =>
+    set({
+      isPinnedSongsSynced: true,
     }),
 });
