@@ -446,9 +446,17 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }));
   },
   setActivePlaylist: (playlistId) => {
-    const targetPlaylist = get().playlists.find(
-      (playlist) => playlist.id === playlistId,
-    );
+    // Handle Favorites playlist specially
+    let targetPlaylist: Playlist | undefined;
+    if (playlistId === FAVORITES_PLAYLIST_ID) {
+      const { pinnedOrder, playlists } = get();
+      targetPlaylist = deriveFavoritesPlaylist(pinnedOrder, playlists);
+    } else {
+      targetPlaylist = get().playlists.find(
+        (playlist) => playlist.id === playlistId,
+      );
+    }
+
     if (!targetPlaylist) {
       return;
     }
@@ -473,7 +481,13 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
   },
   getActivePlaylist: () => {
-    const { playlists, activePlaylistId } = get();
+    const { playlists, activePlaylistId, pinnedOrder } = get();
+
+    // Check if the active playlist is Favorites
+    if (activePlaylistId === FAVORITES_PLAYLIST_ID) {
+      return deriveFavoritesPlaylist(pinnedOrder, playlists);
+    }
+
     return playlists.find((playlist) => playlist.id === activePlaylistId);
   },
   getOrderedPlaylists: () => {
