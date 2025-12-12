@@ -27,7 +27,8 @@ describe("DataComparator - arePlaylistsIdentical", () => {
     };
 
     expect(comparator.arePlaylistsIdentical(local, cloud)).toBe(true);
-    expect(comparator.areDataSetsIdentical(local, cloud)).toBe(false);
+    // areDataSetsIdentical also ignores playback state now
+    expect(comparator.areDataSetsIdentical(local, cloud)).toBe(true);
   });
 
   it("should return true when playlists are identical but loopMode differs", () => {

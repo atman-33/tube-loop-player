@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { usePlayerStore } from "~/stores/player";
 
-const initialState = usePlayerStore.getState();
-
-const resetStore = () => {
-  usePlayerStore.setState(initialState, true);
-};
-
 beforeEach(() => {
-  resetStore();
+  // Reset pinned songs state before each test
+  usePlayerStore.setState({
+    pinnedVideoIds: new Set<string>(),
+    pinnedOrder: [],
+  });
 });
 
 describe("Pinned Songs Slice", () => {

@@ -24,6 +24,7 @@ describe("usePinnedSongsSync Integration Tests", () => {
     usePlayerStore.setState({
       pinnedVideoIds: new Set<string>(),
       pinnedOrder: [],
+      isPinnedSongsSynced: false,
     });
 
     // Clear fetch mocks
@@ -68,11 +69,12 @@ describe("usePinnedSongsSync Integration Tests", () => {
     expect(global.fetch).toHaveBeenCalledWith("/api/pinned-songs/load");
   });
 
-  test("should merge local and cloud pinned songs", async () => {
+  test("should overwrite local pinned songs with cloud data on load", async () => {
     // Set local state
     usePlayerStore.setState({
       pinnedVideoIds: new Set(["local-video"]),
       pinnedOrder: ["local-video"],
+      isPinnedSongsSynced: false,
     });
 
     const mockCloudData = {
@@ -99,8 +101,9 @@ describe("usePinnedSongsSync Integration Tests", () => {
 
     await waitFor(() => {
       const state = usePlayerStore.getState();
-      expect(state.pinnedVideoIds.has("local-video")).toBe(true);
       expect(state.pinnedVideoIds.has("cloud-video")).toBe(true);
+      expect(state.pinnedVideoIds.has("local-video")).toBe(false);
+      expect(state.pinnedOrder).toEqual(["cloud-video"]);
     });
   });
 

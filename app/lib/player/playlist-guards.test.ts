@@ -1,15 +1,22 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { usePlayerStore } from "~/stores/player";
-import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
-
-const initialState = usePlayerStore.getState();
-
-const resetStore = () => {
-  usePlayerStore.setState(initialState, true);
-};
+import {
+  createDefaultPlaylists,
+  defaultActivePlaylistId,
+  FAVORITES_PLAYLIST_ID,
+} from "~/stores/player/constants";
 
 beforeEach(() => {
-  resetStore();
+  // Reset store to clean state before each test
+  usePlayerStore.setState(
+    {
+      playlists: createDefaultPlaylists(),
+      activePlaylistId: defaultActivePlaylistId,
+      pinnedVideoIds: new Set<string>(),
+      pinnedOrder: [],
+    },
+    false,
+  );
 });
 
 describe("Playlist Operation Guards", () => {

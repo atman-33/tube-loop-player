@@ -75,16 +75,42 @@ export class ConflictResolver {
           console.warn(
             "Invalid cloud data structure detected, falling back to modal",
           );
-          const diff = this.diffCalculator.calculateDiff(
-            local || this.getEmptyUserData(),
-            cloud,
-          );
-          return {
-            type: "show-modal",
-            local: local || this.getEmptyUserData(),
-            cloud,
-            diff,
-          };
+          try {
+            const diff = this.diffCalculator.calculateDiff(
+              local || this.getEmptyUserData(),
+              cloud,
+            );
+            return {
+              type: "show-modal",
+              local: local || this.getEmptyUserData(),
+              cloud,
+              diff,
+            };
+          } catch (diffError) {
+            console.error(
+              "Failed to calculate diff for invalid cloud data:",
+              diffError,
+            );
+            // Return show-modal without diff if calculation fails
+            const emptyDiff = {
+              hasChanges: false,
+              playlistDiffs: [],
+              summary: {
+                playlistsAdded: 0,
+                playlistsRemoved: 0,
+                playlistsModified: 0,
+                songsAdded: 0,
+                songsRemoved: 0,
+                songsReordered: 0,
+              },
+            };
+            return {
+              type: "show-modal",
+              local: local || this.getEmptyUserData(),
+              cloud,
+              diff: emptyDiff,
+            };
+          }
         }
         // Only cloud data exists - auto-sync cloud data
         return { type: "auto-sync", data: cloud };
@@ -153,8 +179,8 @@ export class ConflictResolver {
           // Cloud data is empty - sync local to cloud (no action needed here)
           return { type: "no-action" };
 
-        case "different": // Meaningful differences exist - show conflict modal
-        {
+        case "different": {
+          // Meaningful differences exist - show conflict modal
           const diff = this.diffCalculator.calculateDiff(local, cloud);
           return { type: "show-modal", local, cloud, diff };
         }

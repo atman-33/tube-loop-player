@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach } from 'vitest';
 import { vi } from 'vitest';
 import { PlaylistTabs, calculateTabScrollDelta } from './playlist-tabs';
 
@@ -86,6 +87,10 @@ beforeAll(() => {
 
 beforeEach(() => {
   mockUsePlayerStore.mockReset();
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 describe('PlaylistTabs UI', () => {
@@ -236,7 +241,8 @@ describe('PlaylistTabs UI', () => {
 
     render(<PlaylistTabs />);
 
-    const tabButton = screen.getByRole('button', { name: /Playlist 2/i });
+    const allPlaylists = screen.getAllByRole('button', { name: /Playlist 2/i });
+    const tabButton = allPlaylists[0]; // Get the first matching button
     const hintId = tabButton.getAttribute('aria-describedby');
     expect(hintId).toBeTruthy();
     const hintNode = hintId ? document.getElementById(hintId) : null;
@@ -254,7 +260,8 @@ describe('PlaylistTabs UI', () => {
 
     render(<PlaylistTabs />);
 
-    const tabButton = screen.getByRole('button', { name: /Playlist 2/i });
+    const allPlaylists = screen.getAllByRole('button', { name: /Playlist 2/i });
+    const tabButton = allPlaylists[0]; // Get the first matching button
     fireEvent.keyDown(tabButton, { key: ' ' });
     expect(tabButton).toHaveAttribute('aria-grabbed', 'true');
 
