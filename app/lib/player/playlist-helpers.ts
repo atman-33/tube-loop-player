@@ -1,4 +1,5 @@
 import { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
+import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import type { Playlist, PlaylistItem } from "./types";
 
 const PLAYLIST_NAME_PATTERN = /^Playlist (\d+)$/i;
@@ -57,6 +58,15 @@ export const enforcePlaylistBounds = (
 ) => {
   const trimmed = playlists.slice(0, MAX_PLAYLIST_COUNT);
   let nextActiveId = activePlaylistId;
+
+  // Favorites is a special virtual playlist that doesn't exist in the playlists array
+  if (nextActiveId === FAVORITES_PLAYLIST_ID) {
+    return {
+      playlists: trimmed,
+      activePlaylistId: nextActiveId,
+      canCreatePlaylist: trimmed.length < MAX_PLAYLIST_COUNT,
+    };
+  }
 
   if (trimmed.length === 0) {
     nextActiveId = "";
