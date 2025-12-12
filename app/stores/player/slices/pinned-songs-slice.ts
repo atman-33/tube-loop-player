@@ -7,6 +7,7 @@ export interface PinnedSongsSlice {
   isPinned: (videoId: string) => boolean;
   removePinnedSong: (videoId: string) => void;
   reorderPinnedSongs: (fromIndex: number, toIndex: number) => void;
+  setPinnedSongs: (videoIds: Set<string>, order: string[]) => void;
 }
 
 export const createPinnedSongsSlice: PlayerStoreSlice<PinnedSongsSlice> = (
@@ -78,5 +79,10 @@ export const createPinnedSongsSlice: PlayerStoreSlice<PinnedSongsSlice> = (
       return {
         pinnedOrder: newPinnedOrder,
       };
+    }),
+  setPinnedSongs: (videoIds, order) =>
+    set({
+      pinnedVideoIds: videoIds,
+      pinnedOrder: order,
     }),
 });

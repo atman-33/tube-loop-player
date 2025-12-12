@@ -15,6 +15,13 @@
       "when": 1753277007230,
       "tag": "0001_demonic_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1765498227002,
+      "tag": "0002_slim_talon",
+      "breakpoints": true
     }
   ]
 }

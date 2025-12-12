@@ -55,7 +55,7 @@
 
 ## Phase 6: Database Schema and Migration
 
-- [ ] Create migration file: `drizzle/000X_add_pinned_songs.sql`:
+- [x] Create migration file: `drizzle/000X_add_pinned_songs.sql`:
   ```sql
   CREATE TABLE pinned_songs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,27 +66,27 @@
   );
   CREATE INDEX idx_pinned_songs_user ON pinned_songs(user_id);
   ```
-- [ ] Update `database/schema.ts` to define `pinnedSongs` table with Drizzle
-- [ ] Export `pinnedSongs` table from schema
+- [x] Update `database/schema.ts` to define `pinnedSongs` table with Drizzle
+- [x] Export `pinnedSongs` table from schema
 
 ## Phase 7: Cloud Sync Implementation
 
-- [ ] Create `app/lib/pinned-songs.server.ts` with:
-  - [ ] `loadPinnedSongs(userId)` function
-  - [ ] `syncPinnedSongs(userId, pinnedData)` function
-- [ ] Create API route `app/routes/api.pinned-songs.load.ts`:
-  - [ ] Fetch pinned songs from database for authenticated user
-  - [ ] Return JSON response with video IDs and order
-- [ ] Create API route `app/routes/api.pinned-songs.sync.ts`:
-  - [ ] Accept pinned state payload from client
-  - [ ] Merge with existing cloud state (union of sets, prefer latest timestamps)
-  - [ ] Return merged state to client
-- [ ] Create hook `app/hooks/use-pinned-songs-sync.ts`:
-  - [ ] Load pinned state on mount for authenticated users
-  - [ ] Debounce sync on local pinned state changes
-  - [ ] Handle sync conflicts and errors
-- [ ] Integrate hook into `app/routes/_app._index/route.tsx`
-- [ ] Write integration tests: `app/hooks/use-pinned-songs-sync.integration.test.ts`
+- [x] Create `app/lib/pinned-songs.server.ts` with:
+  - [x] `loadPinnedSongs(userId)` function
+  - [x] `syncPinnedSongs(userId, pinnedData)` function
+- [x] Create API route `app/routes/api.pinned-songs.load.ts`:
+  - [x] Fetch pinned songs from database for authenticated user
+  - [x] Return JSON response with video IDs and order
+- [x] Create API route `app/routes/api.pinned-songs.sync.ts`:
+  - [x] Accept pinned state payload from client
+  - [x] Merge with existing cloud state (union of sets, prefer latest timestamps)
+  - [x] Return merged state to client
+- [x] Create hook `app/hooks/use-pinned-songs-sync.ts`:
+  - [x] Load pinned state on mount for authenticated users
+  - [x] Debounce sync on local pinned state changes
+  - [x] Handle sync conflicts and errors
+- [x] Integrate hook into `app/routes/_app._index/route.tsx`
+- [x] Write integration tests: `app/hooks/use-pinned-songs-sync.integration.test.ts`
 
 ## Phase 8: Testing and Validation
 
@@ -102,10 +102,10 @@
 - [ ] Manual test: Guest user flow with localStorage persistence
 - [ ] Manual test: Authenticated user flow with cloud sync
 - [ ] Manual test: Shuffle mode in Favorites playlist
-- [ ] Run all unit tests: `npm run test`
-- [ ] Run all integration tests
-- [ ] Verify no TypeScript errors: `npm run typecheck`
-- [ ] Run linter: `npm run biome:check`
+- [x] Run all unit tests: `npm run test`
+- [x] Run all integration tests
+- [x] Verify no TypeScript errors: `npm run typecheck`
+- [x] Run linter: `npm run biome:check`
 
 ## Phase 9: Documentation and Cleanup
 
