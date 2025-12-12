@@ -2,56 +2,56 @@
 
 ## Phase 1: Core State Management
 
-- [ ] Add `FAVORITES_PLAYLIST_ID` constant to `app/stores/player/constants.ts`
-- [ ] Create `app/stores/player/slices/pinned-songs-slice.ts` with state and actions:
-  - [ ] `pinnedVideoIds: Set<string>` state
-  - [ ] `pinnedOrder: string[]` state  
-  - [ ] `togglePinnedSong(videoId: string)` action
-  - [ ] `isPinned(videoId: string)` selector
-  - [ ] `reorderPinnedSongs(fromIndex: number, toIndex: number)` action
-  - [ ] `removePinnedSong(videoId: string)` action
-- [ ] Integrate pinned songs slice into `app/stores/player.ts`
-- [ ] Update persistence configuration to include `pinnedVideoIds` and `pinnedOrder`
-- [ ] Write unit tests for pinned songs slice: `app/stores/player/slices/pinned-songs-slice.test.ts`
+- [x] Add `FAVORITES_PLAYLIST_ID` constant to `app/stores/player/constants.ts`
+- [x] Create `app/stores/player/slices/pinned-songs-slice.ts` with state and actions:
+  - [x] `pinnedVideoIds: Set<string>` state
+  - [x] `pinnedOrder: string[]` state  
+  - [x] `togglePinnedSong(videoId: string)` action
+  - [x] `isPinned(videoId: string)` selector
+  - [x] `reorderPinnedSongs(fromIndex: number, toIndex: number)` action
+  - [x] `removePinnedSong(videoId: string)` action
+- [x] Integrate pinned songs slice into `app/stores/player.ts`
+- [x] Update persistence configuration to include `pinnedVideoIds` and `pinnedOrder`
+- [x] Write unit tests for pinned songs slice: `app/stores/player/slices/pinned-songs-slice.test.ts`
 
 ## Phase 2: Favorites Playlist Derivation
 
-- [ ] Create `app/lib/player/favorites-playlist.ts` with:
-  - [ ] `deriveFavoritesPlaylist(pinnedOrder, allPlaylists)` function
-  - [ ] `injectFavoritesPlaylist(playlists, favoritesPlaylist)` helper
-- [ ] Add selector `getFavoritesPlaylist()` to player store that derives Favorites from state
-- [ ] Update `playlists` getter in store to inject Favorites at position 0
-- [ ] Write unit tests for Favorites derivation: `app/lib/player/favorites-playlist.test.ts`
+- [x] Create `app/lib/player/favorites-playlist.ts` with:
+  - [x] `deriveFavoritesPlaylist(pinnedOrder, allPlaylists)` function
+  - [x] `injectFavoritesPlaylist(playlists, favoritesPlaylist)` helper
+- [x] Add selector `getFavoritesPlaylist()` to player store that derives Favorites from state
+- [x] Update `playlists` getter in store to inject Favorites at position 0
+- [x] Write unit tests for Favorites derivation: `app/lib/player/favorites-playlist.test.ts`
 
 ## Phase 3: Playlist Operation Guards
 
-- [ ] Update `renamePlaylist()` in `playlist-slice.ts` to guard against `FAVORITES_PLAYLIST_ID`
-- [ ] Update `removePlaylist()` in `playlist-slice.ts` to guard against `FAVORITES_PLAYLIST_ID`
-- [ ] Update `canCreatePlaylist` logic to exclude Favorites from playlist count
-- [ ] Handle `removeFromPlaylist()` for Favorites: unpin the song instead of just removing
-- [ ] Handle `reorderPlaylist()` for Favorites: update `pinnedOrder` array
-- [ ] Add unit tests for operation guards: `app/lib/player/playlist-guards.test.ts`
+- [x] Update `renamePlaylist()` in `playlist-slice.ts` to guard against `FAVORITES_PLAYLIST_ID`
+- [x] Update `removePlaylist()` in `playlist-slice.ts` to guard against `FAVORITES_PLAYLIST_ID`
+- [x] Update `canCreatePlaylist` logic to exclude Favorites from playlist count
+- [x] Handle `removeFromPlaylist()` for Favorites: unpin the song instead of just removing
+- [x] Handle `reorderPlaylist()` for Favorites: update `pinnedOrder` array
+- [x] Add unit tests for operation guards: `app/lib/player/playlist-guards.test.ts`
 
 ## Phase 4: Star Icon UI Component
 
-- [ ] Create `app/routes/_app._index/components/pinned-star-icon.tsx`:
-  - [ ] Render star icon (☆ or ★) based on pinned state
-  - [ ] Handle click to toggle pinned state
-  - [ ] Add ARIA labels for accessibility
-  - [ ] Support keyboard interaction (Enter/Space to toggle)
-- [ ] Add styling for star icon (hover states, active states)
-- [ ] Integrate star icon into playlist item row component
-- [ ] Ensure consistent spacing and alignment across playlist items
+- [x] Create `app/routes/_app._index/components/pinned-star-icon.tsx`:
+  - [x] Render star icon (☆ or ★) based on pinned state
+  - [x] Handle click to toggle pinned state
+  - [x] Add ARIA labels for accessibility
+  - [x] Support keyboard interaction (Enter/Space to toggle)
+- [x] Add styling for star icon (hover states, active states)
+- [x] Integrate star icon into playlist item row component
+- [x] Ensure consistent spacing and alignment across playlist items
 
 ## Phase 5: Favorites Playlist UI Integration
 
-- [ ] Update `app/routes/_app._index/route.tsx` to inject Favorites at position 0
-- [ ] Modify playlist tab rendering to disable rename for Favorites
-- [ ] Modify playlist tab rendering to hide delete action for Favorites
-- [ ] Update playlist context menu to conditionally show/hide options for Favorites
-- [ ] Add visual distinction for Favorites tab (optional: special icon or color)
-- [ ] Test drag-and-drop behavior with Favorites playlist in the tab list
-- [ ] Verify playlist creation limit messaging excludes Favorites
+- [x] Update `app/routes/_app._index/route.tsx` to inject Favorites at position 0
+- [x] Modify playlist tab rendering to disable rename for Favorites
+- [x] Modify playlist tab rendering to hide delete action for Favorites
+- [x] Update playlist context menu to conditionally show/hide options for Favorites
+- [x] Add visual distinction for Favorites tab (optional: special icon or color)
+- [x] Test drag-and-drop behavior with Favorites playlist in the tab list
+- [x] Verify playlist creation limit messaging excludes Favorites
 
 ## Phase 6: Database Schema and Migration
 
