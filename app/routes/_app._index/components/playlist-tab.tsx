@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
-import { Edit2, Check } from 'lucide-react';
+import { Edit2, Check, Star } from 'lucide-react';
 import { useDroppable, useDndContext } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -140,7 +140,11 @@ export const PlaylistTab = ({
       ref={conditionalSortableRef}
       data-playlist-tab
       data-playlist-tab-id={playlist.id}
-      className="relative group flex-none w-[80px] basis-[80px] min-w-[80px] max-w-[80px] md:w-[120px] md:basis-[120px] md:min-w-[120px] md:max-w-[120px]"
+      className={`relative group flex-none ${
+        isFavorites 
+          ? 'w-[50px] basis-[50px] min-w-[50px] max-w-[50px]'
+          : 'w-[80px] basis-[80px] min-w-[80px] max-w-[80px] md:w-[120px] md:basis-[120px] md:min-w-[120px] md:max-w-[120px]'
+      }`}
       style={sortableStyle}
       {...sortableAttributes}
       {...listeners}
@@ -213,9 +217,14 @@ export const PlaylistTab = ({
             <div className="flex flex-col items-center justify-center w-full min-w-0 overflow-hidden">
               <div
                 className="font-medium text-xs text-center w-full truncate leading-tight"
-                title={playlist.name}
+                title={isFavorites ? "Favorites" : playlist.name}
               >
-                {playlist.name}
+                {isFavorites ? (
+                  <Star className="h-4 w-4 fill-yellow-500 text-yellow-500 inline-block" />
+                ) : (
+                  playlist.name
+                )}
+                <span className="sr-only">{playlist.name}</span>
               </div>
               <div
                 className={`text-[11px] opacity-80 font-normal mt-0.5 transition-colors duration-200 ${isActive ? 'text-primary' : 'text-muted-foreground'

@@ -32,7 +32,7 @@ export const PinnedStarIcon: React.FC<PinnedStarIconProps> = ({
       type="button"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={`flex-shrink-0 text-muted-foreground hover:text-yellow-500 transition-colors duration-200 ${className}`}
+      className={`flex-shrink-0 text-muted-foreground hover:text-yellow-500 transition-colors duration-200 cursor-pointer ${className}`}
       aria-label={pinned ? "Unpin from favorites" : "Pin to favorites"}
       aria-pressed={pinned}
     >
