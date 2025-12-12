@@ -1,17 +1,20 @@
 import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { deriveFavoritesPlaylist } from "~/lib/player/favorites-playlist";
 import { enforcePlaylistBounds } from "~/lib/player/playlist-helpers";
 import { sanitizePlaylistIdentifiers } from "~/lib/player/playlist-ids";
 import {
   parsePersistedShuffleQueue,
   rebuildShuffleQueues,
 } from "~/lib/player/shuffle-queue";
+import type { Playlist, PlaylistItem } from "~/lib/player/types";
 import { MAX_PLAYLIST_COUNT } from "~/lib/playlist-limits";
 import {
   defaultActivePlaylistId,
   defaultInitialVideoId,
   defaultPlaylists,
+  FAVORITES_PLAYLIST_ID,
 } from "~/stores/player/constants";
 import { createPinnedSongsSlice } from "~/stores/player/slices/pinned-songs-slice";
 import { createPlaybackSlice } from "~/stores/player/slices/playback-slice";
@@ -78,11 +81,27 @@ export const usePlayerStore = create<PlayerState>()(
           sanitized.activePlaylistId,
         );
 
-        const activePlaylist =
-          constrained.playlists.find(
-            (playlist) => playlist.id === constrained.activePlaylistId,
-          ) || constrained.playlists[0];
-        const firstVideo = activePlaylist?.items[0];
+        // Determine the active playlist and first video
+        let activePlaylist: Playlist | undefined;
+        let firstVideo: PlaylistItem | undefined;
+
+        if (constrained.activePlaylistId === FAVORITES_PLAYLIST_ID) {
+          // For Favorites, derive the virtual playlist from pinned songs
+          const favoritesPlaylist = deriveFavoritesPlaylist(
+            pinnedOrder,
+            constrained.playlists,
+          );
+          activePlaylist = favoritesPlaylist;
+          firstVideo = favoritesPlaylist.items[0];
+        } else {
+          // For regular playlists, find in the playlists array
+          activePlaylist =
+            constrained.playlists.find(
+              (playlist) => playlist.id === constrained.activePlaylistId,
+            ) || constrained.playlists[0];
+          firstVideo = activePlaylist?.items[0];
+        }
+
         const persistedQueue = parsePersistedShuffleQueue(rawQueue);
         const mergedShuffleQueue = rebuildShuffleQueues(
           persistedQueue,

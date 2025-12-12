@@ -8,6 +8,7 @@ import {
   type UserPlaylistData,
 } from "~/lib/data-normalizer";
 import { usePlayerStore } from "~/stores/player";
+import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import { useAuth } from "./use-auth";
 
 function isValidUserData(data: unknown): data is UserPlaylistData {
@@ -119,6 +120,12 @@ export function usePlaylistSync() {
 
         // Validate cloud data
         const validCloudData = isValidUserData(userData) ? userData : null;
+
+        // If local activePlaylistId is Favorites, preserve it
+        // Favorites is a virtual playlist not stored in DB, so cloud data won't have it
+        if (activePlaylistId === FAVORITES_PLAYLIST_ID && validCloudData) {
+          validCloudData.activePlaylistId = FAVORITES_PLAYLIST_ID;
+        }
 
         // Use intelligent conflict resolution
         let conflictResolution: ConflictResolution;
@@ -242,7 +249,6 @@ export function usePlaylistSync() {
   ]);
 
   // Auto-sync changes to server for authenticated users
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <>
   useEffect(() => {
     if (user && isDataSynced && hasHydrated) {
       const timeoutId = setTimeout(() => {

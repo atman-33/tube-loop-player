@@ -46,6 +46,10 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
             state.currentVideoId,
           );
         }
+      } else {
+        // Even if nothing changed, preserve the current activePlaylistId
+        // This is important for special playlists like Favorites
+        nextState.activePlaylistId = state.activePlaylistId;
       }
 
       return nextState;

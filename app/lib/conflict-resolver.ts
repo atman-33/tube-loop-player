@@ -112,7 +112,8 @@ export class ConflictResolver {
           if (!local || !cloud) {
             return { type: "show-modal", local, cloud };
           }
-          // while using cloud playlist content // Preserve local playback state (activePlaylistId, loopMode, isShuffle) // Playlists are identical - auto-sync with merged data
+          // Playlists are identical - use cloud playlist content
+          // but preserve local playback state (device-specific settings)
           const mergedData: UserPlaylistData = {
             ...cloud,
             activePlaylistId: local.activePlaylistId,
@@ -120,14 +121,9 @@ export class ConflictResolver {
             isShuffle: local.isShuffle,
           };
 
-          // Safety check: ensure local activePlaylistId exists in cloud playlists
-          // (Should be true since playlists are identical, but defensive coding)
-          const isValidId = mergedData.playlists.some(
-            (p) => p.id === mergedData.activePlaylistId,
-          );
-          if (!isValidId) {
-            mergedData.activePlaylistId = cloud.activePlaylistId;
-          }
+          // Note: We don't validate activePlaylistId against playlists array
+          // because activePlaylistId can be a virtual playlist like "playlist-favorites"
+          // that doesn't exist in the playlists array
 
           return { type: "auto-sync", data: mergedData };
         }
