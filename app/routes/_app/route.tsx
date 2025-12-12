@@ -46,6 +46,7 @@ const AppLayout = ({ loaderData }: Route.ComponentProps) => {
           isOpen={true}
           localData={conflictData.local}
           cloudData={conflictData.cloud}
+          diff={conflictData.diff}
           onResolve={resolveConflict}
           onCancel={cancelConflictResolution}
         />

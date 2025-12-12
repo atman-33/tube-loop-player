@@ -5,6 +5,8 @@
 
 import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import { DataComparator } from "./data-comparator";
+import type { DataDiff } from "./data-diff-calculator";
+import { DiffCalculator } from "./data-diff-calculator";
 import type { UserPlaylistData } from "./data-normalizer";
 import {
   isSequentialDefaultPlaylistName,
@@ -17,6 +19,7 @@ export type ConflictResolution =
       type: "show-modal";
       local: UserPlaylistData | null;
       cloud: UserPlaylistData | null;
+      diff: DataDiff;
     }
   | { type: "no-action" };
 
@@ -38,9 +41,14 @@ export interface ConflictAnalysis {
  */
 export class ConflictResolver {
   private dataComparator: DataComparator;
+  private diffCalculator: DiffCalculator;
 
-  constructor(dataComparator?: DataComparator) {
+  constructor(
+    dataComparator?: DataComparator,
+    diffCalculator?: DiffCalculator,
+  ) {
     this.dataComparator = dataComparator || new DataComparator();
+    this.diffCalculator = diffCalculator || new DiffCalculator();
   }
 
   /**
@@ -67,10 +75,15 @@ export class ConflictResolver {
           console.warn(
             "Invalid cloud data structure detected, falling back to modal",
           );
+          const diff = this.diffCalculator.calculateDiff(
+            local || this.getEmptyUserData(),
+            cloud,
+          );
           return {
             type: "show-modal",
             local: local || this.getEmptyUserData(),
             cloud,
+            diff,
           };
         }
         // Only cloud data exists - auto-sync cloud data
@@ -92,7 +105,8 @@ export class ConflictResolver {
           "Invalid data structure detected during conflict analysis",
         );
         // Malformed data - fallback to showing modal
-        return { type: "show-modal", local, cloud };
+        const diff = this.diffCalculator.calculateDiff(local, cloud);
+        return { type: "show-modal", local, cloud, diff };
       }
 
       // Both datasets exist - perform intelligent comparison with error handling
@@ -104,14 +118,16 @@ export class ConflictResolver {
           "Conflict analysis failed, falling back to modal:",
           analysisError,
         );
-        return { type: "show-modal", local, cloud };
+        const diff = this.diffCalculator.calculateDiff(local, cloud);
+        return { type: "show-modal", local, cloud, diff };
       }
 
       // Handle analysis results with fallback logic
       switch (analysis.conflictType) {
         case "identical": {
           if (!local || !cloud) {
-            return { type: "show-modal", local, cloud };
+            const diff = this.diffCalculator.calculateDiff(local, cloud);
+            return { type: "show-modal", local, cloud, diff };
           }
           // Playlists are identical - use cloud playlist content
           // but preserve local playback state (device-specific settings)
@@ -137,16 +153,21 @@ export class ConflictResolver {
           // Cloud data is empty - sync local to cloud (no action needed here)
           return { type: "no-action" };
 
-        case "different":
-          // Meaningful differences exist - show conflict modal
-          return { type: "show-modal", local, cloud };
+        case "different": // Meaningful differences exist - show conflict modal
+        {
+          const diff = this.diffCalculator.calculateDiff(local, cloud);
+          return { type: "show-modal", local, cloud, diff };
+        }
 
         default:
           console.warn(
             `Unknown conflict type: ${analysis.conflictType}, falling back to modal`,
           );
           // Fallback to showing modal for unknown cases
-          return { type: "show-modal", local, cloud };
+          {
+            const diff = this.diffCalculator.calculateDiff(local, cloud);
+            return { type: "show-modal", local, cloud, diff };
+          }
       }
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -158,8 +179,17 @@ export class ConflictResolver {
       // Comprehensive fallback to showing modal when analysis fails
       const fallbackLocal = local || this.getEmptyUserData();
       const fallbackCloud = cloud || this.getEmptyUserData();
+      const diff = this.diffCalculator.calculateDiff(
+        fallbackLocal,
+        fallbackCloud,
+      );
 
-      return { type: "show-modal", local: fallbackLocal, cloud: fallbackCloud };
+      return {
+        type: "show-modal",
+        local: fallbackLocal,
+        cloud: fallbackCloud,
+        diff,
+      };
     }
   }
 
