@@ -3,6 +3,7 @@
  * Determines when to auto-sync vs show modal based on data comparison
  */
 
+import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import { DataComparator } from "./data-comparator";
 import type { UserPlaylistData } from "./data-normalizer";
 import {
@@ -315,7 +316,7 @@ export class ConflictResolver {
         };
       }
 
-      // Data has meaningful differences
+      // Data sets are meaningfully different
       return {
         hasConflict: true,
         conflictType: "different",
@@ -433,8 +434,11 @@ export class ConflictResolver {
       }
 
       // Validate active playlist ID exists
+      // Skip validation for virtual playlists (e.g., FAVORITES_PLAYLIST_ID)
+      // Virtual playlists don't exist in the playlists array
       if (
         data.activePlaylistId &&
+        data.activePlaylistId !== FAVORITES_PLAYLIST_ID &&
         !playlistIds.includes(data.activePlaylistId)
       ) {
         console.warn("Active playlist ID does not exist in playlists");
