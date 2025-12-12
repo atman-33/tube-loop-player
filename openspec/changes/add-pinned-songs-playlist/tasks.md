@@ -85,23 +85,23 @@
   - [x] Load pinned state on mount for authenticated users
   - [x] Debounce sync on local pinned state changes
   - [x] Handle sync conflicts and errors
-- [x] Integrate hook into `app/routes/_app._index/route.tsx`
+- [x] Integrate hook into `app/routes/_app/route.tsx` (parent layout component)
 - [x] Write integration tests: `app/hooks/use-pinned-songs-sync.integration.test.ts`
 
 ## Phase 8: Testing and Validation
 
-- [ ] Manual test: Mark song as favorite, verify star icon updates
-- [ ] Manual test: Unmark favorite, verify star icon reverts
-- [ ] Manual test: Mark same video ID in different playlists, verify consistency
-- [ ] Manual test: Delete song from source playlist, verify remains in Favorites
-- [ ] Manual test: Reorder songs in Favorites, verify order persists
-- [ ] Manual test: Remove song from Favorites, verify unpinned state across playlists
-- [ ] Manual test: Attempt to rename Favorites, verify disabled
-- [ ] Manual test: Attempt to delete Favorites, verify disabled
-- [ ] Manual test: Create playlists until limit, verify Favorites doesn't count
-- [ ] Manual test: Guest user flow with localStorage persistence
-- [ ] Manual test: Authenticated user flow with cloud sync
-- [ ] Manual test: Shuffle mode in Favorites playlist
+- [x] Manual test: Mark song as favorite, verify star icon updates
+- [x] Manual test: Unmark favorite, verify star icon reverts
+- [x] Manual test: Mark same video ID in different playlists, verify consistency
+- [x] Manual test: Delete song from source playlist, verify remains in Favorites
+- [x] Manual test: Reorder songs in Favorites, verify order persists
+- [x] Manual test: Remove song from Favorites, verify unpinned state across playlists
+- [x] Manual test: Attempt to rename Favorites, verify disabled
+- [x] Manual test: Attempt to delete Favorites, verify disabled
+- [x] Manual test: Create playlists until limit, verify Favorites doesn't count
+- [x] Manual test: Guest user flow with localStorage persistence
+- [x] Manual test: Authenticated user flow with cloud sync
+- [x] Manual test: Shuffle mode in Favorites playlist
 - [x] Run all unit tests: `npm run test`
 - [x] Run all integration tests
 - [x] Verify no TypeScript errors: `npm run typecheck`
@@ -109,10 +109,10 @@
 
 ## Phase 9: Documentation and Cleanup
 
-- [ ] Update `docs/coding-rule.md` if new patterns introduced (optional)
-- [ ] Add comments to complex functions (favorites derivation, sync logic)
-- [ ] Verify all TODOs and FIXMEs are resolved
-- [ ] Confirm all checklist items in `tasks.md` are marked complete
+- [x] Update `docs/coding-rule.md` if new patterns introduced (optional)
+- [x] Add comments to complex functions (favorites derivation, sync logic)
+- [x] Verify all TODOs and FIXMEs are resolved
+- [x] Confirm all checklist items in `tasks.md` are marked complete
 
 ## Dependencies and Parallelization
 
