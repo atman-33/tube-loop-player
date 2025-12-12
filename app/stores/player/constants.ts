@@ -1,5 +1,7 @@
 import type { Playlist, PlaylistItem } from "~/lib/player/types";
 
+export const FAVORITES_PLAYLIST_ID = "playlist-favorites";
+
 export const defaultInitialVideoId = "V4UL6BYgUXw";
 
 const defaultInitialPlaylistItem: PlaylistItem = {

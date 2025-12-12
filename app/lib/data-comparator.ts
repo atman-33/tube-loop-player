@@ -136,19 +136,16 @@ export class DataComparator {
   /**
    * Compares two normalized UserPlaylistData objects
    * Optimized for performance with early exit conditions
+   *
+   * Note: Excludes activePlaylistId, loopMode, and isShuffle from comparison
+   * as these are local playback state that should not trigger conflicts
    */
   private compareNormalizedData(
     local: NormalizedUserPlaylistData,
     cloud: NormalizedUserPlaylistData,
   ): boolean {
-    // Compare top-level properties first (fastest comparison)
-    if (
-      local.activePlaylistId !== cloud.activePlaylistId ||
-      local.loopMode !== cloud.loopMode ||
-      local.isShuffle !== cloud.isShuffle
-    ) {
-      return false;
-    }
+    // Skip comparison of playback state (activePlaylistId, loopMode, isShuffle)
+    // These are device-specific settings and should not affect conflict detection
 
     // Compare playlist arrays
     if (local.playlists.length !== cloud.playlists.length) {

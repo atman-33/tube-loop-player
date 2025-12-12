@@ -128,6 +128,59 @@ npm run deploy       # Build and deploy to Cloudflare
 npm run cf-typegen   # Generate Cloudflare types
 ```
 
+## Database Schema Updates
+
+When you need to update the database schema, follow these steps in order:
+
+### 1. Update Schema Definition
+
+Edit the schema file to add, modify, or remove tables:
+
+```typescript
+// database/schema.ts
+const newTable = sqliteTable("new_table", {
+  id: integer().primaryKey({ autoIncrement: true }),
+  // ... other fields
+});
+
+export const schema = {
+  // ... existing tables
+  newTable,
+};
+
+export { newTable };
+```
+
+### 2. Generate Migration
+
+Run the following command to automatically generate a migration SQL file:
+
+```sh
+npm run db:generate
+```
+
+This will create a new file in the `drizzle/` directory (e.g., `drizzle/0003_example_name.sql`) with the necessary SQL statements.
+
+### 3. Apply Migration
+
+Apply the migration to your local database:
+
+```sh
+npm run db:migrate
+```
+
+For production database:
+
+```sh
+npm run db:migrate-production
+```
+
+**Important Notes:**
+- ⚠️ Never manually create migration SQL files in the `drizzle/` directory
+- ⚠️ Always let Drizzle generate migrations automatically via `npm run db:generate`
+- ⚠️ Review the generated SQL before applying migrations
+- ⚠️ Migrations are sequential and cannot be skipped
+
 ## OAuth Setup
 
 ### Google OAuth

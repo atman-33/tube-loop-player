@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import type { User } from "~/hooks/use-auth";
 import type { ShuffleQueueMap } from "~/lib/player/shuffle-queue";
 import type { LoopMode, Playlist, PlaylistItem } from "~/lib/player/types";
+import type { PinnedSongsSlice } from "./slices/pinned-songs-slice";
 
 export interface PlaybackSlice {
   isPlaying: boolean;
@@ -52,6 +53,8 @@ export interface PlaylistSlice {
   setActivePlaylist: (playlistId: string) => void;
   getActivePlaylist: () => Playlist | undefined;
   getOrderedPlaylists: () => Playlist[];
+  getFavoritesPlaylist: () => Playlist;
+  getPlaylistsWithFavorites: () => Playlist[];
 }
 
 export interface SyncSlice {
@@ -68,7 +71,10 @@ export interface SyncSlice {
   markAsSynced: () => void;
 }
 
-export type PlayerState = PlaybackSlice & PlaylistSlice & SyncSlice;
+export type PlayerState = PlaybackSlice &
+  PlaylistSlice &
+  SyncSlice &
+  PinnedSongsSlice;
 export type PlayerStore = PlayerState;
 
 export type PlayerStoreSlice<T> = StateCreator<PlayerStore, [], [], T>;

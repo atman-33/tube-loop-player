@@ -1,3 +1,4 @@
+import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import type { Playlist } from "./types";
 
 export const LEGACY_PLAYLIST_ID_PATTERN = /^playlist-\d+$/;
@@ -64,6 +65,16 @@ export const sanitizePlaylistIdentifiers = (
   });
 
   let nextActivePlaylistId = activePlaylistId;
+
+  // Favorites playlist is special and should never be sanitized
+  if (activePlaylistId === FAVORITES_PLAYLIST_ID) {
+    return {
+      playlists: updatedPlaylists,
+      activePlaylistId: FAVORITES_PLAYLIST_ID,
+      didChange,
+    };
+  }
+
   if (idMap.has(activePlaylistId)) {
     const mappedId = idMap.get(activePlaylistId) as string;
     if (mappedId !== activePlaylistId) {

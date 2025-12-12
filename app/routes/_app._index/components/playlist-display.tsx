@@ -13,7 +13,9 @@ import {
   TooltipTrigger,
 } from '../../../components/ui/tooltip';
 import { usePlayerStore } from '../../../stores/player';
+import { FAVORITES_PLAYLIST_ID } from '../../../stores/player/constants';
 import { PLAYLIST_PANEL_ID } from '../consts/playlist-aria';
+import { PinnedStarIcon } from './pinned-star-icon';
 
 const getThumbnailUrl = (videoId: string) =>
   `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
@@ -24,6 +26,7 @@ interface SortableItemProps {
   currentIndex: number | null;
   play: (videoId: string) => void;
   removeFromPlaylist: (index: number) => void;
+  isFavorites: boolean;
 }
 
 const SortableItem: React.FC<SortableItemProps> = ({
@@ -32,6 +35,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
   currentIndex,
   play,
   removeFromPlaylist,
+  isFavorites,
 }) => {
   const {
     attributes,
@@ -88,21 +92,24 @@ const SortableItem: React.FC<SortableItemProps> = ({
               <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground hover:text-primary transition-colors truncate text-ellipsis whitespace-nowrap lg:block">
                 {item.title || `Video ${index + 1}`}
               </div>
-              <Button
-                asChild
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeFromPlaylist(index);
-                }}
-                className="flex-shrink-0 text-muted-foreground hover:text-destructive"
-              >
-                <span className="transition-all duration-300 transform hover:scale-105">
-                  <Trash2 className="h-5 w-5" />
-                  <span className="sr-only">Remove</span>
-                </span>
-              </Button>
+              <PinnedStarIcon videoId={item.id} className="mr-2" />
+              {!isFavorites && (
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFromPlaylist(index);
+                  }}
+                  className="flex-shrink-0 text-muted-foreground hover:text-destructive"
+                >
+                  <span className="transition-all duration-300 transform hover:scale-105">
+                    <Trash2 className="h-5 w-5" />
+                    <span className="sr-only">Remove</span>
+                  </span>
+                </Button>
+              )}
             </button>
           </TooltipTrigger>
           <TooltipContent>
@@ -115,11 +122,12 @@ const SortableItem: React.FC<SortableItemProps> = ({
 };
 
 export const PlaylistDisplay = () => {
-  const { currentIndex, removeFromPlaylist, play, getActivePlaylist } =
+  const { currentIndex, removeFromPlaylist, play, getActivePlaylist, activePlaylistId } =
     usePlayerStore();
 
   const activePlaylist = getActivePlaylist();
   const playlist = activePlaylist?.items || [];
+  const isFavorites = activePlaylistId === FAVORITES_PLAYLIST_ID;
 
   return (
     <div
@@ -148,6 +156,7 @@ export const PlaylistDisplay = () => {
                   currentIndex={currentIndex}
                   play={play}
                   removeFromPlaylist={removeFromPlaylist}
+                  isFavorites={isFavorites}
                 />
               ))}
             </ul>

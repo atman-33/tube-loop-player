@@ -57,8 +57,10 @@ export default function Home() {
     reorderPlaylist,
     reorderPlaylists,
     getActivePlaylist,
-    playlists,
+    getPlaylistsWithFavorites,
   } = usePlayerStore();
+
+  const playlists = getPlaylistsWithFavorites();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dragType, setDragType] = useState<'item' | 'tab' | null>(null);
@@ -239,7 +241,10 @@ export default function Home() {
         const oldIndex = playlists.findIndex((p) => p.id === activeIdStr);
         const newIndex = playlists.findIndex((p) => p.id === overIdStr);
 
-        if (oldIndex !== -1 && newIndex !== -1) {
+        // Prevent reordering if either source or target is Favorites playlist
+        const isFavoritesInvolved = activeIdStr === 'favorites' || overIdStr === 'favorites';
+        
+        if (oldIndex !== -1 && newIndex !== -1 && !isFavoritesInvolved) {
           reorderPlaylists(oldIndex, newIndex);
         }
       }

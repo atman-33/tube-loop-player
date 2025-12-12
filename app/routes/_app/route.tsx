@@ -4,6 +4,7 @@ import Footer from '~/routes/_app/components/footer';
 import type { Route } from './+types/route';
 import Header from './components/header';
 import { usePlaylistSync } from '~/hooks/use-playlist-sync';
+import { usePinnedSongsSync } from '~/hooks/use-pinned-songs-sync';
 import { DataConflictModal } from '~/components/data-conflict-modal';
 import { getAuth } from '~/lib/auth/auth.server';
 
@@ -26,6 +27,9 @@ const AppLayout = ({ loaderData }: Route.ComponentProps) => {
 
   // Initialize playlist sync
   const { conflictData, resolveConflict, cancelConflictResolution } = usePlaylistSync();
+  
+  // Initialize pinned songs sync
+  usePinnedSongsSync();
 
   return (
     <>
@@ -42,6 +46,7 @@ const AppLayout = ({ loaderData }: Route.ComponentProps) => {
           isOpen={true}
           localData={conflictData.local}
           cloudData={conflictData.cloud}
+          diff={conflictData.diff}
           onResolve={resolveConflict}
           onCancel={cancelConflictResolution}
         />

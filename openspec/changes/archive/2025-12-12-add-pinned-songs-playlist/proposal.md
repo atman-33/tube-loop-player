@@ -1,5 +1,20 @@
 # Proposal: Add Pinned Songs Playlist
 
+## Why
+Users want to collect their favorite songs from multiple playlists into a single, curated playlist for quick access and playback without having to navigate through multiple playlists.
+
+## What Changes
+- Add a special "Favorites" playlist positioned as the leftmost tab
+- Implement star icon toggle for marking/unmarking songs as favorites
+- Create pinned songs state management in Zustand store
+- Add database schema and sync endpoints for pinned state persistence
+- Implement UI components for star icons and Favorites playlist rendering
+- Ensure Favorites playlist supports standard playback, reordering, but prevents deletion/renaming
+
+## Impact
+- Affected specs: pinned-songs (new capability)
+- Affected code: app/stores/player.ts, app/routes/api.pinned-songs.*.ts, database/schema.ts, app/components/*, app/hooks/use-pinned-songs-sync.ts
+
 ## Context
 Users want to collect their favorite songs from multiple playlists into a single, curated playlist for quick access and playback. Currently, songs are organized within individual playlists, but there is no mechanism to mark favorites across playlists or aggregate them into a dedicated view.
 

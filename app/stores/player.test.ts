@@ -5,6 +5,10 @@ import {
   sanitizePlaylistIdentifiers,
   usePlayerStore,
 } from "~/stores/player";
+import {
+  createDefaultPlaylists,
+  defaultActivePlaylistId,
+} from "~/stores/player/constants";
 
 const createMockPlaylist = (index: number) => ({
   id: `playlist-mock-${index}`,
@@ -18,7 +22,6 @@ const createPlaylistWithItems = (playlistId: string, ids: string[]) => ({
   items: ids.map((id, index) => ({ id, title: `Track ${index + 1}` })),
 });
 
-const initialState = usePlayerStore.getState();
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
 
@@ -29,7 +32,16 @@ const mockUser: User = {
 };
 
 const resetStore = () => {
-  usePlayerStore.setState(initialState, true);
+  // Reset to default state
+  usePlayerStore.setState(
+    {
+      playlists: createDefaultPlaylists(),
+      activePlaylistId: defaultActivePlaylistId,
+      pinnedVideoIds: new Set<string>(),
+      pinnedOrder: [],
+    },
+    false,
+  );
 };
 
 beforeEach(() => {
@@ -63,11 +75,12 @@ describe("sanitizePlaylistIdentifiers", () => {
 
 describe("usePlayerStore playlist limits", () => {
   it("creates sequential playlists until reaching the max", () => {
+    const initialPlaylists = usePlayerStore.getState().playlists;
     const newPlaylistId = usePlayerStore.getState().createPlaylist();
 
     expect(newPlaylistId).toBeTruthy();
     const state = usePlayerStore.getState();
-    expect(state.playlists).toHaveLength(initialState.playlists.length + 1);
+    expect(state.playlists).toHaveLength(initialPlaylists.length + 1);
     expect(state.playlists.at(-1)?.name).toBe("Playlist 4");
     expect(state.activePlaylistId).toBe(newPlaylistId);
   });
