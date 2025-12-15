@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, not } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AppLoadContext } from "react-router";
 import { playlist, playlistItem, userSettings } from "~/database/schema";
@@ -285,34 +285,65 @@ export class PlaylistService {
     try {
       const sanitized = sanitizeUserPlaylistData(data, userId);
       const safeData = sanitized.data;
-      // Start transaction-like operations
-      // Delete existing playlists and items
-      await this.db.delete(playlist).where(eq(playlist.userId, userId));
 
-      // Insert playlists
-      if (safeData.playlists.length > 0) {
-        await this.db.insert(playlist).values(
-          safeData.playlists.map((p, index) => ({
+      const currentPlaylistIds = safeData.playlists.map((p) => p.id);
+
+      // Upsert playlists (insert or update if exists)
+      for (const [index, p] of safeData.playlists.entries()) {
+        await this.db
+          .insert(playlist)
+          .values({
             id: p.id,
             userId,
             name: p.name,
             order: index,
-          })),
-        );
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: playlist.id,
+            set: {
+              name: p.name,
+              order: index,
+              updatedAt: new Date(),
+            },
+          });
+      }
 
-        // Insert playlist items
-        const allItems = safeData.playlists.flatMap((p, _playlistIndex) =>
-          p.items.map((item, itemIndex) => ({
+      // Delete playlists that are no longer in the list
+      if (currentPlaylistIds.length > 0) {
+        await this.db
+          .delete(playlist)
+          .where(
+            and(
+              eq(playlist.userId, userId),
+              not(inArray(playlist.id, currentPlaylistIds)),
+            ),
+          );
+      } else {
+        // If no playlists, delete all user playlists
+        await this.db.delete(playlist).where(eq(playlist.userId, userId));
+      }
+
+      // Upsert playlist items
+      for (const p of safeData.playlists) {
+        // Delete existing items for this playlist
+        await this.db
+          .delete(playlistItem)
+          .where(eq(playlistItem.playlistId, p.id));
+
+        // Insert new items
+        if (p.items.length > 0) {
+          const items = p.items.map((item, itemIndex) => ({
             playlistId: p.id,
             videoId: item.id,
             title: item.title || null,
             order: itemIndex,
-          })),
-        );
+            createdAt: new Date(),
+          }));
 
-        if (allItems.length > 0) {
-          for (let i = 0; i < allItems.length; i += PLAYLIST_ITEM_CHUNK_SIZE) {
-            const chunk = allItems.slice(i, i + PLAYLIST_ITEM_CHUNK_SIZE);
+          for (let i = 0; i < items.length; i += PLAYLIST_ITEM_CHUNK_SIZE) {
+            const chunk = items.slice(i, i + PLAYLIST_ITEM_CHUNK_SIZE);
             await this.db.insert(playlistItem).values(chunk);
           }
         }
