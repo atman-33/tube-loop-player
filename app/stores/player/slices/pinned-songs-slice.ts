@@ -1,3 +1,5 @@
+import { deriveFavoritesPlaylist } from "~/lib/player/favorites-playlist";
+import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import type { PlayerStoreSlice } from "../types";
 
 export interface PinnedSongsSlice {
@@ -84,9 +86,30 @@ export const createPinnedSongsSlice: PlayerStoreSlice<PinnedSongsSlice> = (
       };
     }),
   setPinnedSongs: (videoIds, order) =>
-    set({
-      pinnedVideoIds: videoIds,
-      pinnedOrder: order,
+    set((state) => {
+      const nextState: Partial<typeof state> = {
+        pinnedVideoIds: videoIds,
+        pinnedOrder: order,
+      };
+
+      if (state.activePlaylistId !== FAVORITES_PLAYLIST_ID) {
+        return nextState;
+      }
+
+      const favorites = deriveFavoritesPlaylist(order, state.playlists);
+      const firstVideo = favorites.items[0];
+      const isCurrentStillInFavorites = state.currentVideoId
+        ? favorites.items.some((item) => item.id === state.currentVideoId)
+        : false;
+
+      if (!isCurrentStillInFavorites) {
+        nextState.currentVideoId = firstVideo ? firstVideo.id : null;
+        nextState.currentIndex = firstVideo ? 0 : null;
+        // Avoid desync between UI and player instance.
+        nextState.isPlaying = false;
+      }
+
+      return nextState;
     }),
   markPinnedSongsAsSynced: () =>
     set({

@@ -1,6 +1,8 @@
+import { deriveFavoritesPlaylist } from "~/lib/player/favorites-playlist";
 import { enforcePlaylistBounds } from "~/lib/player/playlist-helpers";
 import { sanitizePlaylistIdentifiers } from "~/lib/player/playlist-ids";
 import { rebuildShuffleQueues } from "~/lib/player/shuffle-queue";
+import { FAVORITES_PLAYLIST_ID } from "~/stores/player/constants";
 import type { PlayerStoreSlice, SyncSlice } from "../types";
 
 export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
@@ -68,10 +70,14 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
       sanitized.activePlaylistId,
     );
 
+    const { pinnedOrder } = get();
+
     const activePlaylist =
-      constrained.playlists.find(
-        (playlist) => playlist.id === constrained.activePlaylistId,
-      ) || constrained.playlists[0];
+      constrained.activePlaylistId === FAVORITES_PLAYLIST_ID
+        ? deriveFavoritesPlaylist(pinnedOrder, constrained.playlists)
+        : constrained.playlists.find(
+            (playlist) => playlist.id === constrained.activePlaylistId,
+          ) || constrained.playlists[0];
     const firstVideo = activePlaylist?.items[0];
     const initialShuffleQueue = userData.isShuffle
       ? rebuildShuffleQueues(
