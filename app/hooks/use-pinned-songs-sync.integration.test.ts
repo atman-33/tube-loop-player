@@ -57,7 +57,7 @@ describe("usePinnedSongsSync Integration Tests", () => {
       signOut: vi.fn(),
     });
 
-    renderHook(() => usePinnedSongsSync());
+    renderHook(() => usePinnedSongsSync(true));
 
     await waitFor(() => {
       const state = usePlayerStore.getState();
@@ -97,7 +97,7 @@ describe("usePinnedSongsSync Integration Tests", () => {
       signOut: vi.fn(),
     });
 
-    renderHook(() => usePinnedSongsSync());
+    renderHook(() => usePinnedSongsSync(true));
 
     await waitFor(() => {
       const state = usePlayerStore.getState();
@@ -120,7 +120,7 @@ describe("usePinnedSongsSync Integration Tests", () => {
       signOut: vi.fn(),
     });
 
-    renderHook(() => usePinnedSongsSync());
+    renderHook(() => usePinnedSongsSync(true));
 
     // Wait a bit to ensure no fetch is made
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -154,7 +154,7 @@ describe("usePinnedSongsSync Integration Tests", () => {
       signOut: vi.fn(),
     });
 
-    renderHook(() => usePinnedSongsSync());
+    renderHook(() => usePinnedSongsSync(true));
 
     // Wait for initial load
     await waitFor(() => {
