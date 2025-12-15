@@ -10,7 +10,7 @@ interface PinnedSongsData {
 /**
  * Hook to sync pinned songs with cloud storage for authenticated users
  */
-export function usePinnedSongsSync() {
+export function usePinnedSongsSync(playlistSynced = false) {
   const { user, isLoading: authLoading } = useAuth();
   const {
     pinnedVideoIds,
@@ -55,7 +55,14 @@ export function usePinnedSongsSync() {
   // Load pinned songs from server when user logs in (only once)
   useEffect(() => {
     const loadServerData = async () => {
-      if (!user || !hasHydrated || authLoading || isPinnedSongsSynced) return;
+      if (
+        !user ||
+        !hasHydrated ||
+        authLoading ||
+        isPinnedSongsSynced ||
+        !playlistSynced
+      )
+        return;
 
       setIsLoading(true);
 
@@ -94,13 +101,21 @@ export function usePinnedSongsSync() {
     hasHydrated,
     authLoading,
     isPinnedSongsSynced,
+    playlistSynced,
     setPinnedSongs,
     markPinnedSongsAsSynced,
   ]);
 
   // Debounced sync to server when local state changes
   useEffect(() => {
-    if (!user || !hasHydrated || isLoading || !isPinnedSongsSynced) return;
+    if (
+      !user ||
+      !hasHydrated ||
+      isLoading ||
+      !isPinnedSongsSynced ||
+      !playlistSynced
+    )
+      return;
 
     const currentData = JSON.stringify({
       pinnedVideoIds: Array.from(pinnedVideoIds),
