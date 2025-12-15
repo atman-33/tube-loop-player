@@ -181,38 +181,6 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
     <div className="relative mb-0 w-full">
       <div className="rounded-t-lg border border-border/50 border-b-0 bg-background shadow-sm">
         <div className="flex items-center gap-2 px-2 py-2">
-          {/* Favorites Button - Fixed on the left */}
-          {favoritesPlaylist && (
-            <>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant={activePlaylistId === FAVORITES_PLAYLIST_ID ? "default" : "ghost"}
-                    size="icon"
-                    className={`h-10 w-10 rounded-full flex-shrink-0 transition-all duration-200 ${
-                      activePlaylistId === FAVORITES_PLAYLIST_ID
-                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                        : 'hover:bg-yellow-50 text-muted-foreground hover:text-yellow-600'
-                    }`}
-                    onClick={() => setActivePlaylist(FAVORITES_PLAYLIST_ID)}
-                    aria-label="Favorites"
-                  >
-                    <Star className={`h-5 w-5 ${
-                      activePlaylistId === FAVORITES_PLAYLIST_ID
-                        ? 'fill-white'
-                        : 'fill-yellow-500'
-                    }`} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Favorites ({favoritesPlaylist.items.length} items)</p>
-                </TooltipContent>
-              </Tooltip>
-              <div className="h-8 w-px bg-border/50" />
-            </>
-          )}
-
           {shouldShowNavigation && (
             <Button
               type="button"
@@ -297,6 +265,44 @@ export const PlaylistTabs = ({ onScrollAreaRef }: PlaylistTabsProps = {}) => {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+          )}
+
+          {/* Favorites Button - Fixed on the right */}
+          {favoritesPlaylist && (
+            <>
+              <div className="h-8 w-px bg-border/50" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={
+                      activePlaylistId === FAVORITES_PLAYLIST_ID
+                        ? "default"
+                        : "ghost"
+                    }
+                    size="icon"
+                    className={`h-10 w-10 rounded-full flex-shrink-0 transition-all duration-200 ${
+                      activePlaylistId === FAVORITES_PLAYLIST_ID
+                        ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                        : "hover:bg-yellow-50 text-muted-foreground hover:text-yellow-600"
+                    }`}
+                    onClick={() => setActivePlaylist(FAVORITES_PLAYLIST_ID)}
+                    aria-label="Favorites"
+                  >
+                    <Star
+                      className={`h-5 w-5 ${
+                        activePlaylistId === FAVORITES_PLAYLIST_ID
+                          ? "fill-white"
+                          : "fill-yellow-500"
+                      }`}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Favorites ({favoritesPlaylist.items.length} items)</p>
+                </TooltipContent>
+              </Tooltip>
+            </>
           )}
         </div>
       </div>
