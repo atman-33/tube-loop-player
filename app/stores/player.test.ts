@@ -8,6 +8,7 @@ import {
 import {
   createDefaultPlaylists,
   defaultActivePlaylistId,
+  FAVORITES_PLAYLIST_ID,
 } from "~/stores/player/constants";
 
 const createMockPlaylist = (index: number) => ({
@@ -272,6 +273,68 @@ describe("usePlayerStore shuffle behavior", () => {
     } finally {
       randomSpy.mockRestore();
     }
+  });
+});
+
+describe("usePlayerStore Favorites consistency", () => {
+  it("keeps currentVideoId inside Favorites when loadUserData sets Favorites active", () => {
+    const playlist = createPlaylistWithItems("playlist-1", [
+      "alpha-00001",
+      "beta-00002",
+    ]);
+
+    usePlayerStore.setState((state) => ({
+      ...state,
+      playlists: [playlist],
+      pinnedVideoIds: new Set(["beta-00002"]),
+      pinnedOrder: ["beta-00002"],
+      activePlaylistId: FAVORITES_PLAYLIST_ID,
+      currentVideoId: null,
+      currentIndex: null,
+      isPlaying: false,
+    }));
+
+    usePlayerStore.getState().loadUserData({
+      playlists: [playlist],
+      activePlaylistId: FAVORITES_PLAYLIST_ID,
+      loopMode: "all",
+      isShuffle: false,
+    });
+
+    const next = usePlayerStore.getState();
+    expect(next.activePlaylistId).toBe(FAVORITES_PLAYLIST_ID);
+    expect(next.currentVideoId).toBe("beta-00002");
+    expect(next.currentIndex).toBe(0);
+  });
+
+  it("updates currentVideoId when setPinnedSongs overwrites pinned order while Favorites is active", () => {
+    const playlist = createPlaylistWithItems("playlist-1", [
+      "alpha-00001",
+      "beta-00002",
+      "gamma-00003",
+    ]);
+
+    usePlayerStore.setState((state) => ({
+      ...state,
+      playlists: [playlist],
+      activePlaylistId: FAVORITES_PLAYLIST_ID,
+      pinnedVideoIds: new Set(["beta-00002"]),
+      pinnedOrder: ["beta-00002"],
+      currentVideoId: "beta-00002",
+      currentIndex: 0,
+      isPlaying: false,
+    }));
+
+    // Simulate server load overwriting pinned songs
+    usePlayerStore
+      .getState()
+      .setPinnedSongs(new Set(["gamma-00003"]), ["gamma-00003"]);
+
+    const next = usePlayerStore.getState();
+    expect(next.activePlaylistId).toBe(FAVORITES_PLAYLIST_ID);
+    expect(next.currentVideoId).toBe("gamma-00003");
+    expect(next.currentIndex).toBe(0);
+    expect(next.isPlaying).toBe(false);
   });
 });
 
