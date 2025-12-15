@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router';
+import type { ReactElement } from 'react';
 import { Toaster } from '~/components/ui/sonner';
 import Footer from '~/routes/_app/components/footer';
 import type { Route } from './+types/route';
@@ -22,14 +23,15 @@ export const loader = async ({ context, request }: Route.LoaderArgs) => {
   };
 };
 
-const AppLayout = ({ loaderData }: Route.ComponentProps) => {
+const AppLayout = ({ loaderData }: Route.ComponentProps): ReactElement => {
   const { contactEmail } = loaderData;
 
   // Initialize playlist sync
-  const { conflictData, resolveConflict, cancelConflictResolution } = usePlaylistSync();
+  const playlistSync = usePlaylistSync();
+  const { conflictData, resolveConflict, cancelConflictResolution, isSynced: playlistSynced } = playlistSync;
   
-  // Initialize pinned songs sync
-  usePinnedSongsSync();
+  // Initialize pinned songs sync (wait for playlist sync to complete)
+  usePinnedSongsSync(playlistSynced);
 
   return (
     <>
