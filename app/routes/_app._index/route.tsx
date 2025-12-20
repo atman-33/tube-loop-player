@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core';
 import { siteConfig } from '~/config/site-config';
 import { usePlayerStore } from '../../stores/player';
+import { FAVORITES_PLAYLIST_ID } from '../../stores/player/constants';
 import type { Route } from './+types/route';
 import { Description } from './components/description';
 import { PlaylistDisplay } from './components/playlist-display';
@@ -242,10 +243,14 @@ export default function Home() {
         const newIndex = playlists.findIndex((p) => p.id === overIdStr);
 
         // Prevent reordering if either source or target is Favorites playlist
-        const isFavoritesInvolved = activeIdStr === 'favorites' || overIdStr === 'favorites';
-        
+        const isFavoritesInvolved =
+          activeIdStr === FAVORITES_PLAYLIST_ID ||
+          overIdStr === FAVORITES_PLAYLIST_ID;
+
         if (oldIndex !== -1 && newIndex !== -1 && !isFavoritesInvolved) {
-          reorderPlaylists(oldIndex, newIndex);
+          // Subtract 1 because playlists includes Favorites at index 0,
+          // but reorderPlaylists expects indices for the regular playlists array
+          reorderPlaylists(oldIndex - 1, newIndex - 1);
         }
       }
     } else if (dragType === 'item') {
