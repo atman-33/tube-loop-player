@@ -294,7 +294,7 @@ export function DataConflictModal({
                                   variant="outline"
                                   className="text-xs ml-auto"
                                 >
-                                  #{itemDiff.localIndex! + 1} → #
+                                  Local #{itemDiff.localIndex! + 1} / Cloud #
                                   {itemDiff.cloudIndex! + 1}
                                 </Badge>
                               </>
