@@ -1,3 +1,4 @@
+import type { UserPlaylistData } from "~/lib/data-normalizer";
 import { deriveFavoritesPlaylist } from "~/lib/player/favorites-playlist";
 import { enforcePlaylistBounds } from "~/lib/player/playlist-helpers";
 import { sanitizePlaylistIdentifiers } from "~/lib/player/playlist-ids";
@@ -159,10 +160,15 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = (await response.json()) as {
+          success?: boolean;
+          data?: UserPlaylistData;
+        };
         if (result.success && result.data) {
           set((state) => {
             const serverData = result.data;
+            if (!serverData) return state;
+
             const nextShuffleQueue = serverData.isShuffle
               ? rebuildShuffleQueues(
                   state.shuffleQueue,
