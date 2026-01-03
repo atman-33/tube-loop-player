@@ -243,7 +243,7 @@ describe("Data Normalizer", () => {
       );
     });
 
-    it("should handle complex sorting scenarios", () => {
+    it("should preserve complex ordering scenarios", () => {
       const input: UserPlaylistData = {
         playlists: [
           {
@@ -276,24 +276,24 @@ describe("Data Normalizer", () => {
 
       const result = normalizeUserPlaylistData(input);
 
-      // Verify playlist sorting
+      // Verify playlist order is preserved (not sorted)
       expect(result.playlists.map((p) => p.id)).toEqual([
+        "z-playlist",
         "a-playlist",
         "m-playlist",
-        "z-playlist",
       ]);
 
-      // Verify item sorting within each playlist
+      // Verify item order within each playlist is preserved (not sorted)
       expect(result.playlists[0].items.map((i) => i.id)).toEqual([
-        "b-video",
-        "c-video",
-      ]);
-      expect(result.playlists[1].items).toHaveLength(0);
-      expect(result.playlists[2].items.map((i) => i.id)).toEqual([
+        "z-video",
         "a-video",
         "m-video",
-        "z-video",
       ]);
+      expect(result.playlists[1].items.map((i) => i.id)).toEqual([
+        "c-video",
+        "b-video",
+      ]);
+      expect(result.playlists[2].items).toHaveLength(0);
     });
 
     it("should preserve all other properties correctly", () => {
