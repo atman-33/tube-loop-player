@@ -15,6 +15,8 @@ export interface PlaylistDiff {
   localName?: string;
   cloudName?: string;
   itemDiffs?: ItemDiff[];
+  localIndex?: number;
+  cloudIndex?: number;
 }
 
 export interface ItemDiff {
@@ -29,6 +31,7 @@ export interface DiffSummary {
   playlistsAdded: number;
   playlistsRemoved: number;
   playlistsModified: number;
+  playlistsReordered: number;
   songsAdded: number;
   songsRemoved: number;
   songsReordered: number;
@@ -76,28 +79,38 @@ export class DiffCalculator {
     const diffs: PlaylistDiff[] = [];
 
     // Create maps for easier lookup
-    const localMap = new Map(localPlaylists.map((p) => [p.id, p]));
-    const cloudMap = new Map(cloudPlaylists.map((p) => [p.id, p]));
+    const localMap = new Map(
+      localPlaylists.map((p, index) => [p.id, { playlist: p, index }]),
+    );
+    const cloudMap = new Map(
+      cloudPlaylists.map((p, index) => [p.id, { playlist: p, index }]),
+    );
 
     // Find playlists in local
-    for (const localPlaylist of localPlaylists) {
-      const cloudPlaylist = cloudMap.get(localPlaylist.id);
+    for (const [
+      playlistId,
+      { playlist: localPlaylist, index: localIndex },
+    ] of localMap) {
+      const cloudEntry = cloudMap.get(playlistId);
 
-      if (!cloudPlaylist) {
+      if (!cloudEntry) {
         // Playlist exists only in local (removed in cloud)
         diffs.push({
           playlistId: localPlaylist.id,
           playlistName: localPlaylist.name,
           changeType: "removed",
           localName: localPlaylist.name,
+          localIndex,
         });
       } else {
+        const { playlist: cloudPlaylist, index: cloudIndex } = cloudEntry;
         // Playlist exists in both - check for modifications
         const itemDiffs = this.calculateItemDiffs(
           localPlaylist.items,
           cloudPlaylist.items,
         );
         const nameChanged = localPlaylist.name !== cloudPlaylist.name;
+        const indexChanged = localIndex !== cloudIndex;
 
         if (itemDiffs.length > 0 || nameChanged) {
           diffs.push({
@@ -107,19 +120,35 @@ export class DiffCalculator {
             localName: localPlaylist.name,
             cloudName: cloudPlaylist.name,
             itemDiffs,
+            localIndex,
+            cloudIndex,
+          });
+        } else if (indexChanged) {
+          diffs.push({
+            playlistId: localPlaylist.id,
+            playlistName: localPlaylist.name,
+            changeType: "reordered",
+            localName: localPlaylist.name,
+            cloudName: cloudPlaylist.name,
+            localIndex,
+            cloudIndex,
           });
         }
       }
     }
 
     // Find playlists only in cloud (added)
-    for (const cloudPlaylist of cloudPlaylists) {
-      if (!localMap.has(cloudPlaylist.id)) {
+    for (const [
+      playlistId,
+      { playlist: cloudPlaylist, index: cloudIndex },
+    ] of cloudMap) {
+      if (!localMap.has(playlistId)) {
         diffs.push({
           playlistId: cloudPlaylist.id,
           playlistName: cloudPlaylist.name,
           changeType: "added",
           cloudName: cloudPlaylist.name,
+          cloudIndex,
         });
       }
     }
@@ -193,6 +222,7 @@ export class DiffCalculator {
       playlistsAdded: 0,
       playlistsRemoved: 0,
       playlistsModified: 0,
+      playlistsReordered: 0,
       songsAdded: 0,
       songsRemoved: 0,
       songsReordered: 0,
@@ -208,6 +238,17 @@ export class DiffCalculator {
           break;
         case "modified":
           summary.playlistsModified++;
+          // Check if also reordered
+          if (
+            diff.localIndex !== undefined &&
+            diff.cloudIndex !== undefined &&
+            diff.localIndex !== diff.cloudIndex
+          ) {
+            summary.playlistsReordered++;
+          }
+          break;
+        case "reordered":
+          summary.playlistsReordered++;
           break;
       }
 

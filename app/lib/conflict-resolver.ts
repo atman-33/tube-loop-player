@@ -99,6 +99,7 @@ export class ConflictResolver {
                 playlistsAdded: 0,
                 playlistsRemoved: 0,
                 playlistsModified: 0,
+                playlistsReordered: 0,
                 songsAdded: 0,
                 songsRemoved: 0,
                 songsReordered: 0,
