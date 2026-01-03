@@ -40,7 +40,7 @@ describe("DataComparator", () => {
       expect(result).toBe(true);
     });
 
-    it("should return true for functionally identical data with different ordering", () => {
+    it("should return false for data with different ordering", () => {
       const local: UserPlaylistData = {
         playlists: [
           {
@@ -84,7 +84,7 @@ describe("DataComparator", () => {
       };
 
       const result = comparator.areDataSetsIdentical(local, cloud);
-      expect(result).toBe(true);
+      expect(result).toBe(false);
     });
 
     it("should return true when undefined titles are compared with empty strings", () => {

@@ -66,6 +66,7 @@ export function DataConflictModal({
     diff.summary.playlistsAdded > 0 ||
     diff.summary.playlistsRemoved > 0 ||
     diff.summary.playlistsModified > 0 ||
+    diff.summary.playlistsReordered > 0 ||
     diff.summary.songsAdded > 0 ||
     diff.summary.songsRemoved > 0 ||
     diff.summary.songsReordered > 0;
@@ -131,6 +132,14 @@ export function DataConflictModal({
                       </span>
                     </div>
                   )}
+                  {diff.summary.playlistsReordered > 0 && (
+                    <div className="flex items-center gap-2">
+                      <ArrowUpDown className="h-4 w-4 text-blue-600" />
+                      <span>
+                        {diff.summary.playlistsReordered} playlist(s) reordered
+                      </span>
+                    </div>
+                  )}
                   {diff.summary.songsAdded > 0 && (
                     <div className="flex items-center gap-2">
                       <Plus className="h-4 w-4 text-green-600" />
@@ -188,6 +197,19 @@ export function DataConflictModal({
                         <Badge variant="secondary">
                           <FileEdit className="h-3 w-3 mr-1" />
                           Modified
+                        </Badge>
+                      )}
+                      {(playlistDiff.changeType === "reordered" ||
+                        (playlistDiff.changeType === "modified" &&
+                          playlistDiff.localIndex !== undefined &&
+                          playlistDiff.cloudIndex !== undefined &&
+                          playlistDiff.localIndex !== playlistDiff.cloudIndex)) && (
+                        <Badge
+                          variant="outline"
+                          className="border-blue-500 text-blue-600"
+                        >
+                          <ArrowUpDown className="h-3 w-3 mr-1" />
+                          Reordered (Local #{playlistDiff.localIndex! + 1} / Cloud #{playlistDiff.cloudIndex! + 1})
                         </Badge>
                       )}
                     </div>
