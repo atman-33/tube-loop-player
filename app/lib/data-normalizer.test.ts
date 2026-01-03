@@ -8,7 +8,7 @@ import {
 
 describe("Data Normalizer", () => {
   describe("normalizeUserPlaylistData", () => {
-    it("should normalize basic playlist data with sorting", () => {
+    it("should normalize basic playlist data preserving order", () => {
       const input: UserPlaylistData = {
         playlists: [
           {
@@ -36,15 +36,15 @@ describe("Data Normalizer", () => {
       const result = normalizeUserPlaylistData(input);
 
       expect(result.playlists).toHaveLength(2);
-      // Playlists should be sorted by ID
-      expect(result.playlists[0].id).toBe("playlist-1");
-      expect(result.playlists[1].id).toBe("playlist-2");
+      // Playlists should preserve input order
+      expect(result.playlists[0].id).toBe("playlist-2");
+      expect(result.playlists[1].id).toBe("playlist-1");
 
-      // Items within each playlist should be sorted by ID
-      expect(result.playlists[0].items[0].id).toBe("video-c");
-      expect(result.playlists[0].items[1].id).toBe("video-d");
-      expect(result.playlists[1].items[0].id).toBe("video-a");
-      expect(result.playlists[1].items[1].id).toBe("video-b");
+      // Items within each playlist should preserve input order
+      expect(result.playlists[0].items[0].id).toBe("video-b");
+      expect(result.playlists[0].items[1].id).toBe("video-a");
+      expect(result.playlists[1].items[0].id).toBe("video-d");
+      expect(result.playlists[1].items[1].id).toBe("video-c");
     });
 
     it("should convert undefined titles to empty strings", () => {
