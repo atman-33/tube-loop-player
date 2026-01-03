@@ -41,9 +41,8 @@ export interface NormalizedUserPlaylistData {
 
 /**
  * Normalizes UserPlaylistData for consistent comparison
- * - Sorts playlists by ID
- * - Sorts playlist items by ID within each playlist
  * - Converts undefined titles to empty strings
+ * - Preserves order of playlists and items (crucial for sync)
  */
 export function normalizeUserPlaylistData(
   data: UserPlaylistData,
@@ -62,9 +61,6 @@ export function normalizeUserPlaylistData(
     normalizedPlaylists.push(normalizePlaylist(playlist));
   }
 
-  // Sort playlists by ID
-  normalizedPlaylists.sort((a, b) => a.id.localeCompare(b.id));
-
   return {
     playlists: normalizedPlaylists,
     activePlaylistId: data.activePlaylistId || "",
@@ -75,8 +71,8 @@ export function normalizeUserPlaylistData(
 
 /**
  * Normalizes a single playlist
- * - Sorts items by ID
  * - Converts undefined titles to empty strings
+ * - Preserves item order
  */
 function normalizePlaylist(playlist: Playlist): NormalizedPlaylist {
   if (!playlist || typeof playlist !== "object") {
@@ -96,9 +92,6 @@ function normalizePlaylist(playlist: Playlist): NormalizedPlaylist {
   for (const item of playlist.items) {
     normalizedItems.push(normalizePlaylistItem(item));
   }
-
-  // Sort items by ID
-  normalizedItems.sort((a, b) => a.id.localeCompare(b.id));
 
   return {
     id: playlist.id || "",

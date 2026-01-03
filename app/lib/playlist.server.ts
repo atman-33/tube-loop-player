@@ -281,7 +281,7 @@ export class PlaylistService {
   async saveUserPlaylists(
     userId: string,
     data: UserPlaylistData,
-  ): Promise<boolean> {
+  ): Promise<UserPlaylistData | null> {
     try {
       const sanitized = sanitizeUserPlaylistData(data, userId);
       const safeData = sanitized.data;
@@ -344,7 +344,7 @@ export class PlaylistService {
         });
       }
 
-      return true;
+      return safeData;
     } catch (error) {
       console.error("Error saving user playlists:", error);
       if (error && typeof error === "object" && "cause" in error) {
@@ -357,14 +357,14 @@ export class PlaylistService {
           );
         }
       }
-      return false;
+      return null;
     }
   }
 
   async syncLocalStorageDataToDatabase(
     userId: string,
     localData: UserPlaylistData,
-  ): Promise<boolean> {
+  ): Promise<UserPlaylistData | null> {
     // Get existing database data
     const existingData = await this.getUserPlaylists(userId);
 

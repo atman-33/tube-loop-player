@@ -159,7 +159,31 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
       });
 
       if (response.ok) {
-        set({ isDataSynced: true });
+        const result = await response.json();
+        if (result.success && result.data) {
+          set((state) => {
+            const serverData = result.data;
+            const nextShuffleQueue = serverData.isShuffle
+              ? rebuildShuffleQueues(
+                  state.shuffleQueue,
+                  serverData.playlists,
+                  serverData.activePlaylistId,
+                  state.currentVideoId,
+                )
+              : {};
+
+            return {
+              playlists: serverData.playlists,
+              activePlaylistId: serverData.activePlaylistId,
+              loopMode: serverData.loopMode,
+              isShuffle: serverData.isShuffle,
+              shuffleQueue: nextShuffleQueue,
+              isDataSynced: true,
+            };
+          });
+        } else {
+          set({ isDataSynced: true });
+        }
       }
     } catch (error) {
       console.error("Failed to sync to server:", error);

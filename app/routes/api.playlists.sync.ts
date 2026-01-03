@@ -26,13 +26,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     const playlistService = new PlaylistService(context);
-    const success = await playlistService.saveUserPlaylists(
+    const savedData = await playlistService.saveUserPlaylists(
       session.user.id,
       rawData,
     );
 
-    if (success) {
-      return new Response(JSON.stringify({ success: true }), {
+    if (savedData) {
+      return new Response(JSON.stringify({ success: true, data: savedData }), {
         headers: { "Content-Type": "application/json" },
       });
     } else {
