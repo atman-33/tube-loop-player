@@ -279,7 +279,7 @@ export function usePlaylistSync() {
 
   // Auto-sync changes to server for authenticated users
   useEffect(() => {
-    if (user && isDataSynced && hasHydrated) {
+    if (user && !isDataSynced && hasHydrated) {
       const timeoutId = setTimeout(() => {
         syncToServer();
       }, 1000); // Debounce sync by 1 second

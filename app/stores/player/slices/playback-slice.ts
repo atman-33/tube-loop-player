@@ -75,19 +75,28 @@ export const createPlaybackSlice: PlayerStoreSlice<PlaybackSlice> = (
   toggleLoop: () =>
     set((state) => ({
       loopMode: state.loopMode === "all" ? "one" : "all",
+      isDataSynced: false,
     })),
   toggleShuffle: () =>
     set((state) => {
       const isShuffleEnabled = !state.isShuffle;
       if (!isShuffleEnabled) {
-        return { isShuffle: isShuffleEnabled, shuffleQueue: {} };
+        return {
+          isShuffle: isShuffleEnabled,
+          shuffleQueue: {},
+          isDataSynced: false,
+        };
       }
 
       const activePlaylist = state.playlists.find(
         (playlist) => playlist.id === state.activePlaylistId,
       );
       if (!activePlaylist) {
-        return { isShuffle: isShuffleEnabled, shuffleQueue: {} };
+        return {
+          isShuffle: isShuffleEnabled,
+          shuffleQueue: {},
+          isDataSynced: false,
+        };
       }
 
       const queue = sanitizeShuffleQueue(
@@ -103,6 +112,7 @@ export const createPlaybackSlice: PlayerStoreSlice<PlaybackSlice> = (
           activePlaylist.id,
           queue,
         ),
+        isDataSynced: false,
       };
     }),
   playNext: () => {

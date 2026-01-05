@@ -62,6 +62,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         currentIndex:
           currentState.currentIndex === null ? 0 : currentState.currentIndex,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
 
@@ -99,6 +100,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: updatedPlaylists,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
   },
@@ -148,6 +150,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         playlists: updatedPlaylists,
         currentIndex: newCurrentIndex,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
   },
@@ -160,6 +163,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: newPlaylists,
         activePlaylistId: state.activePlaylistId,
+        isDataSynced: false,
       };
     }),
   moveItemBetweenPlaylists: (itemIndex, fromPlaylistId, toPlaylistId) => {
@@ -218,6 +222,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: updatedPlaylists,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
 
@@ -246,6 +251,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: updatedPlaylists,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
         ...resetState,
       };
     }),
@@ -282,6 +288,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         currentIndex: null,
         isPlaying: false,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
 
@@ -327,6 +334,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         currentIndex: null,
         isPlaying: false,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
 
@@ -401,6 +409,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         currentIndex: didChangeActive ? null : currentState.currentIndex,
         isPlaying: didChangeActive ? false : currentState.isPlaying,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
 
@@ -448,6 +457,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         currentIndex: didChangeActive ? null : state.currentIndex,
         isPlaying: didChangeActive ? false : state.isPlaying,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     }),
   renamePlaylist: (playlistId, newName) => {
@@ -460,6 +470,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       playlists: state.playlists.map((playlist) =>
         playlist.id === playlistId ? { ...playlist, name: newName } : playlist,
       ),
+      isDataSynced: false,
     }));
   },
   setActivePlaylist: (playlistId) => {
@@ -496,6 +507,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         currentVideoId: hasItems ? targetPlaylist.items[0].id : null,
         isPlaying: hasItems,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
       };
     });
 
