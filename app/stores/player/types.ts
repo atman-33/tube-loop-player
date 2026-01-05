@@ -30,6 +30,7 @@ export interface PlaylistSlice {
   maxPlaylistCount: number;
   canCreatePlaylist: boolean;
   activePlaylistId: string;
+  lastNonFavoritesPlaylistId: string;
   addToPlaylist: (item: PlaylistItem, playlistId?: string) => boolean;
   removeFromPlaylist: (index: number, playlistId?: string) => void;
   reorderPlaylist: (

@@ -38,6 +38,7 @@ const resetStore = () => {
     {
       playlists: createDefaultPlaylists(),
       activePlaylistId: defaultActivePlaylistId,
+      lastNonFavoritesPlaylistId: defaultActivePlaylistId,
       pinnedVideoIds: new Set<string>(),
       pinnedOrder: [],
     },
@@ -359,7 +360,10 @@ describe("syncToServer", () => {
       canCreatePlaylist: false,
     }));
 
-    fetchMock.mockResolvedValue({ ok: true } as Response);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: false }),
+    } as unknown as Response);
 
     await usePlayerStore.getState().syncToServer();
 
@@ -375,5 +379,43 @@ describe("syncToServer", () => {
       usePlayerStore.getState().playlists[0]?.id ?? "",
     );
     expect(usePlayerStore.getState().canCreatePlaylist).toBe(false);
+  });
+
+  it("preserves Favorites as the active playlist while syncing", async () => {
+    const playlistA = createPlaylistWithItems("playlist-a", ["a-1"]);
+    const playlistB = createPlaylistWithItems("playlist-b", ["b-1"]);
+
+    usePlayerStore.setState((state) => ({
+      ...state,
+      playlists: [playlistA, playlistB],
+      user: mockUser,
+      activePlaylistId: FAVORITES_PLAYLIST_ID,
+      lastNonFavoritesPlaylistId: playlistB.id,
+      canCreatePlaylist: true,
+    }));
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          playlists: [playlistA, playlistB],
+          activePlaylistId: playlistB.id,
+          loopMode: "all",
+          isShuffle: false,
+        },
+      }),
+    } as unknown as Response);
+
+    await usePlayerStore.getState().syncToServer();
+
+    const payload = JSON.parse(
+      (fetchMock.mock.calls[0]?.[1]?.body as string) ?? "{}",
+    ) as { activePlaylistId?: string };
+    expect(payload.activePlaylistId).toBe(playlistB.id);
+
+    expect(usePlayerStore.getState().activePlaylistId).toBe(
+      FAVORITES_PLAYLIST_ID,
+    );
   });
 });

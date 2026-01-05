@@ -52,6 +52,7 @@ export const usePlayerStore = create<PlayerState>()(
     partialize: (state) => ({
       playlists: state.playlists,
       activePlaylistId: state.activePlaylistId,
+      lastNonFavoritesPlaylistId: state.lastNonFavoritesPlaylistId,
       loopMode: state.loopMode,
       isShuffle: state.isShuffle,
       shuffleQueue: state.shuffleQueue,
@@ -80,6 +81,21 @@ export const usePlayerStore = create<PlayerState>()(
           sanitized.playlists,
           sanitized.activePlaylistId,
         );
+
+        const rawLastNonFavoritesPlaylistId =
+          typeof state.lastNonFavoritesPlaylistId === "string"
+            ? state.lastNonFavoritesPlaylistId
+            : "";
+        const nextLastNonFavoritesPlaylistId =
+          rawLastNonFavoritesPlaylistId &&
+          constrained.playlists.some(
+            (playlist) => playlist.id === rawLastNonFavoritesPlaylistId,
+          )
+            ? rawLastNonFavoritesPlaylistId
+            : constrained.activePlaylistId &&
+                constrained.activePlaylistId !== FAVORITES_PLAYLIST_ID
+              ? constrained.activePlaylistId
+              : (constrained.playlists[0]?.id ?? "");
 
         // Determine the active playlist and first video
         let activePlaylist: Playlist | undefined;
@@ -115,6 +131,7 @@ export const usePlayerStore = create<PlayerState>()(
           ...restState,
           playlists: constrained.playlists,
           activePlaylistId: constrained.activePlaylistId,
+          lastNonFavoritesPlaylistId: nextLastNonFavoritesPlaylistId,
           currentVideoId: firstVideo ? firstVideo.id : null,
           currentIndex: firstVideo ? 0 : null,
           canCreatePlaylist: constrained.canCreatePlaylist,
@@ -129,6 +146,7 @@ export const usePlayerStore = create<PlayerState>()(
         ...currentState,
         playlists: defaultPlaylists,
         activePlaylistId: defaultActivePlaylistId,
+        lastNonFavoritesPlaylistId: defaultActivePlaylistId,
         currentVideoId: defaultInitialVideoId,
         currentIndex: 0,
         canCreatePlaylist: defaultPlaylists.length < MAX_PLAYLIST_COUNT,

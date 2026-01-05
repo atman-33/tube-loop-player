@@ -31,6 +31,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
   maxPlaylistCount: MAX_PLAYLIST_COUNT,
   canCreatePlaylist: defaultPlaylists.length < MAX_PLAYLIST_COUNT,
   activePlaylistId: defaultActivePlaylistId,
+  lastNonFavoritesPlaylistId: defaultActivePlaylistId,
   addToPlaylist: (item, playlistId) => {
     const state = get();
     const targetPlaylistId = playlistId || state.activePlaylistId;
@@ -276,6 +277,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         ...constrained,
         activePlaylistId: playlistId,
+        lastNonFavoritesPlaylistId: playlistId,
         currentVideoId: null,
         currentIndex: null,
         isPlaying: false,
@@ -320,6 +322,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         ...constrained,
         activePlaylistId: duplicateId,
+        lastNonFavoritesPlaylistId: duplicateId,
         currentVideoId: null,
         currentIndex: null,
         isPlaying: false,
@@ -370,6 +373,12 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         removedActive ||
         constrained.activePlaylistId !== currentState.activePlaylistId;
 
+      const nextLastNonFavoritesPlaylistId =
+        constrained.activePlaylistId &&
+        constrained.activePlaylistId !== FAVORITES_PLAYLIST_ID
+          ? constrained.activePlaylistId
+          : currentState.lastNonFavoritesPlaylistId;
+
       let nextShuffleQueue = removeQueueForPlaylist(
         currentState.shuffleQueue,
         playlistId,
@@ -387,6 +396,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
 
       return {
         ...constrained,
+        lastNonFavoritesPlaylistId: nextLastNonFavoritesPlaylistId,
         currentVideoId: didChangeActive ? null : currentState.currentVideoId,
         currentIndex: didChangeActive ? null : currentState.currentIndex,
         isPlaying: didChangeActive ? false : currentState.isPlaying,
@@ -425,8 +435,15 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
           )
         : state.shuffleQueue;
 
+      const nextLastNonFavoritesPlaylistId =
+        constrained.activePlaylistId &&
+        constrained.activePlaylistId !== FAVORITES_PLAYLIST_ID
+          ? constrained.activePlaylistId
+          : state.lastNonFavoritesPlaylistId;
+
       return {
         ...constrained,
+        lastNonFavoritesPlaylistId: nextLastNonFavoritesPlaylistId,
         currentVideoId: didChangeActive ? null : state.currentVideoId,
         currentIndex: didChangeActive ? null : state.currentIndex,
         isPlaying: didChangeActive ? false : state.isPlaying,
@@ -467,8 +484,14 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         ? resetQueueForPlaylist(state.shuffleQueue, playlistId)
         : state.shuffleQueue;
 
+      const nextLastNonFavoritesPlaylistId =
+        playlistId !== FAVORITES_PLAYLIST_ID
+          ? playlistId
+          : state.lastNonFavoritesPlaylistId;
+
       return {
         activePlaylistId: playlistId,
+        lastNonFavoritesPlaylistId: nextLastNonFavoritesPlaylistId,
         currentIndex: hasItems ? 0 : null,
         currentVideoId: hasItems ? targetPlaylist.items[0].id : null,
         isPlaying: hasItems,

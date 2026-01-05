@@ -41,6 +41,12 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
         nextState.playlists = constrained.playlists;
         nextState.activePlaylistId = constrained.activePlaylistId;
         nextState.canCreatePlaylist = constrained.canCreatePlaylist;
+        if (
+          constrained.activePlaylistId &&
+          constrained.activePlaylistId !== FAVORITES_PLAYLIST_ID
+        ) {
+          nextState.lastNonFavoritesPlaylistId = constrained.activePlaylistId;
+        }
         if (state.isShuffle) {
           nextState.shuffleQueue = rebuildShuffleQueues(
             state.shuffleQueue,
@@ -92,6 +98,11 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
     set({
       playlists: constrained.playlists,
       activePlaylistId: constrained.activePlaylistId,
+      lastNonFavoritesPlaylistId:
+        constrained.activePlaylistId &&
+        constrained.activePlaylistId !== FAVORITES_PLAYLIST_ID
+          ? constrained.activePlaylistId
+          : get().lastNonFavoritesPlaylistId,
       loopMode: userData.loopMode,
       isShuffle: userData.isShuffle,
       currentVideoId: firstVideo ? firstVideo.id : null,
@@ -106,6 +117,7 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
       user,
       playlists,
       activePlaylistId,
+      lastNonFavoritesPlaylistId,
       loopMode,
       isShuffle,
       canCreatePlaylist,
@@ -124,6 +136,15 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
       sanitized.playlists,
       sanitized.activePlaylistId,
     );
+
+    const effectiveActivePlaylistIdForSync =
+      activePlaylistId === FAVORITES_PLAYLIST_ID
+        ? playlists.some(
+            (playlist) => playlist.id === lastNonFavoritesPlaylistId,
+          )
+          ? lastNonFavoritesPlaylistId
+          : (playlists[0]?.id ?? "")
+        : constrained.activePlaylistId;
 
     if (
       sanitized.didChange ||
@@ -153,7 +174,7 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
         },
         body: JSON.stringify({
           playlists: constrained.playlists,
-          activePlaylistId: constrained.activePlaylistId,
+          activePlaylistId: effectiveActivePlaylistIdForSync,
           loopMode,
           isShuffle,
         }),
@@ -169,6 +190,9 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
             const serverData = result.data;
             if (!serverData) return state;
 
+            const shouldPreserveFavorites =
+              state.activePlaylistId === FAVORITES_PLAYLIST_ID;
+
             const nextShuffleQueue = serverData.isShuffle
               ? rebuildShuffleQueues(
                   state.shuffleQueue,
@@ -180,10 +204,15 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => ({
 
             return {
               playlists: serverData.playlists,
-              activePlaylistId: serverData.activePlaylistId,
+              activePlaylistId: shouldPreserveFavorites
+                ? state.activePlaylistId
+                : serverData.activePlaylistId,
+              lastNonFavoritesPlaylistId: serverData.activePlaylistId,
               loopMode: serverData.loopMode,
               isShuffle: serverData.isShuffle,
-              shuffleQueue: nextShuffleQueue,
+              shuffleQueue: shouldPreserveFavorites
+                ? state.shuffleQueue
+                : nextShuffleQueue,
               isDataSynced: true,
             };
           });
