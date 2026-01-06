@@ -89,7 +89,10 @@ describe("usePlaylistSync Integration Tests", () => {
     setUser: vi.fn(),
     loadUserData: vi.fn(),
     syncToServer: vi.fn().mockResolvedValue(undefined),
-    isDataSynced: false,
+    isDataSynced: true,
+    hasLocalChanges: false,
+    localVersion: null,
+    serverVersion: null,
     playlists: identicalLocalData.playlists,
     activePlaylistId: identicalLocalData.activePlaylistId,
     loopMode: identicalLocalData.loopMode,
@@ -164,6 +167,9 @@ describe("usePlaylistSync Integration Tests", () => {
       mockUsePlayerStore.mockReturnValue({
         ...mockPlayerStore,
         isDataSynced: true,
+        hasLocalChanges: false,
+        localVersion: null,
+        serverVersion: null,
       });
 
       const { result } = renderHook(() => usePlaylistSync());

@@ -25,6 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           activePlaylistId: "",
           loopMode: "all",
           isShuffle: false,
+          serverVersion: Date.now(),
         }),
         {
           headers: { "Content-Type": "application/json" },

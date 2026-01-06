@@ -31,6 +31,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
   maxPlaylistCount: MAX_PLAYLIST_COUNT,
   canCreatePlaylist: defaultPlaylists.length < MAX_PLAYLIST_COUNT,
   activePlaylistId: defaultActivePlaylistId,
+  lastNonFavoritesPlaylistId: defaultActivePlaylistId,
   addToPlaylist: (item, playlistId) => {
     const state = get();
     const targetPlaylistId = playlistId || state.activePlaylistId;
@@ -45,6 +46,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
 
     set((currentState) => {
+      const mutationVersion = Date.now();
       const updatedPlaylists = currentState.playlists.map((playlist) =>
         playlist.id === targetPlaylistId
           ? { ...playlist, items: [...playlist.items, item] }
@@ -61,6 +63,9 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         currentIndex:
           currentState.currentIndex === null ? 0 : currentState.currentIndex,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
 
@@ -81,6 +86,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
 
     set((currentState) => {
+      const mutationVersion = Date.now();
       const updatedPlaylists = currentState.playlists.map((playlist) => {
         if (playlist.id === targetPlaylistId) {
           const newItems = [...playlist.items];
@@ -98,6 +104,9 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: updatedPlaylists,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
   },
@@ -112,6 +121,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
 
     set((currentState) => {
+      const mutationVersion = Date.now();
       const updatedPlaylists = currentState.playlists.map((playlist) => {
         if (playlist.id === targetPlaylistId) {
           const newItems = [...playlist.items];
@@ -147,11 +157,15 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         playlists: updatedPlaylists,
         currentIndex: newCurrentIndex,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
   },
   reorderPlaylists: (fromIndex, toIndex) =>
     set((state) => {
+      const mutationVersion = Date.now();
       const newPlaylists = [...state.playlists];
       const [removed] = newPlaylists.splice(fromIndex, 1);
       newPlaylists.splice(toIndex, 0, removed);
@@ -159,6 +173,9 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: newPlaylists,
         activePlaylistId: state.activePlaylistId,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     }),
   moveItemBetweenPlaylists: (itemIndex, fromPlaylistId, toPlaylistId) => {
@@ -186,6 +203,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
 
     set((currentState) => {
+      const mutationVersion = Date.now();
       const updatedPlaylists = currentState.playlists.map((playlist) => {
         if (playlist.id === fromPlaylistId) {
           const newItems = [...playlist.items];
@@ -217,6 +235,9 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: updatedPlaylists,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
 
@@ -224,6 +245,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
   },
   clearPlaylist: (playlistId) =>
     set((state) => {
+      const mutationVersion = Date.now();
       const targetPlaylistId = playlistId || state.activePlaylistId;
       const updatedPlaylists = state.playlists.map((playlist) =>
         playlist.id === targetPlaylistId
@@ -245,6 +267,9 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         playlists: updatedPlaylists,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
         ...resetState,
       };
     }),
@@ -267,6 +292,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     };
 
     set((currentState) => {
+      const mutationVersion = Date.now();
       const updatedPlaylists = [...currentState.playlists, newPlaylist];
       const constrained = enforcePlaylistBounds(updatedPlaylists, playlistId);
       const nextShuffleQueue = currentState.isShuffle
@@ -276,10 +302,14 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         ...constrained,
         activePlaylistId: playlistId,
+        lastNonFavoritesPlaylistId: playlistId,
         currentVideoId: null,
         currentIndex: null,
         isPlaying: false,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
 
@@ -311,6 +341,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     };
 
     set((currentState) => {
+      const mutationVersion = Date.now();
       const updatedPlaylists = [...currentState.playlists, duplicatedPlaylist];
       const constrained = enforcePlaylistBounds(updatedPlaylists, duplicateId);
       const nextShuffleQueue = currentState.isShuffle
@@ -320,10 +351,14 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       return {
         ...constrained,
         activePlaylistId: duplicateId,
+        lastNonFavoritesPlaylistId: duplicateId,
         currentVideoId: null,
         currentIndex: null,
         isPlaying: false,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
 
@@ -345,6 +380,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
 
     set((currentState) => {
+      const mutationVersion = Date.now();
       const updatedPlaylists = currentState.playlists.filter(
         (playlist) => playlist.id !== playlistId,
       );
@@ -370,6 +406,12 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
         removedActive ||
         constrained.activePlaylistId !== currentState.activePlaylistId;
 
+      const nextLastNonFavoritesPlaylistId =
+        constrained.activePlaylistId &&
+        constrained.activePlaylistId !== FAVORITES_PLAYLIST_ID
+          ? constrained.activePlaylistId
+          : currentState.lastNonFavoritesPlaylistId;
+
       let nextShuffleQueue = removeQueueForPlaylist(
         currentState.shuffleQueue,
         playlistId,
@@ -387,10 +429,14 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
 
       return {
         ...constrained,
+        lastNonFavoritesPlaylistId: nextLastNonFavoritesPlaylistId,
         currentVideoId: didChangeActive ? null : currentState.currentVideoId,
         currentIndex: didChangeActive ? null : currentState.currentIndex,
         isPlaying: didChangeActive ? false : currentState.isPlaying,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
 
@@ -398,6 +444,7 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
   },
   syncPlaylistBounds: () =>
     set((state) => {
+      const mutationVersion = Date.now();
       const constrained = enforcePlaylistBounds(
         state.playlists,
         state.activePlaylistId,
@@ -425,12 +472,22 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
           )
         : state.shuffleQueue;
 
+      const nextLastNonFavoritesPlaylistId =
+        constrained.activePlaylistId &&
+        constrained.activePlaylistId !== FAVORITES_PLAYLIST_ID
+          ? constrained.activePlaylistId
+          : state.lastNonFavoritesPlaylistId;
+
       return {
         ...constrained,
+        lastNonFavoritesPlaylistId: nextLastNonFavoritesPlaylistId,
         currentVideoId: didChangeActive ? null : state.currentVideoId,
         currentIndex: didChangeActive ? null : state.currentIndex,
         isPlaying: didChangeActive ? false : state.isPlaying,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     }),
   renamePlaylist: (playlistId, newName) => {
@@ -443,6 +500,9 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
       playlists: state.playlists.map((playlist) =>
         playlist.id === playlistId ? { ...playlist, name: newName } : playlist,
       ),
+      isDataSynced: false,
+      hasLocalChanges: true,
+      localVersion: Date.now(),
     }));
   },
   setActivePlaylist: (playlistId) => {
@@ -462,17 +522,27 @@ export const createPlaylistSlice: PlayerStoreSlice<PlaylistSlice> = (
     }
 
     set((state) => {
+      const mutationVersion = Date.now();
       const hasItems = targetPlaylist.items.length > 0;
       const nextShuffleQueue = state.isShuffle
         ? resetQueueForPlaylist(state.shuffleQueue, playlistId)
         : state.shuffleQueue;
 
+      const nextLastNonFavoritesPlaylistId =
+        playlistId !== FAVORITES_PLAYLIST_ID
+          ? playlistId
+          : state.lastNonFavoritesPlaylistId;
+
       return {
         activePlaylistId: playlistId,
+        lastNonFavoritesPlaylistId: nextLastNonFavoritesPlaylistId,
         currentIndex: hasItems ? 0 : null,
         currentVideoId: hasItems ? targetPlaylist.items[0].id : null,
         isPlaying: hasItems,
         shuffleQueue: nextShuffleQueue,
+        isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     });
 

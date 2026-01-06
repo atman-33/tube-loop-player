@@ -30,6 +30,7 @@ export interface PlaylistSlice {
   maxPlaylistCount: number;
   canCreatePlaylist: boolean;
   activePlaylistId: string;
+  lastNonFavoritesPlaylistId: string;
   addToPlaylist: (item: PlaylistItem, playlistId?: string) => boolean;
   removeFromPlaylist: (index: number, playlistId?: string) => void;
   reorderPlaylist: (
@@ -60,12 +61,16 @@ export interface PlaylistSlice {
 export interface SyncSlice {
   user: User | null;
   isDataSynced: boolean;
+  hasLocalChanges: boolean;
+  localVersion: number | null;
+  serverVersion: number | null;
   setUser: (user: User | null) => void;
   loadUserData: (userData: {
     playlists: Playlist[];
     activePlaylistId: string;
     loopMode: LoopMode;
     isShuffle: boolean;
+    serverVersion?: number | null;
   }) => void;
   syncToServer: () => Promise<void>;
   markAsSynced: () => void;

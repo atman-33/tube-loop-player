@@ -205,6 +205,8 @@ export interface UserPlaylistData {
   isShuffle: boolean;
 }
 
+export type UserPlaylistPayload = UserPlaylistData & { serverVersion: number };
+
 export class PlaylistService {
   private db;
 
@@ -212,7 +214,7 @@ export class PlaylistService {
     this.db = drizzle(context.cloudflare.env.DB);
   }
 
-  async getUserPlaylists(userId: string): Promise<UserPlaylistData | null> {
+  async getUserPlaylists(userId: string): Promise<UserPlaylistPayload | null> {
     try {
       // Get user playlists
       const playlists = await this.db
@@ -265,13 +267,24 @@ export class PlaylistService {
         isShuffle: settings[0]?.isShuffle || false,
       };
 
+      const timestamps: number[] = [];
+      for (const p of playlists) {
+        if (p.updatedAt) {
+          timestamps.push(new Date(p.updatedAt).getTime());
+        }
+      }
+      if (settings[0]?.updatedAt) {
+        timestamps.push(new Date(settings[0].updatedAt).getTime());
+      }
+      const serverVersion =
+        timestamps.length > 0 ? Math.max(...timestamps) : Date.now();
+
       const sanitized = sanitizeUserPlaylistData(result, userId);
       if (sanitized.didChange) {
-        await this.saveUserPlaylists(userId, sanitized.data);
-        return sanitized.data;
+        return await this.saveUserPlaylists(userId, sanitized.data);
       }
 
-      return sanitized.data;
+      return { ...sanitized.data, serverVersion } satisfies UserPlaylistPayload;
     } catch (error) {
       console.error("Error fetching user playlists:", error);
       return null;
@@ -281,7 +294,7 @@ export class PlaylistService {
   async saveUserPlaylists(
     userId: string,
     data: UserPlaylistData,
-  ): Promise<UserPlaylistData | null> {
+  ): Promise<UserPlaylistPayload | null> {
     try {
       const sanitized = sanitizeUserPlaylistData(data, userId);
       const safeData = sanitized.data;
@@ -344,7 +357,9 @@ export class PlaylistService {
         });
       }
 
-      return safeData;
+      const serverVersion = Date.now();
+
+      return { ...safeData, serverVersion } satisfies UserPlaylistPayload;
     } catch (error) {
       console.error("Error saving user playlists:", error);
       if (error && typeof error === "object" && "cause" in error) {
@@ -364,7 +379,7 @@ export class PlaylistService {
   async syncLocalStorageDataToDatabase(
     userId: string,
     localData: UserPlaylistData,
-  ): Promise<UserPlaylistData | null> {
+  ): Promise<UserPlaylistPayload | null> {
     // Get existing database data
     const existingData = await this.getUserPlaylists(userId);
 

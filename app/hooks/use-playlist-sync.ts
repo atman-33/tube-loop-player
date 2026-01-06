@@ -22,11 +22,16 @@ export function usePlaylistSync() {
     loadUserData,
     syncToServer,
     isDataSynced,
+    hasLocalChanges,
+    localVersion,
+    serverVersion,
     playlists,
     activePlaylistId,
     loopMode,
     isShuffle,
   } = usePlayerStore();
+
+  const [hasFetchedCloudOnce, setHasFetchedCloudOnce] = useState(false);
 
   const [hasHydrated, setHasHydrated] = useState(() => {
     const hasHydratedFn = usePlayerStore.persist?.hasHydrated;
@@ -71,10 +76,17 @@ export function usePlaylistSync() {
     }
   }, [user, authLoading, setUser]);
 
+  useEffect(() => {
+    setHasFetchedCloudOnce(false);
+  }, [user]);
+
   // Load user data from server when user logs in with intelligent conflict resolution
   useEffect(() => {
     const loadServerData = async () => {
-      if (!user || isDataSynced || !hasHydrated) return;
+      if (!user || !hasHydrated) return;
+      if (hasFetchedCloudOnce) return;
+      if (hasLocalChanges) return;
+      if (isDataSynced) return;
 
       const conflictResolver = new ConflictResolver();
       let response: Response | null = null;
@@ -119,8 +131,20 @@ export function usePlaylistSync() {
           isShuffle,
         };
 
+        const cloudServerVersionRaw =
+          userData && typeof userData === "object"
+            ? (userData as { serverVersion?: unknown }).serverVersion
+            : undefined;
+
+        const cloudServerVersion: number | null =
+          typeof cloudServerVersionRaw === "number"
+            ? cloudServerVersionRaw
+            : null;
+
         // Validate cloud data
-        const validCloudData = isValidUserData(userData) ? userData : null;
+        const validCloudData = isValidUserData(userData)
+          ? (userData as UserPlaylistData & { serverVersion?: number | null })
+          : null;
 
         // If local activePlaylistId is Favorites, preserve it
         // Favorites is a virtual playlist not stored in DB, so cloud data won't have it
@@ -152,11 +176,24 @@ export function usePlaylistSync() {
               cloud: validCloudData,
               diff,
             });
+            setHasFetchedCloudOnce(true);
           } else {
             // No valid cloud data, sync local data
             await syncToServer();
+            setHasFetchedCloudOnce(true);
           }
           return;
+        }
+
+        const effectiveLocalVersion: number | null =
+          typeof localVersion === "number" ? localVersion : null;
+        if (
+          conflictResolution.type === "show-modal" &&
+          cloudServerVersion !== null &&
+          effectiveLocalVersion !== null &&
+          cloudServerVersion <= effectiveLocalVersion
+        ) {
+          conflictResolution = { type: "no-action" };
         }
 
         // Handle conflict resolution result
@@ -166,7 +203,14 @@ export function usePlaylistSync() {
               // Perform automatic sync
               await conflictResolver.performAutoSync(conflictResolution.data);
               console.log("Automatically syncing identical cloud data");
-              loadUserData(conflictResolution.data);
+              loadUserData({
+                ...conflictResolution.data,
+                serverVersion:
+                  cloudServerVersion !== null
+                    ? cloudServerVersion
+                    : (serverVersion ?? Date.now()),
+              });
+              setHasFetchedCloudOnce(true);
             } catch (autoSyncError) {
               console.error(
                 "Auto-sync failed, falling back to conflict modal:",
@@ -186,6 +230,7 @@ export function usePlaylistSync() {
                 cloud: conflictResolution.data,
                 diff,
               });
+              setHasFetchedCloudOnce(true);
             }
             break;
 
@@ -196,12 +241,14 @@ export function usePlaylistSync() {
               cloud: conflictResolution.cloud,
               diff: conflictResolution.diff,
             });
+            setHasFetchedCloudOnce(true);
             break;
 
           case "no-action":
             // Sync local data to server (local data takes precedence)
             try {
               await syncToServer();
+              setHasFetchedCloudOnce(true);
             } catch (syncError) {
               console.error("Failed to sync local data to server:", syncError);
               // Continue without showing error to user
@@ -226,8 +273,10 @@ export function usePlaylistSync() {
                 cloud: validCloudData,
                 diff,
               });
+              setHasFetchedCloudOnce(true);
             } else {
               await syncToServer();
+              setHasFetchedCloudOnce(true);
             }
             break;
         }
@@ -275,11 +324,15 @@ export function usePlaylistSync() {
     loopMode,
     isShuffle,
     hasHydrated,
+    hasFetchedCloudOnce,
+    hasLocalChanges,
+    localVersion,
+    serverVersion,
   ]);
 
   // Auto-sync changes to server for authenticated users
   useEffect(() => {
-    if (user && isDataSynced && hasHydrated) {
+    if (user && !isDataSynced && hasHydrated) {
       const timeoutId = setTimeout(() => {
         syncToServer();
       }, 1000); // Debounce sync by 1 second
