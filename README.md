@@ -22,6 +22,7 @@ TubeLoopPlayer is a modern web application designed for looping YouTube videos a
 - **Cloud Synchronization**: Playlists automatically sync to cloud database when signed in
 - **Multi-Device Access**: Access your playlists from any device when authenticated
 - **Smart Data Migration**: Local playlists automatically migrate to cloud on first sign-in
+- **Conflict Handling**: Cloud diff check runs on initial sign-in; thereafter local edits auto-sync and the conflict modal appears only when the cloud version is newer. API responses include a serverVersion used for this gating.
 
 ### Storage Options
 - **Guest Mode**: Browser localStorage persistence for anonymous users

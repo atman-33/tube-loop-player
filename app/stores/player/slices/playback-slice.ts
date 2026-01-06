@@ -76,15 +76,20 @@ export const createPlaybackSlice: PlayerStoreSlice<PlaybackSlice> = (
     set((state) => ({
       loopMode: state.loopMode === "all" ? "one" : "all",
       isDataSynced: false,
+      hasLocalChanges: true,
+      localVersion: Date.now(),
     })),
   toggleShuffle: () =>
     set((state) => {
+      const mutationVersion = Date.now();
       const isShuffleEnabled = !state.isShuffle;
       if (!isShuffleEnabled) {
         return {
           isShuffle: isShuffleEnabled,
           shuffleQueue: {},
           isDataSynced: false,
+          hasLocalChanges: true,
+          localVersion: mutationVersion,
         };
       }
 
@@ -96,6 +101,8 @@ export const createPlaybackSlice: PlayerStoreSlice<PlaybackSlice> = (
           isShuffle: isShuffleEnabled,
           shuffleQueue: {},
           isDataSynced: false,
+          hasLocalChanges: true,
+          localVersion: mutationVersion,
         };
       }
 
@@ -113,6 +120,8 @@ export const createPlaybackSlice: PlayerStoreSlice<PlaybackSlice> = (
           queue,
         ),
         isDataSynced: false,
+        hasLocalChanges: true,
+        localVersion: mutationVersion,
       };
     }),
   playNext: () => {

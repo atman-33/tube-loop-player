@@ -12,6 +12,9 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => {
   return {
     user: null,
     isDataSynced: false,
+    hasLocalChanges: false,
+    localVersion: null,
+    serverVersion: null,
     setUser: (user) => {
       set((state) => {
         if (!user) {
@@ -19,6 +22,9 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => {
             user: null,
             isDataSynced: false,
             isPinnedSongsSynced: false,
+            hasLocalChanges: false,
+            localVersion: null,
+            serverVersion: null,
           };
         }
 
@@ -36,6 +42,9 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => {
           user,
           isDataSynced: false,
           isPinnedSongsSynced: false,
+          hasLocalChanges: false,
+          localVersion: null,
+          serverVersion: null,
         };
 
         const didChange =
@@ -113,6 +122,15 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => {
         currentVideoId: firstVideo ? firstVideo.id : null,
         currentIndex: firstVideo ? 0 : null,
         isDataSynced: true,
+        hasLocalChanges: false,
+        localVersion:
+          typeof userData.serverVersion === "number"
+            ? userData.serverVersion
+            : Date.now(),
+        serverVersion:
+          typeof userData.serverVersion === "number"
+            ? userData.serverVersion
+            : get().serverVersion,
         canCreatePlaylist: constrained.canCreatePlaylist,
         shuffleQueue: initialShuffleQueue,
       });
@@ -196,9 +214,13 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => {
           return;
         }
 
+        type ServerUserPlaylistData = UserPlaylistData & {
+          serverVersion?: number | null;
+        };
+
         const result = (await response.json()) as {
           success?: boolean;
-          data?: UserPlaylistData;
+          data?: ServerUserPlaylistData;
         };
 
         if (result.success && result.data) {
@@ -230,10 +252,19 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => {
                 ? state.shuffleQueue
                 : nextShuffleQueue,
               isDataSynced: true,
+              hasLocalChanges: false,
+              serverVersion:
+                typeof serverData.serverVersion === "number"
+                  ? serverData.serverVersion
+                  : Date.now(),
+              localVersion:
+                typeof serverData.serverVersion === "number"
+                  ? serverData.serverVersion
+                  : Date.now(),
             };
           });
         } else {
-          set({ isDataSynced: true });
+          set({ isDataSynced: true, hasLocalChanges: false });
         }
       } catch (error) {
         console.error("Failed to sync to server:", error);
@@ -242,7 +273,7 @@ export const createSyncSlice: PlayerStoreSlice<SyncSlice> = (set, get) => {
       }
     },
     markAsSynced: () => {
-      set({ isDataSynced: true });
+      set({ isDataSynced: true, hasLocalChanges: false });
     },
   };
 };
