@@ -229,8 +229,6 @@ export class ConflictResolver {
     const startTime = performance.now();
 
     try {
-      console.log("Performing automatic sync with cloud data");
-
       // Validate the cloud data before syncing
       if (!this.isValidUserPlaylistData(cloudData)) {
         throw new Error(
@@ -249,9 +247,6 @@ export class ConflictResolver {
       // In a real implementation, this would update the local state
       // The actual sync operation is handled by the caller
       // This method serves as a validation and logging point
-
-      const duration = performance.now() - startTime;
-      console.log(`Auto-sync validation completed in ${duration.toFixed(2)}ms`);
     } catch (error) {
       const duration = performance.now() - startTime;
       console.error(`Auto-sync failed after ${duration.toFixed(2)}ms:`, error);

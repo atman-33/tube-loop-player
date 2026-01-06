@@ -202,7 +202,6 @@ export function usePlaylistSync() {
             try {
               // Perform automatic sync
               await conflictResolver.performAutoSync(conflictResolution.data);
-              console.log("Automatically syncing identical cloud data");
               loadUserData({
                 ...conflictResolution.data,
                 serverVersion:
@@ -365,8 +364,6 @@ export function usePlaylistSync() {
         );
       }
 
-      console.log(`Resolving conflict with ${source} data`);
-
       // Load the selected data with error handling
       try {
         loadUserData(selectedData);
@@ -379,7 +376,6 @@ export function usePlaylistSync() {
       // Sync the selected data to server to ensure consistency
       try {
         await syncToServer();
-        console.log(`Successfully synced ${source} data to server`);
       } catch (syncError) {
         console.error(`Failed to sync ${source} data to server:`, syncError);
         // Don't throw here - the local data is already loaded
@@ -390,7 +386,7 @@ export function usePlaylistSync() {
       setConflictData(null);
 
       const duration = performance.now() - startTime;
-      console.log(
+      console.info(
         `Conflict resolved with ${source} data in ${duration.toFixed(2)}ms`,
       );
     } catch (error) {
@@ -410,8 +406,6 @@ export function usePlaylistSync() {
 
   const cancelConflictResolution = () => {
     try {
-      console.log("Cancelling conflict resolution, keeping local data");
-
       // Keep current local data and attempt to sync to server
       syncToServer().catch((syncError) => {
         console.error(
