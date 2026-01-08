@@ -438,9 +438,9 @@ export function usePlaylistSync() {
 
     // Notify user about what happened
     const { toast } = await import("sonner");
-    toast.info(
-      "Data conflict postponed. Your local data is preserved. The conflict will be shown again on your next login.",
-      { duration: 5000 },
+    toast.warning(
+      "Data conflict postponed. Your changes will NOT be synced to cloud until resolved. Please log out and log back in to resolve.",
+      { duration: 8000 },
     );
   };
 
@@ -451,5 +451,6 @@ export function usePlaylistSync() {
     conflictData,
     resolveConflict,
     decideLater,
+    isConflictPending,
   };
 }
