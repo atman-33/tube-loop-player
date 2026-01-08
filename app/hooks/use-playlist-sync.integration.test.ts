@@ -183,7 +183,7 @@ describe("usePlaylistSync Integration Tests", () => {
       const { result } = renderHook(() => usePlaylistSync());
 
       expect(typeof result.current.resolveConflict).toBe("function");
-      expect(typeof result.current.cancelConflictResolution).toBe("function");
+      expect(typeof result.current.decideLater).toBe("function");
     });
   });
 });
