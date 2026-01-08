@@ -28,7 +28,7 @@ const AppLayout = ({ loaderData }: Route.ComponentProps): ReactElement => {
 
   // Initialize playlist sync
   const playlistSync = usePlaylistSync();
-  const { conflictData, resolveConflict, cancelConflictResolution, isSynced: playlistSynced } = playlistSync;
+  const { conflictData, resolveConflict, decideLater, isSynced: playlistSynced } = playlistSync;
   
   // Initialize pinned songs sync (wait for playlist sync to complete)
   usePinnedSongsSync(playlistSynced);
@@ -50,7 +50,7 @@ const AppLayout = ({ loaderData }: Route.ComponentProps): ReactElement => {
           cloudData={conflictData.cloud}
           diff={conflictData.diff}
           onResolve={resolveConflict}
-          onCancel={cancelConflictResolution}
+          onDecideLater={decideLater}
         />
       )}
     </>
