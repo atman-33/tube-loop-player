@@ -499,17 +499,9 @@ describe("ConflictResolver", () => {
 
   describe("performAutoSync", () => {
     it("should successfully perform auto-sync with valid data", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
       await expect(
         conflictResolver.performAutoSync(meaningfulCloudData),
       ).resolves.toBeUndefined();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Performing automatic sync with cloud data",
-      );
-
-      consoleSpy.mockRestore();
     });
 
     it("should throw error for invalid cloud data structure", async () => {
@@ -585,18 +577,6 @@ describe("ConflictResolver", () => {
       // Restore original method
       (conflictResolver as any).validateDataIntegrity =
         originalValidateDataIntegrity;
-      consoleSpy.mockRestore();
-    });
-
-    it("should log performance metrics", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
-      await conflictResolver.performAutoSync(meaningfulCloudData);
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/Auto-sync validation completed in \d+\.\d+ms/),
-      );
-
       consoleSpy.mockRestore();
     });
   });

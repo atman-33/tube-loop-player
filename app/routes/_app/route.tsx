@@ -7,6 +7,7 @@ import Header from './components/header';
 import { usePlaylistSync } from '~/hooks/use-playlist-sync';
 import { usePinnedSongsSync } from '~/hooks/use-pinned-songs-sync';
 import { DataConflictModal } from '~/components/data-conflict-modal';
+import { ConflictPendingBanner } from '~/components/conflict-pending-banner';
 import { getAuth } from '~/lib/auth/auth.server';
 
 export const loader = async ({ context, request }: Route.LoaderArgs) => {
@@ -28,13 +29,14 @@ const AppLayout = ({ loaderData }: Route.ComponentProps): ReactElement => {
 
   // Initialize playlist sync
   const playlistSync = usePlaylistSync();
-  const { conflictData, resolveConflict, cancelConflictResolution, isSynced: playlistSynced } = playlistSync;
+  const { conflictData, resolveConflict, decideLater, isSynced: playlistSynced, isConflictPending } = playlistSync;
   
   // Initialize pinned songs sync (wait for playlist sync to complete)
   usePinnedSongsSync(playlistSynced);
 
   return (
     <>
+      <ConflictPendingBanner isVisible={isConflictPending} />
       <div className="mx-auto p-2 md:px-8 md:py-4">
         <Header />
         <Outlet />
@@ -50,7 +52,7 @@ const AppLayout = ({ loaderData }: Route.ComponentProps): ReactElement => {
           cloudData={conflictData.cloud}
           diff={conflictData.diff}
           onResolve={resolveConflict}
-          onCancel={cancelConflictResolution}
+          onDecideLater={decideLater}
         />
       )}
     </>

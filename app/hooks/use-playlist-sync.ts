@@ -69,10 +69,23 @@ export function usePlaylistSync() {
     diff: import("~/lib/data-diff-calculator").DataDiff;
   } | null>(null);
 
+  // Track when user decides to postpone conflict resolution
+  // Persist to localStorage so state survives page reload
+  const [isConflictPending, setIsConflictPending] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("conflictPending") === "true";
+  });
+
   // Update user in store when auth state changes
   useEffect(() => {
     if (!authLoading) {
       setUser(user);
+
+      // Reset conflict pending state when user logs out
+      if (!user) {
+        setIsConflictPending(false);
+        localStorage.removeItem("conflictPending");
+      }
     }
   }, [user, authLoading, setUser]);
 
@@ -87,6 +100,7 @@ export function usePlaylistSync() {
       if (hasFetchedCloudOnce) return;
       if (hasLocalChanges) return;
       if (isDataSynced) return;
+      if (isConflictPending) return; // Don't load/sync when conflict is pending
 
       const conflictResolver = new ConflictResolver();
       let response: Response | null = null;
@@ -327,11 +341,18 @@ export function usePlaylistSync() {
     hasLocalChanges,
     localVersion,
     serverVersion,
+    isConflictPending,
   ]);
 
   // Auto-sync changes to server for authenticated users
   useEffect(() => {
-    if (user && !isDataSynced && hasHydrated) {
+    if (
+      user &&
+      !isDataSynced &&
+      hasHydrated &&
+      !isConflictPending &&
+      !conflictData
+    ) {
       const timeoutId = setTimeout(() => {
         syncToServer();
       }, 1000); // Debounce sync by 1 second
@@ -347,6 +368,8 @@ export function usePlaylistSync() {
     isShuffle,
     syncToServer,
     hasHydrated,
+    isConflictPending,
+    conflictData,
   ]);
 
   // Enhanced conflict resolution functions with error handling
@@ -382,8 +405,10 @@ export function usePlaylistSync() {
         // The user can try syncing again later
       }
 
-      // Clear conflict state
+      // Clear conflict state and pending flag
       setConflictData(null);
+      setIsConflictPending(false);
+      localStorage.removeItem("conflictPending");
 
       const duration = performance.now() - startTime;
       console.info(
@@ -404,24 +429,19 @@ export function usePlaylistSync() {
     }
   };
 
-  const cancelConflictResolution = () => {
-    try {
-      // Keep current local data and attempt to sync to server
-      syncToServer().catch((syncError) => {
-        console.error(
-          "Failed to sync local data after cancelling conflict resolution:",
-          syncError,
-        );
-        // Continue anyway - user can manually sync later
-      });
+  const decideLater = async () => {
+    // Close modal without syncing - user can decide later
+    // Set pending flag to prevent auto-sync and persist to localStorage
+    setIsConflictPending(true);
+    localStorage.setItem("conflictPending", "true");
+    setConflictData(null);
 
-      // Clear conflict state
-      setConflictData(null);
-    } catch (error) {
-      console.error("Error during conflict resolution cancellation:", error);
-      // Clear conflict state anyway to prevent UI from being stuck
-      setConflictData(null);
-    }
+    // Notify user about what happened
+    const { toast } = await import("sonner");
+    toast.warning(
+      "Data conflict postponed. Your changes will NOT be synced to cloud until resolved. Please log out and log back in to resolve.",
+      { duration: 8000 },
+    );
   };
 
   return {
@@ -430,6 +450,7 @@ export function usePlaylistSync() {
     isSynced: isDataSynced,
     conflictData,
     resolveConflict,
-    cancelConflictResolution,
+    decideLater,
+    isConflictPending,
   };
 }
