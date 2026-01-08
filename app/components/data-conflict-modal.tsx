@@ -73,7 +73,12 @@ export function DataConflictModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="flex flex-col h-[90vh] sm:h-[85vh] sm:max-w-[700px]">
+      <DialogContent 
+        className="flex flex-col h-[90vh] sm:h-[85vh] sm:max-w-[700px]"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        showCloseButton={false}
+      >
         {/* Header: Fixed */}
         <div className="flex-shrink-0">
           <DialogHeader>
