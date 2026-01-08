@@ -346,7 +346,13 @@ export function usePlaylistSync() {
 
   // Auto-sync changes to server for authenticated users
   useEffect(() => {
-    if (user && !isDataSynced && hasHydrated && !isConflictPending) {
+    if (
+      user &&
+      !isDataSynced &&
+      hasHydrated &&
+      !isConflictPending &&
+      !conflictData
+    ) {
       const timeoutId = setTimeout(() => {
         syncToServer();
       }, 1000); // Debounce sync by 1 second
@@ -363,6 +369,7 @@ export function usePlaylistSync() {
     syncToServer,
     hasHydrated,
     isConflictPending,
+    conflictData,
   ]);
 
   // Enhanced conflict resolution functions with error handling
