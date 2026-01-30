@@ -13,7 +13,7 @@ The application routes are structured to maximize code reuse while maintaining d
   - Wraps the main interface with ad scripts (`AdScripts`) and analytics.
   - Contains the primary user flow.
 
-- **`app/routes/_clean/`**
+- **`app/routes/clean/`**
   - The "Clean Mode" layout.
   - **No Ads**: Specifically excludes the `AdScripts` component.
   - **SEO Protection**: Includes `noindex, nofollow` meta tags to prevent search indexing.
@@ -24,8 +24,8 @@ The application routes are structured to maximize code reuse while maintaining d
 
 Clean Mode (`/clean`) is implemented as a parallel route tree that reuses the logic from the main application.
 
-*   **Layout (`_clean/route.tsx`)**: Provides the shell for clean mode. It acts similarly to the main layout but omits ad integrations.
-*   **Page (`_clean._index/route.tsx`)**: Re-exports the logic and UI from `_app._index/route.tsx`. This ensures that the player functionality, playlist management, and syncing logic remain identical between both modes.
+*   **Layout (`clean/route.tsx`)**: Provides the shell for clean mode. It acts similarly to the main layout but omits ad integrations.
+*   **Page (`clean._index/route.tsx`)**: Re-exports the logic and UI from `_app._index/route.tsx`. This ensures that the player functionality, playlist management, and syncing logic remain identical between both modes.
 
 ### Data Synchronization
 

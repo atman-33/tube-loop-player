@@ -57,11 +57,11 @@ describe("useAuth", () => {
     expect(mockGetAuthClient).toHaveBeenCalledWith({ baseURL: "https://app.example" });
   });
 
-  it("falls back to routes/_clean loader data when _app is unavailable", () => {
+  it("falls back to routes/clean loader data when _app is unavailable", () => {
     const user = { id: "2", name: "Clean", email: "clean@example.com" };
 
     mockUseRouteLoaderData.mockImplementation((routeId: string) => {
-      if (routeId === "routes/_clean") {
+      if (routeId === "routes/clean") {
         return { baseURL: "https://clean.example", user };
       }
 
@@ -86,7 +86,7 @@ describe("useAuth", () => {
 
   it("uses clean callback URL when signing in from clean mode", async () => {
     mockUseRouteLoaderData.mockImplementation((routeId: string) => {
-      if (routeId === "routes/_clean") {
+      if (routeId === "routes/clean") {
         return { baseURL: "https://clean.example", user: undefined };
       }
 

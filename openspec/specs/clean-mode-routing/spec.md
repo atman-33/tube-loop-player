@@ -75,7 +75,7 @@ The system SHALL provide identical functionality in clean mode compared to the m
 
 ### Requirement: Clean mode layout structure mirrors main application
 
-The system SHALL implement clean mode using a separate layout route (`_clean`) that reuses core application components while excluding advertisement integration.
+The system SHALL implement clean mode using a separate layout route (`clean`) that reuses core application components while excluding advertisement integration.
 
 #### Scenario: Clean mode layout renders
 

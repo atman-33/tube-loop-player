@@ -13,7 +13,7 @@ export function useAuth() {
     baseURL: string;
     user?: User;
   } | null;
-  const cleanLoaderData = useRouteLoaderData("routes/_clean") as {
+  const cleanLoaderData = useRouteLoaderData("routes/clean") as {
     baseURL: string;
     user?: User;
   } | null;
