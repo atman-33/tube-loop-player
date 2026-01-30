@@ -3,6 +3,7 @@ import { siteConfig } from "~/config/site-config";
 export const loader = () => {
   const content = `User-agent: *
 Allow: /
+Disallow: /clean
 
 Sitemap: ${siteConfig.appUrl}/sitemap.xml
 `;

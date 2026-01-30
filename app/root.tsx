@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import {
   isRouteErrorResponse,
   Links,
@@ -6,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useMatches,
 } from 'react-router';
 import { siteConfig } from '~/config/site-config';
 import { AdScripts } from './components/ad-scripts';
@@ -48,6 +48,12 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode; }) {
+  const matches = useMatches();
+  const hideAds = matches.some((match) => {
+    const handle = match.handle as { hideAds?: boolean } | undefined;
+    return Boolean(handle?.hideAds);
+  });
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -55,7 +61,7 @@ export function Layout({ children }: { children: React.ReactNode; }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="canonical" href={siteConfig.appUrl} />
         <JsonLdSoftwareApp />
-        <AdScripts />
+        {!hideAds && <AdScripts />}
         <Meta />
         <Links />
       </head>

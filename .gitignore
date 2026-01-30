@@ -41,3 +41,9 @@ node_modules/
 .serena
 .skillportrc
 .claude/
+
+.github/agents
+.github/instructions
+.github/prompts/*
+!.github/prompts/openspec-*
+!.github/prompts/opsx-*

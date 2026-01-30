@@ -35,6 +35,12 @@ TubeLoopPlayer is a client-side web application that allows users to register Yo
 - Play and pause controls.
 - Toggle switches for loop and shuffle modes.
 
+### Clean Mode
+
+- **Access**: Available via a specific URL path (`/clean`).
+- **Functionality**: Identical to the main application (playback, playlists, sync) but without advertisements.
+- **Visibility**: Not indexed by search engines (`noindex, nofollow`).
+
 ---
 
 ## Non-Functional Requirements

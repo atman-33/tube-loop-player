@@ -1,4 +1,4 @@
-import { useRouteLoaderData } from "react-router";
+import { useLocation, useRouteLoaderData } from "react-router";
 import { getAuthClient } from "~/lib/auth/auth-client";
 
 export interface User {
@@ -9,13 +9,20 @@ export interface User {
 }
 
 export function useAuth() {
-  const loaderData = useRouteLoaderData("routes/_app") as {
+  const appLoaderData = useRouteLoaderData("routes/_app") as {
     baseURL: string;
     user?: User;
   } | null;
+  const cleanLoaderData = useRouteLoaderData("routes/clean") as {
+    baseURL: string;
+    user?: User;
+  } | null;
+  const loaderData = appLoaderData ?? cleanLoaderData;
+  const location = useLocation();
 
   const user = loaderData?.user || null;
   const baseURL = loaderData?.baseURL || "";
+  const callbackURL = location.pathname.startsWith("/clean") ? "/clean" : "/";
 
   const authClient = getAuthClient({ baseURL });
 
@@ -23,7 +30,7 @@ export function useAuth() {
     try {
       await authClient.signIn.social({
         provider,
-        callbackURL: "/",
+        callbackURL,
       });
     } catch (error) {
       console.error("Sign in failed:", error);
