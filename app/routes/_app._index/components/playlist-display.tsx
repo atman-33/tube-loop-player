@@ -16,6 +16,7 @@ import { usePlayerStore } from '../../../stores/player';
 import { FAVORITES_PLAYLIST_ID } from '../../../stores/player/constants';
 import { PLAYLIST_PANEL_ID } from '../consts/playlist-aria';
 import { PinnedStarIcon } from './pinned-star-icon';
+import { SongContextMenu } from './song-context-menu';
 
 const getThumbnailUrl = (videoId: string) =>
   `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
@@ -27,6 +28,7 @@ interface SortableItemProps {
   play: (videoId: string) => void;
   removeFromPlaylist: (index: number) => void;
   isFavorites: boolean;
+  currentPlaylistId: string;
 }
 
 const SortableItem: React.FC<SortableItemProps> = ({
@@ -36,6 +38,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
   play,
   removeFromPlaylist,
   isFavorites,
+  currentPlaylistId,
 }) => {
   const {
     attributes,
@@ -62,61 +65,68 @@ const SortableItem: React.FC<SortableItemProps> = ({
       }`}
       {...attributes}
     >
-      <div className="flex items-center w-full transition-all duration-300 transform hover:scale-105">
-        <button
-          type="button"
-          className={`p-3 text-muted-foreground hover:text-foreground ${
-            isDragging ? 'cursor-grabbing' : 'cursor-grab'
-          }`}
-          {...listeners}
-        >
-          <GripVertical className="h-5 w-5" />
-          <span className="sr-only">Drag to reorder</span>
-        </button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className={`flex-1 flex items-center gap-4 p-3 border-l-0 rounded-r-lg shadow-sm transition-all duration-200 cursor-pointer w-0 ${
-                currentIndex === index
-                  ? 'bg-primary/10 border-primary ring-2 ring-primary/50'
-                  : 'bg-card hover:bg-card-foreground/5'
-              }`}
-              onClick={() => play(item.id)}
-            >
-              <img
-                src={getThumbnailUrl(item.id)}
-                alt={item.title}
-                className="w-24 h-14 object-cover rounded-md flex-shrink-0"
-              />
-              <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground hover:text-primary transition-colors truncate text-ellipsis whitespace-nowrap lg:block">
-                {item.title || `Video ${index + 1}`}
-              </div>
-              <PinnedStarIcon videoId={item.id} className="mr-2" />
-              {!isFavorites && (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFromPlaylist(index);
-                  }}
-                  className="flex-shrink-0 text-muted-foreground hover:text-destructive"
-                >
-                  <span className="transition-all duration-300 transform hover:scale-105">
-                    <Trash2 className="h-5 w-5" />
-                    <span className="sr-only">Remove</span>
-                  </span>
-                </Button>
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{item.title || `Video ${index + 1}`}</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+      <SongContextMenu
+        item={item}
+        index={index}
+        currentPlaylistId={currentPlaylistId}
+      >
+        <div className="flex items-center w-full transition-all duration-300 transform hover:scale-105">
+          <button
+            type="button"
+            className={`p-3 text-muted-foreground hover:text-foreground ${
+              isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+            {...listeners}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <GripVertical className="h-5 w-5" />
+            <span className="sr-only">Drag to reorder</span>
+          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={`flex-1 flex items-center gap-4 p-3 border-l-0 rounded-r-lg shadow-sm transition-all duration-200 cursor-pointer w-0 ${
+                  currentIndex === index
+                    ? 'bg-primary/10 border-primary ring-2 ring-primary/50'
+                    : 'bg-card hover:bg-card-foreground/5'
+                }`}
+                onClick={() => play(item.id)}
+              >
+                <img
+                  src={getThumbnailUrl(item.id)}
+                  alt={item.title}
+                  className="w-24 h-14 object-cover rounded-md flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0 overflow-hidden text-left font-medium text-foreground hover:text-primary transition-colors truncate text-ellipsis whitespace-nowrap lg:block">
+                  {item.title || `Video ${index + 1}`}
+                </div>
+                <PinnedStarIcon videoId={item.id} className="mr-2" />
+                {!isFavorites && (
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFromPlaylist(index);
+                    }}
+                    className="flex-shrink-0 text-muted-foreground hover:text-destructive"
+                  >
+                    <span className="transition-all duration-300 transform hover:scale-105">
+                      <Trash2 className="h-5 w-5" />
+                      <span className="sr-only">Remove</span>
+                    </span>
+                  </Button>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{item.title || `Video ${index + 1}`}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </SongContextMenu>
     </li>
   );
 };
@@ -157,6 +167,7 @@ export const PlaylistDisplay = () => {
                   play={play}
                   removeFromPlaylist={removeFromPlaylist}
                   isFavorites={isFavorites}
+                  currentPlaylistId={activePlaylistId}
                 />
               ))}
             </ul>
